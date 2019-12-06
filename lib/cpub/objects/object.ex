@@ -5,7 +5,7 @@ defmodule CPub.Objects.Object do
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
   schema "objects" do
-    field :data, :map
+    field :data, RDF.EctoType
     timestamps()
   end
 
