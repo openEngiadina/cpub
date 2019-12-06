@@ -9,7 +9,8 @@ use Mix.Config
 
 config :cpub,
   namespace: CPub,
-  ecto_repos: [CPub.Repo]
+  ecto_repos: [CPub.Repo],
+  base_url: "http://localhost:4000/"
 
 # Configures the endpoint
 config :cpub, CPubWeb.Endpoint,
