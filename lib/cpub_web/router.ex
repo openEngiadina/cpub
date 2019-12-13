@@ -5,7 +5,10 @@ defmodule CPubWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", CPubWeb do
+  scope "/", CPubWeb do
     pipe_through :api
+    resources "/objects", ObjectController
   end
+
+
 end
