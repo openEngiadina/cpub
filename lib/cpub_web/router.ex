@@ -2,7 +2,7 @@ defmodule CPubWeb.Router do
   use CPubWeb, :router
 
   pipeline :api do
-    plug :accepts, ["json"]
+    plug :accepts, ["json", "ttl"]
   end
 
   scope "/", CPubWeb do
