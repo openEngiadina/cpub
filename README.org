@@ -1,0 +1,51 @@
+#+TITLE: CPub
+
+An experimental semantic ActivityPub server.
+
+* Quick start
+
+To start the CPub server:
+
+  * Install dependencies with `mix deps.get`
+  * Create and migrate your database with `mix ecto.setup`
+  * Start Phoenix endpoint with `mix phx.server`
+
+Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+* API
+
+#+BEGIN_SRC restclient
+GET http://localhost:4000/objects
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+
+<http://localhost:4000/objects/aad76030-9c41-42d7-a330-d8a178ce7e0c>
+    a as:Note ;
+    as:attributedTo <https://social.example/alyssa> ;
+    as:content "Say, did you say someting?"@en ;
+    as:to <https://chatty.example/ben> .
+
+<http://localhost:4000/objects/bdd9da5d-bf3d-462e-8ef1-59e1af18c396>
+    a as:Create ;
+    as:actor <https://social.example/alyssa> ;
+    as:object <http://localhost:4000/objects/aad76030-9c41-42d7-a330-d8a178ce7e0c> ;
+    as:to <https://chatty.example/ben> .
+
+// GET http://localhost:4000/objects
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 713
+// content-type: text/turtle; charset=utf-8
+// date: Sat, 14 Dec 2019 10:32:33 GMT
+// server: Cowboy
+// x-request-id: FeA2SFb0-8FRxdgAAAMh
+// Request duration: 0.014282s
+#+END_SRC
+

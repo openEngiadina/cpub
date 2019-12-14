@@ -2,6 +2,8 @@ defmodule CPub.Objects.Object do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias CPub.Objects.Object
+
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
   schema "objects" do
@@ -10,10 +12,18 @@ defmodule CPub.Objects.Object do
   end
 
   @doc false
-  def changeset(object, attrs) do
+  def changeset(object \\ %Object{}, attrs) do
     object
     |> cast(attrs, [:data])
-    |> validate_required([:data])
+    |> autogenerate_id
+    |> validate_required([:id, :data])
+  end
+
+  defp autogenerate_id(changeset) do
+    if is_nil(get_change(changeset, :id)) do
+      changeset
+      |> put_change(:id, CPub.ID.generate)
+    end
   end
 
 end
