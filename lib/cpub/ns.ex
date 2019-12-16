@@ -9,4 +9,14 @@ defmodule CPub.NS do
     base_iri: "http://www.w3.org/ns/activitystreams#",
     file: "activitystreams2.ttl"
 
+  defvocab LDP,
+    base_iri: "http://www.w3.org/ns/ldp#",
+    file: "ldp.ttl"
+
+  defvocab DCTERMS,
+    base_iri: "http://purl.org/dc/terms/",
+    file: "dcterms.ttl",
+    ignore: ["ISO639-2", "ISO639-3"]
+
+
 end
