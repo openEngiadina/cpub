@@ -17,7 +17,7 @@ defmodule CPub.Objects.Object do
     |> cast(attrs, [:id, :data])
     |> autogenerate_id
     |> validate_required([:id, :data])
-    |> unique_constraint(:id)
+    |> unique_constraint(:id, name: "objects_pkey")
   end
 
   defp autogenerate_id(changeset) do
