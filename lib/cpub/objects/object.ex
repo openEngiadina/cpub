@@ -21,7 +21,7 @@ defmodule CPub.Objects.Object do
   end
 
   defp autogenerate_id(changeset) do
-    if is_nil(get_change(changeset, :id)) do
+    if is_nil(get_field(changeset, :id)) do
       changeset
       |> put_change(:id, CPub.ID.generate)
     else
