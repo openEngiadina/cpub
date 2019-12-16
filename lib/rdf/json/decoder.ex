@@ -90,7 +90,7 @@ defmodule RDF.JSON.Decoder do
           end).()
 
         "bnode" ->
-          with "_" <> id <- Map.get(value_object, "value") do
+          with "_:" <> id <- Map.get(value_object, "value") do
             RDF.BlankNode.new(id)
           end
       end)

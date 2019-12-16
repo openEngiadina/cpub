@@ -43,6 +43,7 @@ defmodule CPub.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:rdf, "~> 0.7.0"},
       {:sparql, "~> 0.3.4"},
+      {:stream_data, "~> 0.4.3"},
       {:json_ld, "~> 0.3.0"},
       {:guardian, "~> 2.0.0"}
     ]
