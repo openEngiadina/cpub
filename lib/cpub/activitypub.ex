@@ -1,107 +1,98 @@
 defmodule CPub.ActivityPub do
+  @moduledoc """
+  ActivityPub context
+  """
 
-  import RDF.Sigils
   alias Ecto.Multi
+  alias Ecto.Changeset
 
-  alias CPub.NS.ActivityStreams
+  alias CPub.ActivityPub.Activity
   alias CPub.Objects.Object
+  alias CPub.NS.ActivityStreams
   alias CPub.Repo
 
- # The ActivityStreams ontology
+  alias RDF.Description
+  alias RDF.Graph
+
   @activitystreams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
-
-  @query_get_activity SPARQL.query("""
-  select ?activity ?activity_type
-  where {
-    ?activity a ?activity_type .
-    ?activity_type rdfs:subClassOf as:Activity .
-  }
-  """)
   @doc """
-  Extract type of Activity and Activity as RDF.Description from any RDF.Data
+  The ActivityStreams 2.0 ontology
   """
-  def get_activity(data) do
-    query_result = data
-    |> RDF.Data.merge(@activitystreams)
-    |> SPARQL.execute_query(@query_get_activity)
-    case query_result do
-      %SPARQL.Query.Result{results: [%{"activity" => activity_id,
-                                        "activity_type" => activity_type}]} ->
-        {:ok, activity_type, activity_id}
+  def activitystreams, do: @activitystreams
 
-      _ ->
-        {:error, "Could not extract Activity."}
-    end
-  end
-
-  @query_get_object SPARQL.query("""
-  select ?activity ?object
-  where {
-  ?activity as:object ?object
-  }
-  """)
+  @activity_types (SPARQL.execute_query(@activitystreams,
+    SPARQL.query("""
+    select ?activity_type
+    where {
+      ?activity_type rdfs:subClassOf as:Activity .
+    }
+    """
+    ))).results |> Enum.map(&(&1["activity_type"]))
   @doc """
-  Get the object id of an activity
+  List of all ActivityStreams Activity types
   """
-  def get_object(data, activity_id) do
-    query_result = data
-    |> SPARQL.execute_query(@query_get_object)
-    case query_result do
-      %SPARQL.Query.Result{results: [%{"activity" => activity_id_from_query,
-                                        "object" => object}]} when activity_id == activity_id_from_query ->
-        {:ok, object}
+  def activity_types, do: @activity_types
 
-      _ ->
-        {:error, "Could not get object."}
+  @doc """
+  Creates an ActivityPub activity, computes side-effects and runs everything in a transaction.
+  """
+  def create(%Description{subject: activity_id} = activity, data \\ RDF.Graph.new) do
+    # generate an id for an object that may be created
+    object_id = CPub.ID.generate()
+
+    # create the changeset to add the activity
+    activity_changeset =
+      Activity.changeset(%{data: activity, id: activity_id})
+      # set the object id if it is a create activity
+      |> Changeset.update_change(:data, &(set_object_id_if_create_activity(&1, object_id)))
+
+    # create a transaction
+    Multi.new
+
+    # insert the activity
+    |> Multi.insert(:activity, activity_changeset)
+
+    # insert the object (if a Create activity)
+    |> create_object(activity, object_id, data)
+
+    # run the transaction
+    |> Repo.transaction
+  end
+
+  defp set_object_id_if_create_activity(activity, object_id) do
+    if RDF.iri(ActivityStreams.Create) in activity[RDF.type] do
+      activity
+      |> Description.delete_predicates(ActivityStreams.object)
+      |> Description.add(ActivityStreams.object, object_id)
+    else
+      # don't do anything if not a Create activity
+      activity
     end
   end
 
-  def handle(data) do
-    with {:ok, activity_type, activity} <- get_activity(data) do
-      handle(activity_type, activity, data)
-    end
-  end
+  # Creates an object if it is a Create activity
+  defp create_object(multi, %Description{subject: activity_id} = activity, object_id, data) do
+    if RDF.iri(ActivityStreams.Create) in activity[RDF.type] do
+      case data[activity_id][ActivityStreams.object] do
 
-  def handle(~I<http://www.w3.org/ns/activitystreams#Create>, activity_id, data) do
-    new_object_id = CPub.ID.generate()
-    new_activity_id = CPub.ID.generate()
-    with {:ok, object_id} <- get_object(data, activity_id),
-    # replace the ids with freshly generated ones
-    data <- data
-    |> replace_subject(object_id, new_object_id)
-    |> replace_subject(activity_id, new_activity_id),
-    # Extract just the activity
-    activity <- data |> RDF.Data.description(new_activity_id),
-    # Extract just the object
-    object <- data |> RDF.Data.description(new_object_id)
-      do
+        [original_object_id] ->
+          # replace subject
+          multi
+          |> Multi.insert(:object,
+          Object.changeset(%{id: object_id,
+                             data: data
+                             # remove the activity description and the original object description
+                             |> Graph.delete_subjects([original_object_id, activity_id])
+                             # replace subject of object with new id and add to graph
+                             |> Graph.add(%{data[original_object_id] | subject: object_id})}))
 
-      Multi.new
-      |> Multi.insert(:object, Object.changeset(%{data: object, id: new_object_id}))
-      |> Multi.insert(:activity, Object.changeset(%{data: activity, id: new_activity_id}))
-      |> Repo.transaction()
-
-    end
-  end
-
-  def handle(_, _activity, _data) do
-    {:error, "Do not know how to handle activity."}
-  end
-
-  def replace_subject(data, subject_to_replace, replace_with) do
-    data
-    |> Enum.reduce(RDF.Graph.new(), fn {s, p, o}, graph ->
-      cond do
-        s == subject_to_replace ->
-          graph |> RDF.Graph.add(replace_with, p, o)
-
-        o == subject_to_replace ->
-          graph |> RDF.Graph.add(s, p, replace_with)
-
-        true ->
-          graph |> RDF.Graph.add(s, p, o)
+        _ ->
+          multi
+          |> Multi.error(:object, "could not find object")
       end
-    end)
+    else
+      multi
+    end
   end
 
 end
