@@ -26,6 +26,7 @@ defmodule CPub.LDP.BasicContainer do
   def changeset(container \\ %BasicContainer{}, attrs) do
     container
     |> cast(attrs, [:id, :data])
+    |> CPub.ID.validate()
     |> validate_required([:id, :data])
     |> unique_constraint(:id, name: "objects_pkey")
   end
