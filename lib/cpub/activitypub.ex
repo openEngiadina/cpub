@@ -36,13 +36,13 @@ defmodule CPub.ActivityPub do
   @doc """
   Creates an ActivityPub activity, computes side-effects and runs everything in a transaction.
   """
-  def create(%Description{subject: activity_id} = activity, data \\ RDF.Graph.new) do
+  def create(%RDF.IRI{} = activity_id, %RDF.Graph{} = data) do
     # generate an id for an object that may be created
     object_id = CPub.ID.generate()
 
     # create the changeset to add the activity
     activity_changeset =
-      Activity.changeset(%{data: activity, id: activity_id})
+      Activity.changeset(%{data: data[activity_id], id: activity_id})
       # set the object id if it is a create activity
       |> Changeset.update_change(:data, &(set_object_id_if_create_activity(&1, object_id)))
 
@@ -53,7 +53,7 @@ defmodule CPub.ActivityPub do
     |> Multi.insert(:activity, activity_changeset)
 
     # insert the object (if a Create activity)
-    |> create_object(activity, object_id, data)
+    |> create_object(activity_id, object_id, data)
 
     # run the transaction
     |> Repo.transaction
@@ -71,8 +71,8 @@ defmodule CPub.ActivityPub do
   end
 
   # Creates an object if it is a Create activity
-  defp create_object(multi, %Description{subject: activity_id} = activity, object_id, data) do
-    if RDF.iri(ActivityStreams.Create) in activity[RDF.type] do
+  defp create_object(multi, activity_id, object_id, data) do
+    if RDF.iri(ActivityStreams.Create) in data[activity_id][RDF.type] do
       case data[activity_id][ActivityStreams.object] do
 
         [original_object_id] ->
