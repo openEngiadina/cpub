@@ -3,8 +3,7 @@ defmodule RDF.JSON.Decoder do
 
   use RDF.Serialization.Decoder
 
-  alias RDF.{Graph, Triple}
-  import RDF.Sigils
+  alias RDF.Graph
 
   @impl RDF.Serialization.Decoder
   def decode(content, opts \\ []) do
@@ -14,7 +13,7 @@ defmodule RDF.JSON.Decoder do
     end
   end
 
-  def to_rdf(rdf_json_object, opts \\ []) do
+  def to_rdf(rdf_json_object, _opts \\ []) do
     {:ok,
      Enum.reduce(
        rdf_json_object,

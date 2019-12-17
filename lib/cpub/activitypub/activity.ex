@@ -13,11 +13,6 @@ defmodule CPub.ActivityPub.Activity do
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
 
-  alias SPARQL.Query.Result
-
-  alias CPub.Repo
-  alias CPub.NS.ActivityStreams
-
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
   schema "objects" do

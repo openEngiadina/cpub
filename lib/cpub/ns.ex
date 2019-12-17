@@ -11,7 +11,8 @@ defmodule CPub.NS do
 
   defvocab LDP,
     base_iri: "http://www.w3.org/ns/ldp#",
-    file: "ldp.ttl"
+    file: "ldp.ttl",
+    ignore: ["PreferEmptyContainer"]
 
   defvocab DCTERMS,
     base_iri: "http://purl.org/dc/terms/",

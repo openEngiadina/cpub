@@ -3,7 +3,6 @@ defmodule CPubWeb.ObjectView do
 
   alias CPubWeb.ObjectView
 
-  alias RDF.IRI
   alias RDF.Turtle
 
   def render("index.json", %{objects: objects}) do

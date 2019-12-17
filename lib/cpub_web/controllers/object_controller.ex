@@ -2,7 +2,6 @@ defmodule CPubWeb.ObjectController do
   use CPubWeb, :controller
 
   alias CPub.Objects
-  alias CPub.Objects.Object
 
   alias CPub.ID
 
