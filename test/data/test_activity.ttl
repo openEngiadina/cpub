@@ -1,0 +1,16 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+
+<>
+    a as:Create ;
+    as:to <https://chatty.example/ben> ;
+    as:actor <https://social.example/alyssa> ;
+    as:object _:object .
+
+_:object
+    a as:Note ;
+    as:attributedTo <https://social.example/alyssa> ;
+    as:to <https://chatty.example/ben> ;
+    as:content "Say, did you say someting?"@en .
