@@ -7,7 +7,10 @@ defmodule CPub.Objects.Object do
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
   schema "objects" do
-    field :data, RDF.EctoType
+
+    # data field holds an RDF graph
+    field :data, RDF.Graph.EctoType
+
     timestamps()
   end
 

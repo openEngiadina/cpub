@@ -18,7 +18,7 @@ defmodule CPub.LDP.BasicContainer do
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
   schema "objects" do
-    field :data, RDF.EctoType
+    field :data, RDF.Description.EctoType
     timestamps()
   end
 
@@ -64,7 +64,6 @@ defmodule CPub.LDP.BasicContainer do
     container
     |> changeset(%{
           data: container.data
-          |> RDF.Data.description(container.id)
           |> RDF.Description.add(LDP.contains, element)})
   end
 
@@ -83,7 +82,6 @@ defmodule CPub.LDP.BasicContainer do
 
   def to_list(%BasicContainer{} = container) do
     case container.data
-    |> RDF.Data.description(container.id)
     |> RDF.Description.fetch(LDP.contains)
       do
       :error -> []
@@ -99,7 +97,6 @@ defmodule CPub.LDP.BasicContainer do
 
   def contains?(container, element) do
     container.data
-    |> RDF.Data.description(container.id)
     |> RDF.Description.include?({LDP.contains, element})
   end
 
@@ -118,7 +115,6 @@ defmodule CPub.LDP.BasicContainer do
 
     def reduce(%BasicContainer{} = container, acc, fun) do
       container.data
-      |> RDF.Data.description(container.id)
       |> Enum.reduce(acc, fun)
     end
 
