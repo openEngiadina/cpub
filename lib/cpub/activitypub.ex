@@ -100,7 +100,7 @@ defmodule CPub.ActivityPub do
     end
   end
 
-  def deliver_local_to(to, multi, activity_id) do
+  defp deliver_local_to(to, multi, activity_id) do
     recipient = Repo.get(Object, to)
     cond do
       BasicContainer.is_basic_container?(recipient[to]) ->
@@ -114,7 +114,7 @@ defmodule CPub.ActivityPub do
     end
   end
 
-  def deliver_local(multi, activity_id, data) do
+  defp deliver_local(multi, activity_id, data) do
     [AS.to, AS.cc, AS.bcc, AS.bto]
     |> Enum.map(&(Access.get(data[activity_id], &1)))
     |> Enum.reject(&is_nil/1)
