@@ -28,7 +28,7 @@ defmodule CPub.LDP.BasicContainer do
   Returns a new Basic Container.
   """
   def new(opts \\ []) do
-    id = Keyword.get(opts, :id, CPub.ID.generate())
+    id = Keyword.get(opts, :id, CPub.ID.generate(type: :container))
     %BasicContainer{id: id,
                     data: Description.new(id)
                     |> Description.add(RDF.type, LDP.BasicContainer)}

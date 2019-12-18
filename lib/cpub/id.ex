@@ -42,15 +42,32 @@ defmodule CPub.ID do
     {:ok, IRI.new(data)}
   end
 
-  def generate() do
+  defp get_id_prefix(type) do
+    case type do
+      :actor ->
+        "actors"
+
+      :container ->
+        "containers"
+
+      _ ->
+        "objects"
+    end
+  end
+
+  def generate(opts \\ []) do
+    id_prefix =
+      Keyword.get(opts, :type, :objects)
+      |> get_id_prefix()
+
     URI.merge(
       Application.get_env(:cpub, :base_url),
-      "objects/" <> Ecto.UUID.generate())
+      id_prefix <> "/" <> Ecto.UUID.generate())
     |> IRI.new!
   end
 
-  def autogenerate() do
-    generate()
+  def autogenerate(opts \\ []) do
+    generate(opts)
   end
 
   @doc """
