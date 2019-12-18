@@ -65,4 +65,30 @@ defmodule CPub.ActivityPubTest do
 
   end
 
+  test "add activity" do
+
+    # create a container
+    assert {:ok, %BasicContainer{} = container} = BasicContainer.create()
+
+    activity_id = CPub.ID.generate()
+
+    object = ~I<http://example.com>
+
+    data = Graph.new()
+    |> Graph.add(
+      Description.new(activity_id)
+      |> Description.add(RDF.type, AS.Add)
+      |> Description.add(AS.object, object)
+      |> Description.add(AS.target, container.id))
+
+    # create activity
+    assert {:ok, %{activity: %Activity{},
+                   deliver_local: %BasicContainer{}}} =
+      ActivityPub.create(activity_id, data)
+
+    # check that activity has been added to container
+    assert BasicContainer.get!(container.id) |> Enum.member?(object)
+
+  end
+
 end

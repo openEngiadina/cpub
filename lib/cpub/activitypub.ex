@@ -57,6 +57,9 @@ defmodule CPub.ActivityPub do
     # insert the object (if a Create activity)
     |> create_object(activity_id, object_id, data)
 
+    # handle Add activity
+    |> handle_add(activity_id, data)
+
     # deliver activity to local recipients
     |> deliver_local(activity_id, data)
 
@@ -100,17 +103,17 @@ defmodule CPub.ActivityPub do
     end
   end
 
-  defp deliver_local_to(to, multi, activity_id) do
+  defp add_to_local(multi, element, to) do
     recipient = Repo.get(Object, to)
     cond do
       BasicContainer.is_basic_container?(recipient[to]) ->
         Multi.update(multi, :deliver_local,
           %BasicContainer{data: recipient[to], id: to}
-          |> BasicContainer.add_changeset(activity_id))
+          |> BasicContainer.add_changeset(element))
 
       true ->
         multi
-        |> Multi.error(:deliver_local, "do not know how to deliver to local recipient " <> RDF.IRI.to_string(to))
+        |> Multi.error(:deliver_local, "do not know how to add to local recipient " <> RDF.IRI.to_string(to))
     end
   end
 
@@ -120,7 +123,20 @@ defmodule CPub.ActivityPub do
     |> Enum.reject(&is_nil/1)
     |> Enum.concat()
     |> Enum.filter(&CPub.ID.is_local?/1)
-    |> List.foldl(multi, &(deliver_local_to(&1, &2, activity_id)))
+    |> List.foldl(multi, &(add_to_local(&2, activity_id, &1)))
+  end
+
+  defp handle_add(multi, activity_id, data) do
+    if RDF.iri(AS.Add) in data[activity_id][RDF.type] do
+      # TODO: What to do with multiple objects or multiple targets?
+      with object <- data[activity_id][AS.object] |> List.first(),
+           target <- data[activity_id][AS.target] |> List.first() do
+        multi
+        |> add_to_local(object,target)
+      end
+    else
+      multi
+    end
   end
 
 end
