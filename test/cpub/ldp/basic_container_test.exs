@@ -9,18 +9,20 @@ defmodule CPub.LDP.BasicContainerTest do
   alias CPub.LDP.BasicContainer
 
   test "create" do
-    assert {:ok, %BasicContainer{}} = BasicContainer.create
+    assert {:ok, %BasicContainer{}} = BasicContainer.create()
   end
 
   test "add elements to container" do
     # create a container
-    assert {:ok, %BasicContainer{} = container} = BasicContainer.create
+    assert {:ok, %BasicContainer{} = container} = BasicContainer.create()
 
     # add some random elements
     check all element <- RDF.StreamData.iri() do
       assert {:ok, container} =
-        container.id
+        container
         |> BasicContainer.add(element)
+        |> BasicContainer.changeset()
+        |> CPub.Repo.update()
 
       assert Enum.member?(BasicContainer.get!(container.id), element)
     end

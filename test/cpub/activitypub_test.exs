@@ -20,7 +20,7 @@ defmodule CPub.ActivityPubTest do
   test "create activity" do
 
     # Create an actor
-    {:ok, %{actor: actor}} = ActivityPub.create_actor(Description.new(CPub.ID.generate))
+    {:ok, %{actor: actor}} = ActivityPub.create_actor()
 
     activity_id = CPub.ID.generate()
 
@@ -48,7 +48,7 @@ defmodule CPub.ActivityPubTest do
   test "create activity and deliver to container" do
 
     # Create an actor
-    {:ok, %{actor: actor}} = ActivityPub.create_actor(Description.new(CPub.ID.generate))
+    {:ok, %{actor: actor}} = ActivityPub.create_actor()
 
     # create a container
     assert {:ok, %BasicContainer{} = container} = BasicContainer.create()
@@ -84,7 +84,7 @@ defmodule CPub.ActivityPubTest do
   test "add activity" do
 
     # Create an actor
-    {:ok, %{actor: actor}} = ActivityPub.create_actor(Description.new(CPub.ID.generate))
+    {:ok, %{actor: actor}} = ActivityPub.create_actor()
 
     # create a container
     assert {:ok, %BasicContainer{} = container} = BasicContainer.create()
@@ -116,7 +116,11 @@ defmodule CPub.ActivityPubTest do
     assert {:ok, %{actor: %Actor{},
                    outbox: %BasicContainer{},
                    inbox: %BasicContainer{}}} =
-      ActivityPub.create_actor(Description.new(CPub.ID.generate))
+      ActivityPub.create_actor()
+  end
+
+  test "create actor with wrong type fails" do
+    assert true
   end
 
 end

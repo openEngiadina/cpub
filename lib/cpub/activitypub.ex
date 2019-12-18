@@ -27,20 +27,18 @@ defmodule CPub.ActivityPub do
   @doc """
   Create an ActivityPub actor
   """
-  def create_actor(%Description{} = description, actor_type \\ AS.Person) do
+  def create_actor(opts \\ []) do
+    actor = Actor.new(opts)
     inbox = BasicContainer.new()
     outbox = BasicContainer.new()
     Multi.new
     |> Multi.insert(
-      :actor, %Actor{}
-      |> Actor.changeset(%{
-            id: description.subject,
-            data: description
-            |> Description.add(RDF.type, actor_type)
-            |> Description.add(LDP.inbox, inbox.id)
-            |> Description.add(AS.outbox, outbox.id)}))
-    |> Multi.insert(:inbox, inbox |> BasicContainer.changeset(%{}))
-    |> Multi.insert(:outbox, outbox |> BasicContainer.changeset(%{}))
+      :actor, actor
+      |> Actor.add(LDP.inbox, inbox.id)
+      |> Actor.add(AS.outbox, outbox.id)
+      |> Actor.changeset())
+    |> Multi.insert(:inbox, inbox |> BasicContainer.changeset())
+    |> Multi.insert(:outbox, outbox |> BasicContainer.changeset())
     |> Repo.transaction
   end
 
@@ -134,7 +132,8 @@ defmodule CPub.ActivityPub do
       BasicContainer.is_basic_container?(recipient[to]) ->
         Multi.update(multi, name,
           %BasicContainer{data: recipient[to], id: to}
-          |> BasicContainer.add_changeset(element))
+          |> BasicContainer.add(element)
+          |> BasicContainer.changeset())
 
       Actor.is_actor?(recipient[to]) ->
         multi

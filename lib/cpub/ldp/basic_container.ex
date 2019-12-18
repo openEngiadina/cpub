@@ -27,15 +27,19 @@ defmodule CPub.LDP.BasicContainer do
   @doc """
   Returns a new Basic Container.
   """
-  def new(id \\ CPub.ID.generate) do
+  def new(opts \\ []) do
+    id = Keyword.get(opts, :id, CPub.ID.generate())
     %BasicContainer{id: id,
-                    data: Description.new(id) |> Description.add(RDF.type, LDP.BasicContainer)}
+                    data: Description.new(id)
+                    |> Description.add(RDF.type, LDP.BasicContainer)}
   end
 
   @doc false
-  def changeset(container \\ %BasicContainer{}, attrs) do
+  def changeset(container \\ %BasicContainer{}) do
     container
-    |> cast(attrs, [:id, :data])
+    |> change()
+    # NOTE forcing the change might be slightly unconventional. I think it is justified as this is the only field in the schema and optimizing by selecting which field get a change does not make sense.
+    |> force_change(:data, container.data)
     |> CPub.ID.validate()
     |> validate_required([:id, :data])
     |> validate_type()
@@ -65,24 +69,16 @@ defmodule CPub.LDP.BasicContainer do
   end
 
   @doc """
-  Creates an empty container and return the changeset to insert the newly created container.
+  Creates an empty container.
   """
-  def create_changeset(id \\ CPub.ID.generate()) do
-    RDF.Description.new(id)
-    |> RDF.Description.add(RDF.type, LDP.BasicContainer)
-    |> (&(changeset(%{data: &1, id: id}))).()
-  end
-
-  @doc """
-  Creates an empty container. If not id is specified an id will be generated.
-  """
-  def create(id \\ CPub.ID.generate()) do
-    create_changeset(id)
+  def create(opts \\ []) do
+    new(opts)
+    |> changeset()
     |> Repo.insert()
   end
 
   @doc """
-  Gets a container.
+  Gets a BasicContainer
 
   Raises `Ecto.NoResultsError` if the Container does not exist.
   """
@@ -91,26 +87,10 @@ defmodule CPub.LDP.BasicContainer do
   end
 
   @doc """
-  Returns the changeset that would add a single element to the container.
+  Add an element to the container.
   """
-  def add_changeset(%BasicContainer{} = container, %RDF.IRI{} = element) do
-    container
-    |> changeset(%{
-          data: container.data
-          |> RDF.Description.add(LDP.contains, element)})
-  end
-
-  def add_changeset(%RDF.IRI{} = container_id, element) do
-    get!(container_id)
-    |> add_changeset(element)
-  end
-
-  @doc """
-  Adds an element to the container and writes update to database.
-  """
-  def add(container, %RDF.IRI{} = element) do
-    add_changeset(container, element)
-    |> Repo.update()
+  def add(%BasicContainer{} = container, %RDF.IRI{} = element) do
+    %{container | data: container.data |> RDF.Description.add(LDP.contains, element)}
   end
 
   def to_list(%BasicContainer{} = container) do

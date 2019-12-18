@@ -19,10 +19,31 @@ defmodule CPub.ActivityPub.Actor do
     timestamps()
   end
 
+  @doc """
+  Returns a new Actor.
+
+  ## Examples
+
+    iex> CPub.ActivityPub.Actor.new()
+    %Actor{}
+
+    iex> CPub.ActivityPub.Actor.new(id: ~I<http://social.example/alyssa>, type: ~I<http://www.w3.org/ns/activitystreams#Person>)
+    %Actor{}
+
+  """
+  def new(opts \\ []) do
+    id = Keyword.get(opts, :id, CPub.ID.generate())
+    type = Keyword.get(opts, :type, AS.Person)
+    %Actor{id: id,
+           data: RDF.Description.new(id)}
+           |> add(RDF.type, type)
+  end
+
   @doc false
-  def changeset(actor \\ %Actor{}, attrs) do
+  def changeset(actor \\ new()) do
     actor
-    |> cast(attrs, [:id, :data])
+    |> change
+    |> force_change(:data, actor.data)
     |> CPub.ID.validate()
     |> validate_required([:id, :data])
     |> unique_constraint(:id, name: "objects_pkey")
@@ -100,6 +121,15 @@ defmodule CPub.ActivityPub.Actor do
       {value, new_graph} ->
         {value, %{activity | data: new_graph}}
     end
+  end
+
+  @doc """
+  Add objects to a predicate of the actor.
+
+  See also `RDF.Description.add`.
+  """
+  def add(%Actor{} = actor, predicate, objects) do
+    %{actor | data: actor.data |> RDF.Description.add(predicate, objects)}
   end
 
 end
