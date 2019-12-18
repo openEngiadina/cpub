@@ -13,6 +13,8 @@ defmodule CPub.ActivityPub.Activity do
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
 
+  alias CPub.NS.ActivityStreams, as: AS
+
   @behaviour Access
 
   @primary_key {:id, CPub.ID, autogenerate: true}
@@ -30,6 +32,7 @@ defmodule CPub.ActivityPub.Activity do
     |> validate_required([:id, :data])
     |> unique_constraint(:id, name: "objects_pkey")
     |> validate_activity_type()
+    |> validate_required_property(AS.actor, "no actor")
   end
 
   @doc """
@@ -46,6 +49,16 @@ defmodule CPub.ActivityPub.Activity do
     else
       changeset
       |> add_error(:data, "not an ActivityPub activity")
+    end
+  end
+
+  # TODO: this is duplicated from Actor module. Move to a nice place. Best probably create a Macro for such kind of Schema objects.
+  def validate_required_property(changeset, property, message) do
+    if is_nil(get_field(changeset, :data)[property]) do
+      changeset
+      |> add_error(:data, message)
+    else
+      changeset
     end
   end
 
