@@ -7,8 +7,10 @@ defmodule CPub.ActivityPub do
   alias Ecto.Changeset
 
   alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.NS.LDP
 
   alias CPub.ActivityPub.Activity
+  alias CPub.ActivityPub.Actor
   alias CPub.Objects.Object
   alias CPub.LDP.BasicContainer
   alias CPub.Repo
@@ -21,6 +23,26 @@ defmodule CPub.ActivityPub do
   The ActivityStreams 2.0 ontology
   """
   def activitystreams, do: @activitystreams
+
+  @doc """
+  Create an ActivityPub actor
+  """
+  def create_actor(%Description{} = description, actor_type \\ AS.Person) do
+    inbox = BasicContainer.new()
+    outbox = BasicContainer.new()
+    Multi.new
+    |> Multi.insert(
+      :actor, %Actor{}
+      |> Actor.changeset(%{
+            id: description.subject,
+            data: description
+            |> Description.add(RDF.type, actor_type)
+            |> Description.add(LDP.inbox, inbox.id)
+            |> Description.add(AS.outbox, outbox.id)}))
+    |> Multi.insert(:inbox, inbox |> BasicContainer.changeset(%{}))
+    |> Multi.insert(:outbox, outbox |> BasicContainer.changeset(%{}))
+    |> Repo.transaction
+  end
 
   @activity_types (SPARQL.execute_query(@activitystreams,
     SPARQL.query("""
@@ -38,7 +60,7 @@ defmodule CPub.ActivityPub do
   @doc """
   Creates an ActivityPub activity, computes side-effects and runs everything in a transaction.
   """
-  def create(%RDF.IRI{} = activity_id, %RDF.Graph{} = data) do
+  def create_activity(%RDF.IRI{} = activity_id, %RDF.Graph{} = data) do
     # generate an id for an object that may be created
     object_id = CPub.ID.generate()
 

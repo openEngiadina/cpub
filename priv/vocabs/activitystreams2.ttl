@@ -37,6 +37,15 @@ as:actor a owl:ObjectProperty ;
     owl:unionOf (as:Object as:Link)
   ] .
 
+as:outbox a owl:ObjectProperty ;
+    rdfs:label "outbox"@en .
+
+as:following a owl:ObjectProperty .
+
+as:followers a owl:ObjectProperty .
+
+as:liked a owl:ObjectProperty .
+
 as:attributedTo a owl:ObjectProperty ;
   rdfs:label "attributedTo"@en;
   rdfs:comment "Identifies an entity to which an object is attributed"@en;

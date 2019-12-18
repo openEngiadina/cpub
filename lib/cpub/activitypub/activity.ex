@@ -41,18 +41,13 @@ defmodule CPub.ActivityPub.Activity do
   end
 
   defp validate_activity_type(changeset) do
-
-    activity = get_field(changeset, :data)
-
-    if activity[RDF.type] |> Enum.any?(&(&1 in ActivityPub.activity_types)) do
+    if is_activity?(get_field(changeset, :data)) do
       changeset
     else
       changeset
       |> add_error(:data, "not an ActivityPub activity")
     end
-
   end
-
 
   @doc """
   See `RDF.Description.fetch`.
@@ -85,6 +80,5 @@ defmodule CPub.ActivityPub.Activity do
         {value, %{activity | data: new_graph}}
     end
   end
-
 
 end

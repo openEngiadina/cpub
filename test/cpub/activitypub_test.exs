@@ -11,9 +11,11 @@ defmodule CPub.ActivityPubTest do
 
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
-  alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.ActivityPub.Actor
   alias CPub.Objects.Object
   alias CPub.LDP.BasicContainer
+
+  alias CPub.NS.ActivityStreams, as: AS
 
   test "create activity" do
 
@@ -30,7 +32,7 @@ defmodule CPub.ActivityPubTest do
       |> Description.add(AS.content, ~L<Just a simple note>))
 
     assert {:ok, %{activity: %Activity{}, object: %Object{}}} =
-      ActivityPub.create(activity_id, data)
+      ActivityPub.create_activity(activity_id, data)
 
   end
 
@@ -58,7 +60,7 @@ defmodule CPub.ActivityPubTest do
     assert {:ok, %{activity: %Activity{},
                    object: %Object{},
                    deliver_local: %BasicContainer{}}} =
-      ActivityPub.create(activity_id, data)
+      ActivityPub.create_activity(activity_id, data)
 
     # check that activity has been added to container
     assert BasicContainer.get!(container.id) |> Enum.member?(activity_id)
@@ -84,11 +86,18 @@ defmodule CPub.ActivityPubTest do
     # create activity
     assert {:ok, %{activity: %Activity{},
                    deliver_local: %BasicContainer{}}} =
-      ActivityPub.create(activity_id, data)
+      ActivityPub.create_activity(activity_id, data)
 
     # check that activity has been added to container
     assert BasicContainer.get!(container.id) |> Enum.member?(object)
 
+  end
+
+  test "create actor" do
+    assert {:ok, %{actor: %Actor{},
+                   outbox: %BasicContainer{},
+                   inbox: %BasicContainer{}}} =
+      ActivityPub.create_actor(Description.new(CPub.ID.generate))
   end
 
 end

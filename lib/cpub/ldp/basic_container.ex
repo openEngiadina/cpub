@@ -15,11 +15,21 @@ defmodule CPub.LDP.BasicContainer do
   alias CPub.Repo
   alias CPub.NS.LDP
 
+  alias RDF.Description
+
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
   schema "objects" do
     field :data, RDF.Description.EctoType
     timestamps()
+  end
+
+  @doc """
+  Returns a new Basic Container.
+  """
+  def new(id \\ CPub.ID.generate) do
+    %BasicContainer{id: id,
+                    data: Description.new(id) |> Description.add(RDF.type, LDP.BasicContainer)}
   end
 
   @doc false
@@ -36,8 +46,13 @@ defmodule CPub.LDP.BasicContainer do
   Returns true if description is a LDP Basic Container, false otherwise.
   """
   def is_basic_container?(description) do
-    description[RDF.type]
-    |> Enum.any?(&(&1 == RDF.iri(LDP.BasicContainer)))
+    case description[RDF.type] do
+      nil ->
+        false
+      types ->
+        types
+        |> Enum.any?(&(&1 == RDF.iri(LDP.BasicContainer)))
+    end
   end
 
   defp validate_type(changeset) do
