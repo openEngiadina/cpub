@@ -126,22 +126,16 @@ defmodule CPub.ActivityPub do
     end
   end
 
-  defp add_to_local(multi, name, element, to) do
-    recipient = Repo.get(Object, to)
-    cond do
-      BasicContainer.is_basic_container?(recipient[to]) ->
-        Multi.update(multi, name,
-          %BasicContainer{data: recipient[to], id: to}
-          |> BasicContainer.add(element)
-          |> BasicContainer.changeset())
 
-      Actor.is_actor?(recipient[to]) ->
+  defp add_to_local_container(multi, to, element) do
+    case CPub.Objects.add_to_container(to, element) do
+      {:error, _} ->
         multi
-        |> add_to_local(name, element, recipient[to][LDP.inbox] |> List.first())
+        |> Multi.error(to, "do not know how to add to local container")
 
-      true ->
+      changeset ->
         multi
-        |> Multi.error(name, "do not know how to add to local recipient " <> RDF.IRI.to_string(to))
+        |> Multi.update(to, changeset)
     end
   end
 
@@ -151,14 +145,14 @@ defmodule CPub.ActivityPub do
     |> Enum.reject(&is_nil/1)
     |> Enum.concat()
     |> Enum.filter(&CPub.ID.is_local?/1)
-    |> List.foldl(multi, &(add_to_local(&2, &1, activity_id, &1)))
+    |> List.foldl(multi, &(add_to_local_container(&2, &1, activity_id)))
   end
 
   defp place_in_outbox(multi, activity_id, data) do
     actor = Repo.get(Actor, data[activity_id][AS.actor] |> List.first())
     with outbox <- actor[AS.outbox] |> List.first() do
       multi
-      |> add_to_local(:place_in_outbox, activity_id, outbox)
+      |> add_to_local_container(outbox, activity_id)
     end
   end
 
@@ -168,7 +162,7 @@ defmodule CPub.ActivityPub do
       with object <- data[activity_id][AS.object] |> List.first(),
            target <- data[activity_id][AS.target] |> List.first() do
         multi
-        |> add_to_local(target, object,target)
+        |> add_to_local_container(target, object)
       end
     else
       multi
