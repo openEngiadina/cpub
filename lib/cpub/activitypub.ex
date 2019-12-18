@@ -103,9 +103,9 @@ defmodule CPub.ActivityPub do
   def deliver_local_to(to, multi, activity_id) do
     recipient = Repo.get(Object, to)
     cond do
-      BasicContainer.is_basic_container?(recipient.data[to]) ->
+      BasicContainer.is_basic_container?(recipient[to]) ->
         Multi.update(multi, :deliver_local,
-          %BasicContainer{data: recipient.data[to], id: to}
+          %BasicContainer{data: recipient[to], id: to}
           |> BasicContainer.add_changeset(activity_id))
 
       true ->

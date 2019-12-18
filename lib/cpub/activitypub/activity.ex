@@ -13,6 +13,8 @@ defmodule CPub.ActivityPub.Activity do
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
 
+  @behaviour Access
+
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
   schema "objects" do
@@ -50,5 +52,39 @@ defmodule CPub.ActivityPub.Activity do
     end
 
   end
+
+
+  @doc """
+  See `RDF.Description.fetch`.
+  """
+  @impl Access
+  def fetch(%Activity{data: data}, key) do
+    Access.fetch(data, key)
+  end
+
+  @doc """
+  See `RDF.Description.get_and_update`
+  """
+  @impl Access
+  def get_and_update(%Activity{} = activity, key, fun) do
+    with {get_value, new_data} <- Access.get_and_update(activity.data, key, fun) do
+      {get_value, %{activity | data: new_data}}
+    end
+  end
+
+  @doc """
+  See `RDF.Description.pop`.
+  """
+  @impl Access
+  def pop(%Activity{} = activity, key) do
+    case Access.pop(activity.data, key) do
+      {nil, _} ->
+        {nil, activity}
+
+      {value, new_graph} ->
+        {value, %{activity | data: new_graph}}
+    end
+  end
+
 
 end
