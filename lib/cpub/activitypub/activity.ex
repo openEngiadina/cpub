@@ -30,6 +30,9 @@ defmodule CPub.ActivityPub.Activity do
     |> validate_activity_type()
   end
 
+  @doc """
+  Returns true if description is an ActivityStreams activity, false otherwise.
+  """
   def is_activity?(description) do
     description[RDF.type]
     |> Enum.any?(&(&1 in ActivityPub.activity_types))

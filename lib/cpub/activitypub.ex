@@ -6,9 +6,11 @@ defmodule CPub.ActivityPub do
   alias Ecto.Multi
   alias Ecto.Changeset
 
+  alias CPub.NS.ActivityStreams, as: AS
+
   alias CPub.ActivityPub.Activity
   alias CPub.Objects.Object
-  alias CPub.NS.ActivityStreams
+  alias CPub.LDP.BasicContainer
   alias CPub.Repo
 
   alias RDF.Description
@@ -55,15 +57,18 @@ defmodule CPub.ActivityPub do
     # insert the object (if a Create activity)
     |> create_object(activity_id, object_id, data)
 
+    # deliver activity to local recipients
+    |> deliver_local(activity_id, data)
+
     # run the transaction
     |> Repo.transaction
   end
 
   defp set_object_id_if_create_activity(activity, object_id) do
-    if RDF.iri(ActivityStreams.Create) in activity[RDF.type] do
+    if RDF.iri(AS.Create) in activity[RDF.type] do
       activity
-      |> Description.delete_predicates(ActivityStreams.object)
-      |> Description.add(ActivityStreams.object, object_id)
+      |> Description.delete_predicates(AS.object)
+      |> Description.add(AS.object, object_id)
     else
       # don't do anything if not a Create activity
       activity
@@ -72,8 +77,8 @@ defmodule CPub.ActivityPub do
 
   # Creates an object if it is a Create activity
   defp create_object(multi, activity_id, object_id, data) do
-    if RDF.iri(ActivityStreams.Create) in data[activity_id][RDF.type] do
-      case data[activity_id][ActivityStreams.object] do
+    if RDF.iri(AS.Create) in data[activity_id][RDF.type] do
+      case data[activity_id][AS.object] do
 
         [original_object_id] ->
           # replace subject
@@ -93,6 +98,29 @@ defmodule CPub.ActivityPub do
     else
       multi
     end
+  end
+
+  def deliver_local_to(to, multi, activity_id) do
+    recipient = Repo.get(Object, to)
+    cond do
+      BasicContainer.is_basic_container?(recipient.data[to]) ->
+        Multi.update(multi, :deliver_local,
+          %BasicContainer{data: recipient.data[to], id: to}
+          |> BasicContainer.add_changeset(activity_id))
+
+      true ->
+        multi
+        |> Multi.error(:deliver_local, "do not know how to deliver to local recipient " <> RDF.IRI.to_string(to))
+    end
+  end
+
+  def deliver_local(multi, activity_id, data) do
+    [AS.to, AS.cc, AS.bcc, AS.bto]
+    |> Enum.map(&(Access.get(data[activity_id], &1)))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.concat()
+    |> Enum.filter(&CPub.ID.is_local?/1)
+    |> List.foldl(multi, &(deliver_local_to(&1, &2, activity_id)))
   end
 
 end

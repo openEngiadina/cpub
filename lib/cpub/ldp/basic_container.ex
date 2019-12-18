@@ -28,7 +28,25 @@ defmodule CPub.LDP.BasicContainer do
     |> cast(attrs, [:id, :data])
     |> CPub.ID.validate()
     |> validate_required([:id, :data])
+    |> validate_type()
     |> unique_constraint(:id, name: "objects_pkey")
+  end
+
+  @doc """
+  Returns true if description is a LDP Basic Container, false otherwise.
+  """
+  def is_basic_container?(description) do
+    description[RDF.type]
+    |> Enum.any?(&(&1 == RDF.iri(LDP.BasicContainer)))
+  end
+
+  defp validate_type(changeset) do
+    if is_basic_container?(get_field(changeset, :data)) do
+      changeset
+    else
+      changeset
+      |> add_error(:data, "not a LDP.BasicContainer")
+    end
   end
 
   @doc """
@@ -36,7 +54,7 @@ defmodule CPub.LDP.BasicContainer do
   """
   def create_changeset(id \\ CPub.ID.generate()) do
     RDF.Description.new(id)
-    |> RDF.Description.add(RDF.NS.RDF.type, LDP.BasicContainer)
+    |> RDF.Description.add(RDF.type, LDP.BasicContainer)
     |> (&(changeset(%{data: &1, id: id}))).()
   end
 
