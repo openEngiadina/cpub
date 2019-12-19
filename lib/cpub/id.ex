@@ -60,15 +60,19 @@ defmodule CPub.ID do
     |> IRI.new!
   end
 
+  def merge_with_base_url(rel) do
+    URI.merge(
+      Application.get_env(:cpub, :base_url),
+      rel)
+      |> IRI.new!
+  end
+
   def generate(opts \\ []) do
     id_prefix =
       Keyword.get(opts, :type, :objects)
       |> get_id_prefix()
 
-    URI.merge(
-      Application.get_env(:cpub, :base_url),
-      id_prefix <> "/" <> Ecto.UUID.generate())
-    |> IRI.new!
+    merge_with_base_url(id_prefix <> "/" <> Ecto.UUID.generate())
   end
 
   def autogenerate(opts \\ []) do

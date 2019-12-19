@@ -2,6 +2,7 @@ defmodule CPubWeb.ActivityPub.ActorController do
   use CPubWeb, :controller
 
   alias CPub.ActivityPub
+  alias RDF.IRI
 
   action_fallback CPubWeb.FallbackController
 
@@ -27,6 +28,18 @@ defmodule CPubWeb.ActivityPub.ActorController do
       do
       conn
       |> put_resp_header("Location", actor.id |> RDF.IRI.to_string)
+      |> send_resp(:created, "")
+    end
+  end
+
+  def post_to_outbox(conn, %{"actor_id" => actor_id}) do
+    with actor_id <- CPub.ID.merge_with_base_url("actor/" <> actor_id),
+         activity_id <- CPub.ID.generate(type: :activity),
+         {:ok, data, conn} <- read_rdf_body(conn, base_iri: activity_id),
+         {:ok, %{activity: activity}} <- ActivityPub.create_activity(activity_id, data)
+      do
+      conn
+      |> put_resp_header("Location", activity_id |> RDF.IRI.to_string)
       |> send_resp(:created, "")
     end
   end

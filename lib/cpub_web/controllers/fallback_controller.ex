@@ -27,4 +27,10 @@ defmodule CPubWeb.FallbackController do
     |> put_view(CPubWeb.ErrorView)
     |> render(:"404")
   end
+
+  def call(conn, {:error, msg}) do
+    conn
+    |> put_status(500)
+    |> text(msg)
+  end
 end

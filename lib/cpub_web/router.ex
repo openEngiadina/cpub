@@ -24,7 +24,9 @@ defmodule CPubWeb.Router do
 
     resources "/actors", ActivityPub.ActorController, only: [:show, :create] do
       get "/inbox", LDP.BasicContainerController, :show
+
       get "/outbox", LDP.BasicContainerController, :show
+      post "/outbox", ActivityPub.ActorController, :post_to_outbox
     end
 
   end
