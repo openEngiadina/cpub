@@ -13,6 +13,7 @@ defmodule CPub.ActivityPubTest do
   alias CPub.ActivityPub.Activity
   alias CPub.ActivityPub.Actor
   alias CPub.Objects.Object
+  alias CPub.LDP
   alias CPub.LDP.BasicContainer
 
   alias CPub.NS.ActivityStreams, as: AS
@@ -41,7 +42,7 @@ defmodule CPub.ActivityPubTest do
       ActivityPub.create_activity(activity_id, data)
 
     # check that activity has been placed in actor outbox
-    assert BasicContainer.get!(actor[AS.outbox] |> List.first()) |> Enum.member?(activity_id)
+    assert LDP.get_basic_container!(actor[AS.outbox] |> List.first()) |> Enum.member?(activity_id)
 
   end
 
@@ -51,7 +52,7 @@ defmodule CPub.ActivityPubTest do
     {:ok, %{actor: actor}} = ActivityPub.create_actor()
 
     # create a container
-    assert {:ok, %BasicContainer{} = container} = BasicContainer.create()
+    assert {:ok, %BasicContainer{} = container} = LDP.create_basic_container()
 
     activity_id = CPub.ID.generate()
 
@@ -75,10 +76,10 @@ defmodule CPub.ActivityPubTest do
       ActivityPub.create_activity(activity_id, data)
 
     # check that activity has been added to container
-    assert BasicContainer.get!(container.id) |> Enum.member?(activity_id)
+    assert LDP.get_basic_container!(container.id) |> Enum.member?(activity_id)
 
     # check that activity has been placed in actor outbox
-    assert BasicContainer.get!(actor[AS.outbox] |> List.first()) |> Enum.member?(activity_id)
+    assert LDP.get_basic_container!(actor[AS.outbox] |> List.first()) |> Enum.member?(activity_id)
   end
 
   test "add activity" do
@@ -87,7 +88,7 @@ defmodule CPub.ActivityPubTest do
     {:ok, %{actor: actor}} = ActivityPub.create_actor()
 
     # create a container
-    assert {:ok, %BasicContainer{} = container} = BasicContainer.create()
+    assert {:ok, %BasicContainer{} = container} = LDP.create_basic_container()
 
     activity_id = CPub.ID.generate()
 
@@ -106,10 +107,10 @@ defmodule CPub.ActivityPubTest do
       ActivityPub.create_activity(activity_id, data)
 
     # check that activity has been added to container
-    assert BasicContainer.get!(container.id) |> Enum.member?(object)
+    assert LDP.get_basic_container!(container.id) |> Enum.member?(object)
 
     # check that activity has been placed in actor outbox
-    assert BasicContainer.get!(actor[AS.outbox] |> List.first()) |> Enum.member?(activity_id)
+    assert LDP.get_basic_container!(actor[AS.outbox] |> List.first()) |> Enum.member?(activity_id)
   end
 
   test "create actor" do

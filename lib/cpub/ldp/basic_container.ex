@@ -11,8 +11,6 @@ defmodule CPub.LDP.BasicContainer do
   import Ecto.Changeset
 
   alias CPub.LDP.BasicContainer
-
-  alias CPub.Repo
   alias CPub.NS.LDP
 
   alias RDF.Description
@@ -69,24 +67,6 @@ defmodule CPub.LDP.BasicContainer do
   end
 
   @doc """
-  Creates an empty container.
-  """
-  def create(opts \\ []) do
-    new(opts)
-    |> changeset()
-    |> Repo.insert()
-  end
-
-  @doc """
-  Gets a BasicContainer
-
-  Raises `Ecto.NoResultsError` if the Container does not exist.
-  """
-  def get!(id) do
-    Repo.get!(BasicContainer, id)
-  end
-
-  @doc """
   Add an element to the container.
   """
   def add(%BasicContainer{} = container, %RDF.IRI{} = element) do
@@ -101,11 +81,6 @@ defmodule CPub.LDP.BasicContainer do
 
       count -> count
     end
-  end
-
-  def to_list(%RDF.IRI{} = container_id) do
-    get!(container_id)
-    |> to_list()
   end
 
   def contains?(container, element) do
