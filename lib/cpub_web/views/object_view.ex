@@ -18,15 +18,11 @@ defmodule CPubWeb.ObjectView do
   end
 
   def render("show.json", %{object: object}) do
-    render_one(object, ObjectView, "object.json")
-  end
-
-  def render("object.json", %{object: object}) do
     object.data
     |> RDF.JSON.Encoder.from_rdf!
   end
 
-  def render("object.ttl", %{object: object}) do
+  def render("show.ttl", %{object: object}) do
     object.data
     |> Turtle.Encoder.encode!
   end

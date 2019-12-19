@@ -24,6 +24,8 @@ defmodule CPubWeb do
       import Plug.Conn
       import CPubWeb.Gettext
       alias CPubWeb.Router.Helpers, as: Routes
+
+      alias CPubWeb.ObjectView
     end
   end
 

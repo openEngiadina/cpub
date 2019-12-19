@@ -9,14 +9,12 @@ defmodule CPubWeb.ObjectController do
 
   def index(conn, _params) do
     objects = Objects.list_objects()
-    render(conn, "index." <> get_format(conn), objects: objects)
+    render(conn, :index, objects: objects)
   end
 
   def show(conn, %{"id" => _}) do
-    with {:ok, id} <- Plug.Conn.request_url(conn) |> ID.cast() do
-      object = Objects.get_object!(id)
-      render(conn, "show." <> get_format(conn), object: object)
-    end
+    object = Objects.get_object!(conn.assigns[:id])
+    render(conn, :show, object: object)
   end
 
 end

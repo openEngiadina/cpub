@@ -42,6 +42,11 @@ defmodule CPub.ActivityPub do
     |> Repo.transaction
   end
 
+  @doc """
+  Gets an actor.
+  """
+  def get_actor!(id), do: Repo.get!(Actor, id)
+
   @activity_types (SPARQL.execute_query(@activitystreams,
     SPARQL.query("""
     select ?activity_type
