@@ -6,7 +6,11 @@ defmodule CPubWeb.ObjectView do
   alias RDF.Turtle
 
   def render("index.json", %{objects: objects}) do
-    render_many(objects, ObjectView, "object.json")
+    Enum.reduce(objects, RDF.Graph.new, fn object, graph ->
+      graph
+      |> RDF.Graph.add(object.data)
+    end)
+    |> RDF.JSON.Encoder.from_rdf!
   end
 
   def render("index.ttl", %{objects: objects}) do
