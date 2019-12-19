@@ -1,6 +1,17 @@
 #+TITLE: CPub
 
-An experimental semantic ActivityPub server.
+A semantic ActivityPub server.
+
+* About
+
+CPub is a general [[https://www.w3.org/TR/activitypub/][ActivityPub]] server built upon Semantic Web ideas. Most notably it also implements a [[https://www.w3.org/TR/ldp/][Linked Data Platform (LDP)]] and uses [[https://www.w3.org/TR/turtle/][RDF Turtle]] as serialization for data.
+
+The project goals are:
+
+- Develop a general ActivityPub server that can be used to create any kind of structured content.
+- Experiment with using Linked Data (RDF) as data model for everything.
+
+CPub is developed as part of the [[https://miaengiadina.github.io/openengiadina/][openEngiadina]] platform for open local knowledge. Development is supported by [[https://www.miaengiadina.ch/][miaEngiadina]].
 
 * Quick start
 
@@ -12,10 +23,40 @@ To start the CPub server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-* API
+* Example
+** Create an Actor
 
-#+BEGIN_SRC restclient
-GET http://localhost:4000/objects
+An Actor can be created with a ~POST~ request to ~/actors~. We create an actor "Alyssa":
+
+#+BEGIN_SRC restclient :exports both
+POST http://localhost:4000/actors
+Accept: text/turtle
+Content-type: text/turtle
+
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+
+<>
+   a as:Person;
+   as:name "Alyssa" .
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+// POST http://localhost:4000/actors
+// HTTP/1.1 201 Created
+// Location: http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 0
+// date: Thu, 19 Dec 2019 10:24:05 GMT
+// server: Cowboy
+// x-request-id: FeG-uPm48dHQNuQAADdk
+// Request duration: 0.045008s
+#+END_SRC
+
+The server responds with ~201 Created~. The Actor can be retrieved by accessing the URL in the ~Location~ header:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404
 Accept: text/turtle
 #+END_SRC
 
@@ -25,27 +66,79 @@ Accept: text/turtle
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/objects/aad76030-9c41-42d7-a330-d8a178ce7e0c>
-    a as:Note ;
-    as:attributedTo <https://social.example/alyssa> ;
-    as:content "Say, did you say someting?"@en ;
-    as:to <https://chatty.example/ben> .
+<http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404>
+    a as:Person ;
+    as:name "Alyssa" ;
+    as:outbox <http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/outbox> ;
+    ldp:inbox <http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/inbox> .
 
-<http://localhost:4000/objects/bdd9da5d-bf3d-462e-8ef1-59e1af18c396>
-    a as:Create ;
-    as:actor <https://social.example/alyssa> ;
-    as:object <http://localhost:4000/objects/aad76030-9c41-42d7-a330-d8a178ce7e0c> ;
-    as:to <https://chatty.example/ben> .
-
-// GET http://localhost:4000/objects
+// GET http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 713
+// content-length: 556
 // content-type: text/turtle; charset=utf-8
-// date: Sat, 14 Dec 2019 10:32:33 GMT
+// date: Thu, 19 Dec 2019 10:29:31 GMT
 // server: Cowboy
-// x-request-id: FeA2SFb0-8FRxdgAAAMh
-// Request duration: 0.014282s
+// x-request-id: FeG_BQlaLHUODHgAAIij
+// Request duration: 0.082640s
 #+END_SRC
 
+An inbox and outbox has been created for the actor. Both can be accessed:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/inbox
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/inbox>
+    a ldp:BasicContainer .
+
+// GET http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/inbox
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 367
+// content-type: text/turtle; charset=utf-8
+// date: Thu, 19 Dec 2019 10:30:31 GMT
+// server: Cowboy
+// x-request-id: FeG_EqowgBGdQBYAAIjj
+// Request duration: 0.019056s
+#+END_SRC
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/outbox
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/outbox>
+    a ldp:BasicContainer .
+
+// GET http://localhost:4000/actors/5079d2ad-20cd-4b07-88ac-90af2a8be404/outbox
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 368
+// content-type: text/turtle; charset=utf-8
+// date: Thu, 19 Dec 2019 10:31:01 GMT
+// server: Cowboy
+// x-request-id: FeG_GZUOXVkxC48AAIOi
+// Request duration: 0.009628s
+#+END_SRC
+
+Note that currently the inbox and outbox are Linked Data Platform basic containers and not ActivityStreams Collections. In the future they will be both.

@@ -33,7 +33,8 @@ config :mime, :types, %{
 
 config :rdf,
   default_prefixes: %{
-    as: "http://www.w3.org/ns/activitystreams#"
+    as: "http://www.w3.org/ns/activitystreams#",
+    ldp: "http://www.w3.org/ns/ldp#"
   }
 
 # Import environment specific config. This must remain at the bottom

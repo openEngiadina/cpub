@@ -32,11 +32,12 @@ defmodule CPub.ActivityPub.Actor do
 
   """
   def new(opts \\ []) do
-    id = Keyword.get(opts, :id, CPub.ID.generate(type: :actor))
     type = Keyword.get(opts, :type, AS.Person)
-    %Actor{id: id,
-           data: RDF.Description.new(id)}
-           |> add(RDF.type, type)
+    description = Keyword.get(opts, :description,
+      RDF.Description.new(CPub.ID.generate(type: :actor))
+      |> RDF.Description.add(RDF.type, type))
+    %Actor{id: description.subject,
+           data: description}
   end
 
   @doc false

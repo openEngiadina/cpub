@@ -13,6 +13,14 @@ defmodule CPubWeb.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
+  # Handles error response from an Repo.transaction
+  def call(conn, {:error, _,  %Ecto.Changeset{} = changeset, _}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(CPubWeb.ChangesetView)
+    |> render("error.json", changeset: changeset)
+  end
+
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
