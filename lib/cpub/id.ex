@@ -55,6 +55,11 @@ defmodule CPub.ID do
     end
   end
 
+  def extend(%IRI{} = base, rel) do
+    (base |> IRI.to_string()) <> "/" <> rel
+    |> IRI.new!
+  end
+
   def generate(opts \\ []) do
     id_prefix =
       Keyword.get(opts, :type, :objects)

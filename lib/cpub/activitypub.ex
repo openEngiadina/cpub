@@ -29,8 +29,8 @@ defmodule CPub.ActivityPub do
   """
   def create_actor(opts \\ []) do
     actor = Actor.new(opts)
-    inbox = BasicContainer.new()
-    outbox = BasicContainer.new()
+    inbox = BasicContainer.new(id: actor.id |> CPub.ID.extend("inbox"))
+    outbox = BasicContainer.new(id: actor.id |> CPub.ID.extend("outbox"))
     Multi.new
     |> Multi.insert(
       :actor, actor
