@@ -19,7 +19,7 @@ defmodule CPubWeb.Router do
   scope "/", CPubWeb do
     pipe_through :api
 
-    resources "/objects", ObjectController, only: [:index, :show]
+    resources "/objects", LDP.RDFSourceController, only: [:index, :show]
     resources "/containers", LDP.BasicContainerController, only: [:show]
 
     resources "/actors", ActivityPub.ActorController, only: [:show, :create] do

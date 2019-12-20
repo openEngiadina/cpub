@@ -1,8 +1,8 @@
-defmodule CPub.Repo.Migrations.CreateObjects do
+defmodule CPub.Repo.Migrations.CreateLDPRS do
   use Ecto.Migration
 
   def change do
-    create table(:objects, primary_key: false) do
+    create table(:ldp_rs, primary_key: false) do
       add :id, :string, primary_key: true
       add :data, :map
       timestamps()

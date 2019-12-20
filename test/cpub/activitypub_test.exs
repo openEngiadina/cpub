@@ -12,9 +12,9 @@ defmodule CPub.ActivityPubTest do
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
   alias CPub.ActivityPub.Actor
-  alias CPub.Objects.Object
   alias CPub.LDP
   alias CPub.LDP.BasicContainer
+  alias CPub.LDP.RDFSource
 
   alias CPub.NS.ActivityStreams, as: AS
 
@@ -38,7 +38,7 @@ defmodule CPub.ActivityPubTest do
       |> Description.add(AS.content, ~L<Just a simple note>))
 
     # create activity
-    assert {:ok, %{activity: %Activity{}, object: %Object{}}} =
+    assert {:ok, %{activity: %Activity{}, object: %RDFSource{}}} =
       ActivityPub.create_activity(activity_id, data)
 
     # check that activity has been placed in actor outbox
@@ -72,7 +72,7 @@ defmodule CPub.ActivityPubTest do
 
     # create activity
     assert {:ok, %{activity: %Activity{},
-                   object: %Object{}}} =
+                   object: %RDFSource{}}} =
       ActivityPub.create_activity(activity_id, data)
 
     # check that activity has been added to container

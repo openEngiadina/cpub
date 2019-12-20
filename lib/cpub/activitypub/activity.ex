@@ -19,7 +19,7 @@ defmodule CPub.ActivityPub.Activity do
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
-  schema "objects" do
+  schema "ldp_rs" do
     field :data, RDF.Description.EctoType
     timestamps()
   end
@@ -30,7 +30,7 @@ defmodule CPub.ActivityPub.Activity do
     |> cast(attrs, [:id, :data])
     |> CPub.ID.validate()
     |> validate_required([:id, :data])
-    |> unique_constraint(:id, name: "objects_pkey")
+    |> unique_constraint(:id, name: "ldp_rs_pkey")
     |> validate_activity_type()
     |> validate_required_property(AS.actor, "no actor")
   end

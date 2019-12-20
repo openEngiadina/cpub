@@ -11,8 +11,8 @@ defmodule CPub.ActivityPub do
 
   alias CPub.ActivityPub.Activity
   alias CPub.ActivityPub.Actor
-  alias CPub.Objects.Object
   alias CPub.LDP.BasicContainer
+  alias CPub.LDP.RDFSource
   alias CPub.Repo
 
   alias RDF.Description
@@ -114,14 +114,13 @@ defmodule CPub.ActivityPub do
         [original_object_id] ->
           # replace subject
           multi
-          |> Multi.insert(:object,
-          Object.changeset(%{id: object_id,
-                             data: data
-                             # remove the activity description and the original object description
-                             |> Graph.delete_subjects([original_object_id, activity_id])
-                             # replace subject of object with new id and add to graph
-                             |> Graph.add(%{data[original_object_id] | subject: object_id})}))
-
+          |> Multi.insert(:object, RDFSource.new(id: object_id,
+              data: data
+              # remove the activity description and the original object description
+              |> Graph.delete_subjects([original_object_id, activity_id])
+              # replace subject of object with new id and add to graph
+              |> Graph.add(%{data[original_object_id] | subject: object_id}))
+              |> RDFSource.changeset())
         _ ->
           multi
           |> Multi.error(:object, "could not find object")
@@ -133,7 +132,7 @@ defmodule CPub.ActivityPub do
 
 
   defp add_to_local_container(multi, to, element) do
-    case CPub.Objects.add_to_container(to, element) do
+    case CPub.LDP.add_to_container(to, element) do
       {:error, _} ->
         multi
         |> Multi.error(to, "do not know how to add to local container")

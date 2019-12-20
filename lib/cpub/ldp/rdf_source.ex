@@ -1,14 +1,14 @@
-defmodule CPub.Objects.Object do
+defmodule CPub.LDP.RDFSource do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias CPub.Objects.Object
+  alias CPub.LDP.RDFSource
 
   @behaviour Access
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
-  schema "objects" do
+  schema "ldp_rs" do
 
     # data field holds an RDF graph
     field :data, RDF.Graph.EctoType
@@ -16,21 +16,30 @@ defmodule CPub.Objects.Object do
     timestamps()
   end
 
-  @doc false
-  def changeset(object \\ %Object{}, attrs) do
-    object
-    |> cast(attrs, [:id, :data])
-    |> CPub.ID.validate
-    |> validate_required([:id, :data])
-    |> unique_constraint(:id, name: "objects_pkey")
+  @doc """
+  Returns a new RDFSource.
+  """
+  def new(opts \\ []) do
+    id =  Keyword.get(opts, :id, CPub.ID.generate())
+    data = Keyword.get(opts, :data, RDF.Graph.new())
+    %RDFSource{id: id, data: data}
   end
 
+  @doc false
+  def changeset(rdf_source \\ new()) do
+    rdf_source
+    |> change()
+    |> force_change(:data, rdf_source.data)
+    |> CPub.ID.validate
+    |> validate_required([:id, :data])
+    |> unique_constraint(:id, name: "ldp_rs_pkey")
+  end
 
   @doc """
   See `RDF.Graph.fetch`.
   """
   @impl Access
-  def fetch(%Object{data: data}, key) do
+  def fetch(%RDFSource{data: data}, key) do
     Access.fetch(data, key)
   end
 
@@ -38,7 +47,7 @@ defmodule CPub.Objects.Object do
   See `RDF.Graph.get_and_update`
   """
   @impl Access
-  def get_and_update(%Object{} = object, key, fun) do
+  def get_and_update(%RDFSource{} = object, key, fun) do
     with {get_value, new_graph} <- Access.get_and_update(object.data, key, fun) do
       {get_value, %{object | data: new_graph}}
     end
@@ -48,7 +57,7 @@ defmodule CPub.Objects.Object do
   See `RDF.Graph.pop`.
   """
   @impl Access
-  def pop(%Object{} = object, key) do
+  def pop(%RDFSource{} = object, key) do
     case Access.pop(object.data, key) do
       {nil, _} ->
         {nil, object}

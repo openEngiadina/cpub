@@ -17,7 +17,7 @@ defmodule CPub.LDP.BasicContainer do
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type :binary_id
-  schema "objects" do
+  schema "ldp_rs" do
     field :data, RDF.Description.EctoType
     timestamps()
   end
@@ -41,7 +41,7 @@ defmodule CPub.LDP.BasicContainer do
     |> CPub.ID.validate()
     |> validate_required([:id, :data])
     |> validate_type()
-    |> unique_constraint(:id, name: "objects_pkey")
+    |> unique_constraint(:id, name: "ldp_rs_pkey")
   end
 
   @doc """
