@@ -28,6 +28,16 @@ defmodule CPub.ActivityPub do
   Create an ActivityPub actor
   """
   def create_actor(opts \\ []) do
+    create_actor_multi(opts)
+    |> Repo.transaction
+  end
+
+  @doc """
+  Returns an `Ecto.Multi` that inserts the actor and all automatically created containers.
+
+  This is useful when adding more changes to the same transaction.
+  """
+  def create_actor_multi(opts \\ []) do
     actor = Actor.new(opts)
     inbox = BasicContainer.new(id: actor.id |> CPub.ID.extend("inbox"))
     outbox = BasicContainer.new(id: actor.id |> CPub.ID.extend("outbox"))
@@ -39,7 +49,6 @@ defmodule CPub.ActivityPub do
       |> Actor.changeset())
     |> Multi.insert(:inbox, inbox |> BasicContainer.changeset())
     |> Multi.insert(:outbox, outbox |> BasicContainer.changeset())
-    |> Repo.transaction
   end
 
   @doc """

@@ -45,7 +45,8 @@ defmodule CPub.MixProject do
       {:sparql, "~> 0.3.4"},
       {:stream_data, "~> 0.4.3"},
       {:json_ld, "~> 0.3.0"},
-      {:guardian, "~> 2.0.0"}
+      {:comeonin_ecto_password, "~> 3.0.0"},
+      {:pbkdf2_elixir , "~> 1.0.2"}
     ]
   end
 

@@ -16,6 +16,9 @@ defmodule CPub.ActivityPub.Actor do
   @foreign_key_type :binary_id
   schema "ldp_rs" do
     field :data, RDF.Description.EctoType
+
+    has_one :user, CPub.Users.User
+
     timestamps()
   end
 
@@ -33,8 +36,9 @@ defmodule CPub.ActivityPub.Actor do
   """
   def new(opts \\ []) do
     type = Keyword.get(opts, :type, AS.Person)
+    id = Keyword.get(opts, :id, CPub.ID.generate(type: :actor))
     description = Keyword.get(opts, :description,
-      RDF.Description.new(CPub.ID.generate(type: :actor))
+      RDF.Description.new(id)
       |> RDF.Description.add(RDF.type, type))
     %Actor{id: description.subject,
            data: description}

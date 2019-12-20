@@ -37,6 +37,11 @@ config :rdf,
     ldp: "http://www.w3.org/ns/ldp#"
   }
 
+# Password hashing function
+config :comeonin,
+  # Use Pbkdf2 because it does not require any C code
+  Ecto.Password, Pbkdf2
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
