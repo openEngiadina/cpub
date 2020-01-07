@@ -20,7 +20,7 @@ defmodule CPub.WebACL.Authorization do
     field :mode_append, :boolean, default: false
     field :mode_control, :boolean, default: false
 
-    many_to_many :resources, CPub.LDP.RDFSource, join_through: "authorizations_ldp_rs"
+    many_to_many :resources, RDFSource, join_through: "authorizations_ldp_rs"
 
     timestamps()
   end
