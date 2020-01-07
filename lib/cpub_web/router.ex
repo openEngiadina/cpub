@@ -14,6 +14,10 @@ defmodule CPubWeb.Router do
   pipeline :api do
     plug :accepts, ["json", "ttl"]
     plug :assign_id
+
+    # TODO/NOTE This is not working properly.
+    # If authentication fails (can not decode credentials or invalid username/password) the Authentication.Basic plug halts the pipeline. When this happens an error is raised by cowboy. I think because halt does not work as I expect and downstream plugs attempt to send a response even though a response is already sent.
+    plug CPubWeb.Authentication.Basic
   end
 
   scope "/", CPubWeb do

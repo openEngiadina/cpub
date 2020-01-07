@@ -16,4 +16,16 @@ defmodule CPub.Users do
     end)
     |> Repo.transaction
   end
+
+  def list_users do
+    Repo.all(User)
+    |> Repo.preload([:actor])
+  end
+
+  def verify_user(username, password) do
+    Repo.get_by(User, username: username)
+    |> Repo.preload([:actor])
+    |> Pbkdf2.check_pass(password, hash_key: :password)
+  end
+
 end
