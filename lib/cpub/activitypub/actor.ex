@@ -17,8 +17,6 @@ defmodule CPub.ActivityPub.Actor do
   schema "ldp_rs" do
     field :data, RDF.Description.EctoType
 
-    has_one :user, CPub.Users.User
-
     timestamps()
   end
 

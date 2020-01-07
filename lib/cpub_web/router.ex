@@ -26,7 +26,7 @@ defmodule CPubWeb.Router do
     resources "/objects", LDP.RDFSourceController, only: [:index, :show]
     resources "/containers", LDP.BasicContainerController, only: [:show]
 
-    resources "/actors", ActivityPub.ActorController, only: [:show, :create] do
+    resources "/users", ActivityPub.ActorController, only: [:show, :create] do
       get "/inbox", LDP.BasicContainerController, :show
 
       get "/outbox", LDP.BasicContainerController, :show

@@ -24,39 +24,67 @@ To start the CPub server:
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 * Example
-** Create an Actor
+** Create a User
 
-An Actor can be created with a ~POST~ request to ~/actors~. We create an actor "Alyssa":
+Users can be created from the Elixir shell.
 
-#+BEGIN_SRC restclient :exports both
-POST http://localhost:4000/actors
-Accept: text/turtle
-Content-type: text/turtle
+For example we create the user "alice" with password "123":
 
-@prefix as: <http://www.w3.org/ns/activitystreams#> .
-
-<>
-   a as:Person;
-   as:name "Alyssa" .
+#+BEGIN_SRC elixir
+iex> CPub.Users.create_user(username: "alice", password: "123")
+{:ok,
+ %{
+   actor: %CPub.ActivityPub.Actor{
+     __meta__: #Ecto.Schema.Metadata<:loaded, "ldp_rs">,
+     data: #RDF.Description{subject: ~I<http://localhost:4000/users/alice>
+          ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+              ~I<http://www.w3.org/ns/activitystreams#Person>
+          ~I<http://www.w3.org/ns/activitystreams#outbox>
+              ~I<http://localhost:4000/users/alice/outbox>
+          ~I<http://www.w3.org/ns/ldp#inbox>
+              ~I<http://localhost:4000/users/alice/inbox>},
+     id: ~I<http://localhost:4000/users/alice>,
+     inserted_at: ~N[2020-01-07 12:31:54],
+     updated_at: ~N[2020-01-07 12:31:54]
+   },
+   inbox: %CPub.LDP.BasicContainer{
+     __meta__: #Ecto.Schema.Metadata<:loaded, "ldp_rs">,
+     data: #RDF.Description{subject: ~I<http://localhost:4000/users/alice/inbox>
+          ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+              ~I<http://www.w3.org/ns/ldp#BasicContainer>},
+     id: ~I<http://localhost:4000/users/alice/inbox>,
+     inserted_at: ~N[2020-01-07 12:31:54],
+     updated_at: ~N[2020-01-07 12:31:54]
+   },
+   outbox: %CPub.LDP.BasicContainer{
+     __meta__: #Ecto.Schema.Metadata<:loaded, "ldp_rs">,
+     data: #RDF.Description{subject: ~I<http://localhost:4000/users/alice/outbox>
+          ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+              ~I<http://www.w3.org/ns/ldp#BasicContainer>},
+     id: ~I<http://localhost:4000/users/alice/outbox>,
+     inserted_at: ~N[2020-01-07 12:31:54],
+     updated_at: ~N[2020-01-07 12:31:54]
+   },
+   user: %CPub.Users.User{
+     __meta__: #Ecto.Schema.Metadata<:loaded, "users">,
+     actor: #Ecto.Association.NotLoaded<association :actor is not loaded>,
+     actor_id: ~I<http://localhost:4000/users/alice>,
+     authorizations: #Ecto.Association.NotLoaded<association :authorizations is not loaded>,
+     id: ~I<http://localhost:4000/users/alice>,
+     inserted_at: ~N[2020-01-07 12:31:54],
+     password: "$pbkdf2-sha512$160000$8XcXUNpYG0AOwryYTGPtPA$56y9mTMg073G0bCxnwqJuFh.LRC4ceC/bAiiphvAwqsLHYnyxIjxjHYtRnPMHJx6R4THmu/ERXyxa0kTKXMe2g",
+     updated_at: ~N[2020-01-07 12:31:54],
+     username: "alice"
+   }
+ }}
 #+END_SRC
 
-#+RESULTS:
-#+BEGIN_SRC js
-// POST http://localhost:4000/actors
-// HTTP/1.1 201 Created
-// Location: http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc
-// cache-control: max-age=0, private, must-revalidate
-// content-length: 0
-// date: Thu, 19 Dec 2019 11:35:15 GMT
-// server: Cowboy
-// x-request-id: FeHCmy5CxrwKLiIAAAAE
-// Request duration: 0.203247s
-#+END_SRC
+This creates the user, an actor profile, inbox and outbox for the user and inserts it into the database in a transaction.
 
-The server responds with ~201 Created~. The Actor can be retrieved by accessing the URL in the ~Location~ header:
+The id of the newly created user is http://localhost:4000/users/alice:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc
+GET http://localhost:4000/users/alice
 Accept: text/turtle
 #+END_SRC
 
@@ -68,27 +96,26 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc>
+<http://localhost:4000/users/alice>
     a as:Person ;
-    as:name "Alyssa" ;
-    as:outbox <http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox> ;
-    ldp:inbox <http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/inbox> .
+    as:outbox <http://localhost:4000/users/alice/outbox> ;
+    ldp:inbox <http://localhost:4000/users/alice/inbox> .
 
-// GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc
+// GET http://localhost:4000/users/alice
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 556
+// content-length: 437
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 19 Dec 2019 11:35:39 GMT
+// date: Tue, 07 Jan 2020 12:35:03 GMT
 // server: Cowboy
-// x-request-id: FeHCoMNNnrUtaSkAAAAC
-// Request duration: 0.036042s
+// x-request-id: Feea5TvFCYSxPW8AAAPh
+// Request duration: 0.009779s
 #+END_SRC
 
 An inbox and outbox has been created for the actor. Both can be accessed:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/inbox
+GET http://localhost:4000/users/alice/inbox
 Accept: text/turtle
 #+END_SRC
 
@@ -100,22 +127,22 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/inbox>
+<http://localhost:4000/users/alice/inbox>
     a ldp:BasicContainer .
 
-// GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/inbox
+// GET http://localhost:4000/users/alice/inbox
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 367
+// content-length: 335
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 19 Dec 2019 11:35:51 GMT
+// date: Tue, 07 Jan 2020 12:36:25 GMT
 // server: Cowboy
-// x-request-id: FeHCo5rU-wOiv94AAABC
-// Request duration: 0.008739s
+// x-request-id: Feea-DktSCrXJwoAAAQh
+// Request duration: 0.009204s
 #+END_SRC
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox
+GET http://localhost:4000/users/alice/inbox
 Accept: text/turtle
 #+END_SRC
 
@@ -127,25 +154,26 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox>
+<http://localhost:4000/users/alice/inbox>
     a ldp:BasicContainer .
 
-// GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox
+// GET http://localhost:4000/users/alice/inbox
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 368
+// content-length: 335
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 19 Dec 2019 11:36:12 GMT
+// date: Tue, 07 Jan 2020 12:36:35 GMT
 // server: Cowboy
-// x-request-id: FeHCqI4hlRzlaOIAAACC
-// Request duration: 0.008608s
+// x-request-id: Feea-ruj1M4uHIkAAARh
+// Request duration: 0.013530s
 #+END_SRC
 
 Note that currently the inbox and outbox are Linked Data Platform basic containers and not ActivityStreams Collections. In the future they will be both.
+
 ** Posting an Activity
 
 #+BEGIN_SRC restclient :exports both
-POST http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox
+POST http://localhost:4000/users/alice/outbox
 Accept: text/turtle
 Content-type: text/turtle
 
@@ -153,7 +181,7 @@ Content-type: text/turtle
 
 <>
     a as:Create ;
-    as:actor <http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc> ;
+    as:actor <http://localhost:4000/users/alice> ;
     as:object _:object .
 
 _:object
@@ -166,21 +194,21 @@ _:object
 
 #+RESULTS:
 #+BEGIN_SRC js
-// POST http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox
+// POST http://localhost:4000/users/alice/outbox
 // HTTP/1.1 201 Created
-// Location: http://localhost:4000/objects/43503e2f-732a-4114-b89f-b9b82a5b6cab
+// Location: http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 0
-// date: Thu, 19 Dec 2019 11:37:53 GMT
+// date: Tue, 07 Jan 2020 12:37:26 GMT
 // server: Cowboy
-// x-request-id: FeHCv_gM4vkgF7IAAADi
-// Request duration: 0.031898s
+// x-request-id: FeebBmkWuuPgNwQAAASB
+// Request duration: 0.029260s
 #+END_SRC
 
 The activity has been created and can be accessed:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/objects/43503e2f-732a-4114-b89f-b9b82a5b6cab
+GET http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38
 Accept: text/turtle
 #+END_SRC
 
@@ -192,26 +220,26 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/objects/43503e2f-732a-4114-b89f-b9b82a5b6cab>
+<http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38>
     a as:Create ;
-    as:actor <http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc> ;
-    as:object <http://localhost:4000/objects/d695695c-c9a5-4426-a47b-df8544cf8e68> .
+    as:actor <http://localhost:4000/users/alice> ;
+    as:object <http://localhost:4000/objects/83a3a097-42d7-4b3b-91b5-a8d7ba97971c> .
 
-// GET http://localhost:4000/objects/43503e2f-732a-4114-b89f-b9b82a5b6cab
+// GET http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 521
+// content-length: 489
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 19 Dec 2019 11:38:44 GMT
+// date: Tue, 07 Jan 2020 12:37:50 GMT
 // server: Cowboy
-// x-request-id: FeHCy4tdXw63k_sAAAEi
-// Request duration: 0.008888s
+// x-request-id: FeebDA4Ac24Cd0MAAATB
+// Request duration: 0.008027s
 #+END_SRC
 
 Note that the object has received an id for itself and can be accessed directly:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/objects/d695695c-c9a5-4426-a47b-df8544cf8e68
+GET <http://localhost:4000/objects/83a3a097-42d7-4b3b-91b5-a8d7ba97971c> .
 Accept: text/turtle
 #+END_SRC
 
@@ -241,7 +269,7 @@ Accept: text/turtle
 The activity has also been placed in the actor's outbox:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox
+GET http://localhost:4000/users/alice/outbox
 Accept: text/turtle
 #+END_SRC
 
@@ -253,17 +281,17 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox>
+<http://localhost:4000/users/alice/outbox>
     a ldp:BasicContainer ;
-    ldp:contains <http://localhost:4000/objects/43503e2f-732a-4114-b89f-b9b82a5b6cab> .
+    ldp:contains <http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38> .
 
-// GET http://localhost:4000/actors/dd01f570-5ad0-44e5-9cb6-4f0df8a1d6dc/outbox
+// GET http://localhost:4000/users/alice/outbox
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 456
+// content-length: 424
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 19 Dec 2019 11:40:42 GMT
+// date: Tue, 07 Jan 2020 12:38:28 GMT
 // server: Cowboy
-// x-request-id: FeHC5zAf6RLCC4oAAAFi
-// Request duration: 0.008637s
+// x-request-id: FeebFPHWQ0oEDbQAAATh
+// Request duration: 0.008352s
 #+END_SRC

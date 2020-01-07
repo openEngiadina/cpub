@@ -6,8 +6,8 @@ defmodule CPub.Users.User do
 
   alias CPub.Users.User
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  @primary_key {:id, CPub.ID, autogenerate: true}
+  @foreign_key_type CPub.ID
   schema "users" do
 
     field :username, :string
@@ -20,7 +20,7 @@ defmodule CPub.Users.User do
 
   def changeset(%User{} = user, attrs \\ %{}) do
     user
-    |> cast(attrs, [:username, :password, :actor_id])
+    |> cast(attrs, [:id, :username, :password, :actor_id])
     |> validate_required([:username, :password, :actor_id])
     |> unique_constraint(:username, name: "users_username_index")
   end

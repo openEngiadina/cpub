@@ -9,10 +9,15 @@ defmodule CPub.Users do
   def create_user(opts \\ []) do
     username = Keyword.get(opts, :username)
     password = Keyword.get(opts, :password)
+    opts = Keyword.put_new(opts, :id, CPub.ID.merge_with_base_url("users/" <> username))
     ActivityPub.create_actor_multi(opts)
     |> Multi.insert(:user, fn %{actor: actor} ->
       %User{}
-      |> User.changeset(%{username: username, password: password, actor_id: actor.id})
+      |> User.changeset(%{
+            id: actor.id,
+            username: username,
+            password: password,
+            actor_id: actor.id})
     end)
     |> Repo.transaction
   end
