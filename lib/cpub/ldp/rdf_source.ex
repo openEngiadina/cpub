@@ -31,6 +31,7 @@ defmodule CPub.LDP.RDFSource do
   def changeset(rdf_source \\ new()) do
     rdf_source
     |> change()
+    # NOTE We force a change instead of using Ecto.Changeset.cast to figure out which fields have changed. This is ok as :data is the only field in the schema and it does not make sense to optimize by restricting changeset to field that change.
     |> force_change(:data, rdf_source.data)
     |> CPub.ID.validate
     |> validate_required([:id, :data])

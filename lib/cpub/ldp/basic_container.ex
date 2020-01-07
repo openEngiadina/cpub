@@ -11,6 +11,8 @@ defmodule CPub.LDP.BasicContainer do
   import Ecto.Changeset
 
   alias CPub.LDP.BasicContainer
+  alias CPub.LDP.RDFSource
+
   alias CPub.NS.LDP
 
   alias RDF.Description
@@ -35,13 +37,8 @@ defmodule CPub.LDP.BasicContainer do
   @doc false
   def changeset(container \\ %BasicContainer{}) do
     container
-    |> change()
-    # NOTE forcing the change might be slightly unconventional. I think it is justified as this is the only field in the schema and optimizing by selecting which field get a change does not make sense.
-    |> force_change(:data, container.data)
-    |> CPub.ID.validate()
-    |> validate_required([:id, :data])
+    |> RDFSource.changeset
     |> validate_type()
-    |> unique_constraint(:id, name: "ldp_rs_pkey")
   end
 
   @doc """

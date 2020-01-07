@@ -7,6 +7,8 @@ defmodule CPub.ActivityPub.Actor do
   import Ecto.Changeset
 
   alias CPub.ActivityPub.Actor
+  alias CPub.LDP.RDFSource
+
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
 
@@ -45,11 +47,7 @@ defmodule CPub.ActivityPub.Actor do
   @doc false
   def changeset(actor \\ new()) do
     actor
-    |> change
-    |> force_change(:data, actor.data)
-    |> CPub.ID.validate()
-    |> validate_required([:id, :data])
-    |> unique_constraint(:id, name: "ldp_rs_pkey")
+    |> RDFSource.changeset
     |> validate_actor_type()
     |> validate_required_property(LDP.inbox, "no inbox")
     |> validate_required_property(AS.outbox, "no outbox")

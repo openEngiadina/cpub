@@ -78,7 +78,8 @@ defmodule CPub.ActivityPub do
 
     # create the changeset to add the activity
     activity_changeset =
-      Activity.changeset(%{data: data[activity_id], id: activity_id})
+      %Activity{data: data[activity_id], id: activity_id}
+      |> Activity.changeset
       # set the object id if it is a create activity
       |> Changeset.update_change(:data, &(set_object_id_if_create_activity(&1, object_id)))
 

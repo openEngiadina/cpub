@@ -12,6 +12,7 @@ defmodule CPub.ActivityPub.Activity do
 
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
+  alias CPub.LDP.RDFSource
 
   alias CPub.NS.ActivityStreams, as: AS
 
@@ -25,12 +26,9 @@ defmodule CPub.ActivityPub.Activity do
   end
 
   @doc false
-  def changeset(activity \\ %Activity{}, attrs) do
+  def changeset(activity \\ %Activity{}) do
     activity
-    |> cast(attrs, [:id, :data])
-    |> CPub.ID.validate()
-    |> validate_required([:id, :data])
-    |> unique_constraint(:id, name: "ldp_rs_pkey")
+    |> RDFSource.changeset
     |> validate_activity_type()
     |> validate_required_property(AS.actor, "no actor")
   end
