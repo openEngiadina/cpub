@@ -13,7 +13,9 @@ defmodule CPub.LDP.RDFSource do
     # data field holds an RDF graph
     field :data, RDF.Graph.EctoType
 
-    many_to_many :authorizations, CPub.WebACL.Authorization, join_through: "authorizations_ldp_rs"
+    many_to_many :authorizations, CPub.WebACL.Authorization,
+      join_through: "authorizations_resources",
+      join_keys: [resource_id: :id, authorization_id: :id]
 
     timestamps()
   end
