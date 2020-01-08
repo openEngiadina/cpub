@@ -1,4 +1,4 @@
-defmodule CPub.Repo.Migrations.CreateAuthorizationsLdpRs do
+defmodule CPub.Repo.Migrations.CreateAuthorizationsResources do
   use Ecto.Migration
 
   def change do

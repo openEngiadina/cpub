@@ -6,6 +6,7 @@ defmodule CPub.Users do
   alias CPub.ActivityPub
   alias CPub.Repo
   alias CPub.WebACL.Authorization
+  alias CPub.WebACL.AuthorizationResource
 
   def create_user(opts \\ []) do
     username = Keyword.get(opts, :username)
@@ -34,6 +35,10 @@ defmodule CPub.Users do
                 mode_append: false,
                 mode_control: false
               },&1)))
+    |> Multi.insert("full authorization to inbox", fn %{inbox: resource, authorizations_full: authorization} ->
+    |> Multi.insert("full authorization to outbox", fn %{outbox: resource, authorizations_full: authorization} ->
+      AuthorizationResource.new(authorization.id, resource.id)
+    end)
     |> Repo.transaction
   end
 
