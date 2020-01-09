@@ -21,32 +21,31 @@ defmodule CPub.Users do
             password: password,
             actor_id: actor.id})
     end)
-    |> Multi.insert(:authorizations_full, &(create_authorizations(
-              "full",
-              %{mode_read: true,
-                mode_write: true,
-                mode_append: true,
-                mode_control: true
-              },&1)))
-    |> Multi.insert(:authorizations_read_only, &(create_authorizations(
-              "read_only",
-              %{mode_read: true,
-                mode_write: false,
-                mode_append: false,
-                mode_control: false
-              },&1)))
-    |> Multi.insert("full authorization to inbox", fn %{inbox: resource, authorizations_full: authorization} ->
-    |> Multi.insert("full authorization to outbox", fn %{outbox: resource, authorizations_full: authorization} ->
-      AuthorizationResource.new(authorization.id, resource.id)
-    end)
+    |> insert_authorization("authorizations/read", %{mode_read: true})
+    |> insert_authorization("authorizations/write", %{mode_write: true})
+    |> grant_authorization("authorizations/read", to: :inbox)
+    |> grant_authorization("authorizations/read", to: :outbox)
+    |> grant_authorization("authorizations/read", to: :actor)
+    |> grant_authorization("authorizations/write", to: :actor)
     |> Repo.transaction
   end
 
-  defp create_authorizations(name, attrs, %{user: user}) do
-    %Authorization{
-      id: user.id |> CPub.ID.extend("authorizations/" <> name),
-      user_id: user.id}
-    |> Authorization.changeset(attrs)
+  defp grant_authorization(multi, auth_key, [to: ressource_key]) do
+    name = "grant " <> to_string(auth_key) <> " to " <> to_string(ressource_key)
+    multi
+    |> Multi.insert(name, fn %{^auth_key => authorization, ^ressource_key => ressource} ->
+      AuthorizationResource.new(authorization.id, ressource.id)
+    end)
+  end
+
+  defp insert_authorization(multi, name, attrs) do
+    multi
+    |> Multi.insert(name, fn %{user: user} ->
+      %Authorization{
+        id: user.id |> CPub.ID.extend(name),
+        user_id: user.id}
+      |> Authorization.changeset(attrs)
+    end)
   end
 
   def list_users do
