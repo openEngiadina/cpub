@@ -50,13 +50,17 @@ defmodule CPub.Users do
 
   def list_users do
     Repo.all(User)
-    |> Repo.preload([:actor, :authorizations])
+    |> Repo.preload([:actor])
   end
 
   def verify_user(username, password) do
     Repo.get_by(User, username: username)
     |> Repo.preload([:actor])
     |> Pbkdf2.check_pass(password, hash_key: :password)
+  end
+
+  def get_user(username) do
+    Repo.get_by(User, username: username)
   end
 
 end

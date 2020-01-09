@@ -21,6 +21,11 @@ defmodule CPub.LDP.BasicContainer do
   @foreign_key_type :binary_id
   schema "ldp_rs" do
     field :data, RDF.Description.EctoType
+
+    many_to_many :authorizations, CPub.WebACL.Authorization,
+      join_through: "authorizations_resources",
+      join_keys: [resource_id: :id, authorization_id: :id]
+
     timestamps()
   end
 

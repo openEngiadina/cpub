@@ -1,10 +1,16 @@
 defmodule CPubWeb.LDP.BasicContainerController do
   use CPubWeb, :controller
 
-  alias CPub.LDP
+  alias CPub.LDP.BasicContainer
+  alias CPub.Repo
 
   def show(conn, _params) do
-    container = LDP.get_basic_container!(conn.assigns[:id])
+    user = Map.get(conn.assigns, :user, nil)
+    container =
+      Repo.get_resource(BasicContainer,
+        conn.assigns.id,
+        user)
+
     conn
     |> put_view(RDFSourceView)
     |> render(:show, rdf_source: container)
