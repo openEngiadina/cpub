@@ -40,5 +40,7 @@ defmodule CPubWeb.Endpoint do
     key: "_cpub_key",
     signing_salt: "uME3vEPr"
 
+  plug BasicAuth, callback: &CPubWeb.Authentication.verify_user/3
+
   plug CPubWeb.Router
 end

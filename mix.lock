@@ -1,5 +1,6 @@
 %{
   "base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},
+  "basic_auth": {:hex, :basic_auth, "2.2.4", "d8c748237870dd1df3bc5c0f1ab4f1fad6270c75472d7e62b19302ec59e92a79", [:mix], [{:plug, "~> 0.14 or ~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
   "comeonin": {:hex, :comeonin, "5.1.3", "4c9880ed348cc0330c74086b4383ffb0b5a599aa603416497b7374c168cae340", [:mix], [], "hexpm"},
   "comeonin_ecto_password": {:hex, :comeonin_ecto_password, "3.0.0", "daec861f2283181d99f9fa5f7d4bc2349b78a34fb2c3aeee38f084fb49d4b658", [:mix], [{:argon2_elixir, "~> 2.0", [hex: :argon2_elixir, repo: "hexpm", optional: true]}, {:bcrypt_elixir, "~> 2.0", [hex: :bcrypt_elixir, repo: "hexpm", optional: true]}, {:ecto, "~> 3.0 or ~> 2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:pbkdf2_elixir, "~> 1.0", [hex: :pbkdf2_elixir, repo: "hexpm", optional: true]}], "hexpm"},
   "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm"},

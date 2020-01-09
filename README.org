@@ -34,123 +34,14 @@ For example we create the user "alice" with password "123":
 CPub.Users.create_user(username: "alice", password: "123")
 #+END_SRC
 
-#+RESULTS:
-#+BEGIN_SRC elixir
-{:ok,
- %{
-   :actor => %CPub.ActivityPub.Actor{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "ldp_rs">,
-     authorizations: #Ecto.Association.NotLoaded<association :authorizations is not loaded>,
-     data: #RDF.Description{subject: ~I<http://localhost:4000/users/alice>
-          ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
-              ~I<http://www.w3.org/ns/activitystreams#Person>
-          ~I<http://www.w3.org/ns/activitystreams#outbox>
-              ~I<http://localhost:4000/users/alice/outbox>
-          ~I<http://www.w3.org/ns/ldp#inbox>
-              ~I<http://localhost:4000/users/alice/inbox>},
-     id: ~I<http://localhost:4000/users/alice>,
-     inserted_at: ~N[2020-01-09 14:54:07],
-     updated_at: ~N[2020-01-09 14:54:07]
-   },
-   :inbox => %CPub.LDP.BasicContainer{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "ldp_rs">,
-     authorizations: #Ecto.Association.NotLoaded<association :authorizations is not loaded>,
-     data: #RDF.Description{subject: ~I<http://localhost:4000/users/alice/inbox>
-          ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
-              ~I<http://www.w3.org/ns/ldp#BasicContainer>},
-     id: ~I<http://localhost:4000/users/alice/inbox>,
-     inserted_at: ~N[2020-01-09 14:54:07],
-     updated_at: ~N[2020-01-09 14:54:07]
-   },
-   :outbox => %CPub.LDP.BasicContainer{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "ldp_rs">,
-     authorizations: #Ecto.Association.NotLoaded<association :authorizations is not loaded>,
-     data: #RDF.Description{subject: ~I<http://localhost:4000/users/alice/outbox>
-          ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
-              ~I<http://www.w3.org/ns/ldp#BasicContainer>},
-     id: ~I<http://localhost:4000/users/alice/outbox>,
-     inserted_at: ~N[2020-01-09 14:54:07],
-     updated_at: ~N[2020-01-09 14:54:07]
-   },
-   :user => %CPub.Users.User{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "users">,
-     actor: #Ecto.Association.NotLoaded<association :actor is not loaded>,
-     actor_id: ~I<http://localhost:4000/users/alice>,
-     authorizations: #Ecto.Association.NotLoaded<association :authorizations is not loaded>,
-     id: ~I<http://localhost:4000/users/alice>,
-     inserted_at: ~N[2020-01-09 14:54:07],
-     password: "$pbkdf2-sha512$160000$jLYBk3vk4wHk2XdGIKUrIQ$Q3P/yKxLGP9e3ZZFByj9rGe1LvcYPUQxWhwCEm0gOo5UaDC7QuEHfJULUgW4rAREPfPheurnOkbs0DqqdXKnPQ",
-     updated_at: ~N[2020-01-09 14:54:07],
-     username: "alice"
-   },
-   "authorizations/read" => %CPub.WebACL.Authorization{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "authorizations">,
-     id: ~I<http://localhost:4000/users/alice/authorizations/read>,
-     inserted_at: ~N[2020-01-09 14:54:07],
-     mode_append: false,
-     mode_control: false,
-     mode_read: true,
-     mode_write: false,
-     resources: #Ecto.Association.NotLoaded<association :resources is not loaded>,
-     updated_at: ~N[2020-01-09 14:54:07],
-     user: #Ecto.Association.NotLoaded<association :user is not loaded>,
-     user_id: ~I<http://localhost:4000/users/alice>
-   },
-   "authorizations/write" => %CPub.WebACL.Authorization{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "authorizations">,
-     id: ~I<http://localhost:4000/users/alice/authorizations/write>,
-     inserted_at: ~N[2020-01-09 14:54:07],
-     mode_append: false,
-     mode_control: false,
-     mode_read: false,
-     mode_write: true,
-     resources: #Ecto.Association.NotLoaded<association :resources is not loaded>,
-     updated_at: ~N[2020-01-09 14:54:07],
-     user: #Ecto.Association.NotLoaded<association :user is not loaded>,
-     user_id: ~I<http://localhost:4000/users/alice>
-   },
-   "grant authorizations/read to actor" => %CPub.WebACL.AuthorizationResource{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "authorizations_resources">,
-     authorization: #Ecto.Association.NotLoaded<association :authorization is not loaded>,
-     authorization_id: ~I<http://localhost:4000/users/alice/authorizations/read>,
-     id: 3,
-     resource: #Ecto.Association.NotLoaded<association :resource is not loaded>,
-     resource_id: ~I<http://localhost:4000/users/alice>
-   },
-   "grant authorizations/read to inbox" => %CPub.WebACL.AuthorizationResource{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "authorizations_resources">,
-     authorization: #Ecto.Association.NotLoaded<association :authorization is not loaded>,
-     authorization_id: ~I<http://localhost:4000/users/alice/authorizations/read>,
-     id: 1,
-     resource: #Ecto.Association.NotLoaded<association :resource is not loaded>,
-     resource_id: ~I<http://localhost:4000/users/alice/inbox>
-   },
-   "grant authorizations/read to outbox" => %CPub.WebACL.AuthorizationResource{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "authorizations_resources">,
-     authorization: #Ecto.Association.NotLoaded<association :authorization is not loaded>,
-     authorization_id: ~I<http://localhost:4000/users/alice/authorizations/read>,
-     id: 2,
-     resource: #Ecto.Association.NotLoaded<association :resource is not loaded>,
-     resource_id: ~I<http://localhost:4000/users/alice/outbox>
-   },
-   "grant authorizations/write to actor" => %CPub.WebACL.AuthorizationResource{
-     __meta__: #Ecto.Schema.Metadata<:loaded, "authorizations_resources">,
-     authorization: #Ecto.Association.NotLoaded<association :authorization is not loaded>,
-     authorization_id: ~I<http://localhost:4000/users/alice/authorizations/write>,
-     id: 4,
-     resource: #Ecto.Association.NotLoaded<association :resource is not loaded>,
-     resource_id: ~I<http://localhost:4000/users/alice>
-   }
- }}
-#+END_SRC elixir
-
 This creates the user, an actor profile, inbox and outbox for the user and inserts it into the database in a transaction.
 
-The id of the newly created user is http://localhost:4000/users/alice:
+Currently public access is not implemented and we need to authenticate to the system. We can do this with HTTP Basic Authentication. We base64 encode the string ~alice:123~ and add it as a header to our HTTP requests:
 
 #+BEGIN_SRC restclient :exports both
 GET http://localhost:4000/users/alice
 Accept: text/turtle
+Authorization: Basic YWxpY2U6MTIz
 #+END_SRC
 
 #+RESULTS:
@@ -171,10 +62,10 @@ Accept: text/turtle
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 437
 // content-type: text/turtle; charset=utf-8
-// date: Tue, 07 Jan 2020 12:35:03 GMT
+// date: Thu, 09 Jan 2020 18:39:34 GMT
 // server: Cowboy
-// x-request-id: Feea5TvFCYSxPW8AAAPh
-// Request duration: 0.009779s
+// x-request-id: FehFfJ32O_MHB2UAAAXB
+// Request duration: 0.364091s
 #+END_SRC
 
 An inbox and outbox has been created for the actor. Both can be accessed:
@@ -182,6 +73,7 @@ An inbox and outbox has been created for the actor. Both can be accessed:
 #+BEGIN_SRC restclient :exports both
 GET http://localhost:4000/users/alice/inbox
 Accept: text/turtle
+Authorization: Basic YWxpY2U6MTIz
 #+END_SRC
 
 #+RESULTS:
@@ -200,15 +92,16 @@ Accept: text/turtle
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 335
 // content-type: text/turtle; charset=utf-8
-// date: Tue, 07 Jan 2020 12:36:25 GMT
+// date: Thu, 09 Jan 2020 18:39:39 GMT
 // server: Cowboy
-// x-request-id: Feea-DktSCrXJwoAAAQh
-// Request duration: 0.009204s
+// x-request-id: FehFfcA-zG1tJ3cAAAXh
+// Request duration: 0.363181s
 #+END_SRC
 
 #+BEGIN_SRC restclient :exports both
 GET http://localhost:4000/users/alice/inbox
 Accept: text/turtle
+Authorization: Basic YWxpY2U6MTIz
 #+END_SRC
 
 #+RESULTS:
@@ -227,10 +120,10 @@ Accept: text/turtle
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 335
 // content-type: text/turtle; charset=utf-8
-// date: Tue, 07 Jan 2020 12:36:35 GMT
+// date: Thu, 09 Jan 2020 18:39:48 GMT
 // server: Cowboy
-// x-request-id: Feea-ruj1M4uHIkAAARh
-// Request duration: 0.013530s
+// x-request-id: FehFf9pu7wo0L-cAAAYB
+// Request duration: 0.363611s
 #+END_SRC
 
 Note that currently the inbox and outbox are Linked Data Platform basic containers and not ActivityStreams Collections. In the future they will be both.

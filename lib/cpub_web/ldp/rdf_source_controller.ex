@@ -1,17 +1,18 @@
 defmodule CPubWeb.LDP.RDFSourceController do
   use CPubWeb, :controller
 
-  alias CPub.LDP
+  alias CPub.Repo
+  alias CPub.LDP.RDFSource
 
   action_fallback CPubWeb.FallbackController
 
   def index(conn, _params) do
-    rdf_sources = LDP.list_rdf_source()
+    rdf_sources = Repo.all_resources(RDFSource, conn.assigns.user)
     render(conn, :index, rdf_sources: rdf_sources)
   end
 
   def show(conn, %{"id" => _}) do
-    rdf_source = LDP.get_rdf_source!(conn.assigns[:id])
+    rdf_source = Repo.get_resource(RDFSource, conn.assigns.id, conn.assigns.user)
     render(conn, :show, rdf_source: rdf_source)
   end
 

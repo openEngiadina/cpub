@@ -8,6 +8,24 @@ defmodule CPub.Repo do
   alias CPub.Users.User
 
   # TODO implement public accessible resources
+  def all_resources(queryable, nil) do
+    all(queryable)
+  end
+
+  @doc """
+  Get all resources that a user is authorized to read.
+  """
+  def all_resources(queryable, %User{} = user) do
+    query = from resource in queryable,
+      join: authorization in assoc(resource, :authorizations),
+      where: authorization.mode_read == true,
+      where: authorization.user_id == ^user.id,
+      select: resource
+
+    all(query)
+  end
+
+  # TODO implement public accessible resources
   def get_resource(queryable, id, nil) do
     get(queryable, id)
   end
