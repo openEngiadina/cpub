@@ -19,5 +19,8 @@ defmodule CPub.NS do
     file: "dcterms.ttl",
     ignore: ["ISO639-2", "ISO639-3"]
 
+  defvocab ACL,
+    base_iri: "http://www.w3.org/ns/auth/acl#",
+    file: "acl.ttl"
 
 end
