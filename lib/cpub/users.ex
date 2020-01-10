@@ -2,17 +2,49 @@ defmodule CPub.Users do
 
   alias Ecto.Multi
 
-  alias CPub.Users.User
-  alias CPub.ActivityPub
+  alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.NS.LDP
+
   alias CPub.Repo
+  alias CPub.ID
+  alias CPub.Users.User
+  alias CPub.ActivityPub.Actor
+  alias CPub.LDP.BasicContainer
   alias CPub.WebACL.Authorization
   alias CPub.WebACL.AuthorizationResource
 
   def create_user(opts \\ []) do
     username = Keyword.get(opts, :username)
     password = Keyword.get(opts, :password)
-    opts = Keyword.put_new(opts, :id, CPub.ID.merge_with_base_url("users/" <> username))
-    ActivityPub.create_actor_multi(opts)
+
+    # set the ID to "/users/<username>"
+    id = "users/" <> username
+    |> ID.merge_with_base_url()
+
+    # start a new transaction
+    Multi.new
+
+    # create the inbox
+    |> Multi.insert(:inbox,
+      BasicContainer.new(id: id |> ID.extend("inbox"))
+      |> BasicContainer.changeset())
+
+    # create the outbox
+    |> Multi.insert(:outbox,
+      BasicContainer.new(id: id |> ID.extend("outbox"))
+      |> BasicContainer.changeset())
+
+    # create the actor
+    |> Multi.insert(:actor, fn %{inbox: inbox, outbox: outbox} ->
+      RDF.Description.new(id)
+      |> RDF.Description.add(RDF.type, AS.Person)
+      |> RDF.Description.add(LDP.inbox, inbox.id)
+      |> RDF.Description.add(AS.outbox, outbox.id)
+      |> Actor.new()
+      |> Actor.changeset()
+    end)
+
+    # create the user
     |> Multi.insert(:user, fn %{actor: actor} ->
       %User{}
       |> User.changeset(%{
@@ -21,12 +53,19 @@ defmodule CPub.Users do
             password: password,
             actor_id: actor.id})
     end)
+
+    # create default authorizations for user
     |> insert_authorization("authorizations/read", %{mode_read: true})
     |> insert_authorization("authorizations/write", %{mode_write: true})
+
+    # grant read authorization to inbox and outbox
     |> grant_authorization("authorizations/read", to: :inbox)
     |> grant_authorization("authorizations/read", to: :outbox)
+
+    # grant read/write access to actor profile
     |> grant_authorization("authorizations/read", to: :actor)
     |> grant_authorization("authorizations/write", to: :actor)
+
     |> Repo.transaction
   end
 

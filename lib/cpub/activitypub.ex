@@ -7,11 +7,9 @@ defmodule CPub.ActivityPub do
   alias Ecto.Changeset
 
   alias CPub.NS.ActivityStreams, as: AS
-  alias CPub.NS.LDP
 
   alias CPub.ActivityPub.Activity
   alias CPub.ActivityPub.Actor
-  alias CPub.LDP.BasicContainer
   alias CPub.LDP.RDFSource
   alias CPub.Repo
 
@@ -23,33 +21,6 @@ defmodule CPub.ActivityPub do
   The ActivityStreams 2.0 ontology
   """
   def activitystreams, do: @activitystreams
-
-  @doc """
-  Create an ActivityPub actor
-  """
-  def create_actor(opts \\ []) do
-    create_actor_multi(opts)
-    |> Repo.transaction
-  end
-
-  @doc """
-  Returns an `Ecto.Multi` that inserts the actor and all automatically created containers.
-
-  This is useful when adding more changes to the same transaction.
-  """
-  def create_actor_multi(opts \\ []) do
-    actor = Actor.new(opts)
-    inbox = BasicContainer.new(id: actor.id |> CPub.ID.extend("inbox"))
-    outbox = BasicContainer.new(id: actor.id |> CPub.ID.extend("outbox"))
-    Multi.new
-    |> Multi.insert(
-      :actor, actor
-      |> Actor.add(LDP.inbox, inbox.id)
-      |> Actor.add(AS.outbox, outbox.id)
-      |> Actor.changeset())
-    |> Multi.insert(:inbox, inbox |> BasicContainer.changeset())
-    |> Multi.insert(:outbox, outbox |> BasicContainer.changeset())
-  end
 
   @doc """
   Gets an actor.

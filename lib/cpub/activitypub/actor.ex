@@ -31,25 +31,21 @@ defmodule CPub.ActivityPub.Actor do
 
   ## Examples
 
-    iex> CPub.ActivityPub.Actor.new()
+    iex> CPub.ActivityPub.Actor.new(description)
     %Actor{}
 
-    iex> CPub.ActivityPub.Actor.new(id: ~I<http://social.example/alyssa>, type: ~I<http://www.w3.org/ns/activitystreams#Person>)
+    iex> CPub.ActivityPub.Actor.new(
+      RDF.Description.new(~I<http://social.example/alyssa>)
+      |> RDF.Description.add(RDF.type, CPub.NS.ActivityStreams.Person)))
     %Actor{}
 
   """
-  def new(opts \\ []) do
-    type = Keyword.get(opts, :type, AS.Person)
-    id = Keyword.get(opts, :id, CPub.ID.generate(type: :actor))
-    description = Keyword.get(opts, :description,
-      RDF.Description.new(id)
-      |> RDF.Description.add(RDF.type, type))
-    %Actor{id: description.subject,
-           data: description}
+  def new(%RDF.Description{} = description) do
+    %Actor{id: description.subject, data: description}
   end
 
   @doc false
-  def changeset(actor \\ new()) do
+  def changeset(actor) do
     actor
     |> RDFSource.changeset
     |> validate_actor_type()

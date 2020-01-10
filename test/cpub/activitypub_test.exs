@@ -9,9 +9,10 @@ defmodule CPub.ActivityPubTest do
   alias RDF.Graph
   alias RDF.Description
 
+  alias CPub.Users
+
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
-  alias CPub.ActivityPub.Actor
   alias CPub.LDP
   alias CPub.LDP.BasicContainer
   alias CPub.LDP.RDFSource
@@ -20,8 +21,8 @@ defmodule CPub.ActivityPubTest do
 
   test "create activity" do
 
-    # Create an actor
-    {:ok, %{actor: actor}} = ActivityPub.create_actor()
+    # Create a user
+    {:ok, %{actor: actor}}= Users.create_user(username: "alice", password: "123")
 
     activity_id = CPub.ID.generate()
 
@@ -48,8 +49,8 @@ defmodule CPub.ActivityPubTest do
 
   test "create activity and deliver to container" do
 
-    # Create an actor
-    {:ok, %{actor: actor}} = ActivityPub.create_actor()
+    # Create a user
+    {:ok, %{actor: actor}}= Users.create_user(username: "alice", password: "123")
 
     # create a container
     assert {:ok, %BasicContainer{} = container} = LDP.create_basic_container()
@@ -85,7 +86,7 @@ defmodule CPub.ActivityPubTest do
   test "add activity" do
 
     # Create an actor
-    {:ok, %{actor: actor}} = ActivityPub.create_actor()
+    {:ok, %{actor: actor}}= Users.create_user(username: "alice", password: "123")
 
     # create a container
     assert {:ok, %BasicContainer{} = container} = LDP.create_basic_container()
@@ -113,15 +114,15 @@ defmodule CPub.ActivityPubTest do
     assert LDP.get_basic_container!(actor[AS.outbox] |> List.first()) |> Enum.member?(activity_id)
   end
 
-  test "create actor" do
-    assert {:ok, %{actor: %Actor{},
-                   outbox: %BasicContainer{},
-                   inbox: %BasicContainer{}}} =
-      ActivityPub.create_actor()
-  end
+  # test "create actor" do
+  #   assert {:ok, %{actor: %Actor{},
+  #                  outbox: %BasicContainer{},
+  #                  inbox: %BasicContainer{}}} =
+  #     ActivityPub.create_actor()
+  # end
 
-  test "create actor with wrong type fails" do
-    assert true
-  end
+  # test "create actor with wrong type fails" do
+  #   assert true
+  # end
 
 end
