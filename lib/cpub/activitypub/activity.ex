@@ -25,6 +25,11 @@ defmodule CPub.ActivityPub.Activity do
     timestamps()
   end
 
+  def new(%RDF.Description{} = activity) do
+    %Activity{data: activity,
+              id: activity.subject}
+  end
+
   @doc false
   def changeset(activity \\ %Activity{}) do
     activity

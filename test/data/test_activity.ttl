@@ -5,12 +5,10 @@
 
 <>
     a as:Create ;
-    as:to <https://chatty.example/ben> ;
-    as:actor <https://social.example/alyssa> ;
+    as:to <http://localhost:4000/users/bob> ;
     as:object _:object .
 
 _:object
     a as:Note ;
-    as:attributedTo <https://social.example/alyssa> ;
     as:to <https://chatty.example/ben> ;
     as:content "Say, did you say someting?"@en .

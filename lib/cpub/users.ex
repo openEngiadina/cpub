@@ -106,6 +106,7 @@ defmodule CPub.Users do
 
   def get_user(username) do
     Repo.get_by(User, username: username)
+    |> Repo.preload([:actor])
   end
 
 end

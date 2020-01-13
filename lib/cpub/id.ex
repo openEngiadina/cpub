@@ -50,6 +50,9 @@ defmodule CPub.ID do
       :container ->
         "containers"
 
+      :activity ->
+        "activities"
+
       _ ->
         "objects"
     end
