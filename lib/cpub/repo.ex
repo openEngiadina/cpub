@@ -18,7 +18,7 @@ defmodule CPub.Repo do
   def all_resources(queryable, %User{} = user) do
     query = from resource in queryable,
       join: authorization in assoc(resource, :authorizations),
-      where: authorization.mode_read == true,
+      where: authorization.read == true,
       where: authorization.user_id == ^user.id,
       select: resource
 
@@ -36,7 +36,7 @@ defmodule CPub.Repo do
   def get_resource(queryable, id, %User{} = user) do
     query = from resource in queryable,
       join: authorization in assoc(resource, :authorizations),
-      where: authorization.mode_read == true,
+      where: authorization.read == true,
       where: authorization.user_id == ^user.id,
       where: resource.id == ^id,
       select: resource

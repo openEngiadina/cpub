@@ -3,21 +3,17 @@ defmodule CPub.ActivityPub do
   ActivityPub context
   """
 
-  alias Ecto.Multi
-  alias Ecto.Changeset
-
   alias CPub.NS.ActivityStreams, as: AS
-  alias CPub.NS.ACL
 
   alias CPub.Repo
   alias CPub.ID
+
   alias CPub.Users.User
 
   alias CPub.LDP.RDFSource
 
   alias CPub.ActivityPub.Activity
   alias CPub.ActivityPub.Actor
-
 
   alias CPub.ActivityPub.Request
 
@@ -106,10 +102,13 @@ defmodule CPub.ActivityPub do
   defp insert_activity(%Request{} = request) do
     request
     |> Request.insert(:activity, Activity.new(request.activity) |> Activity.changeset())
+
     # Grant user access to the created activity
-    |> Request.authorize(request.user.actor[ACL.default], request.id)
-    # TODO Grant recipients read access to the created activity
-    # how???
+    |> Request.authorize(request.user, request.id, read: true, write: true)
+
+    # Grant recipients read access to the created activity
+    |> Request.authorize(request.recipients, request.id, read: true)
+
   end
 
   defp get_recipients(%Request{} = request) do
@@ -150,7 +149,8 @@ defmodule CPub.ActivityPub do
             |> Graph.add(%{request.data[original_object_id] | subject: request.object_id}))
             |> RDFSource.changeset()
           )
-          |> Request.authorize(request.user.actor[ACL.default], request.object_id)
+          |> Request.authorize(request.user, request.object_id, read: true, write: true)
+          |> Request.authorize(request.recipients, request.object_id, read: true)
 
         _ ->
           request

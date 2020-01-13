@@ -62,10 +62,10 @@ Authorization: Basic YWxpY2U6MTIz
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 437
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 09 Jan 2020 18:39:34 GMT
+// date: Mon, 13 Jan 2020 15:15:42 GMT
 // server: Cowboy
-// x-request-id: FehFfJ32O_MHB2UAAAXB
-// Request duration: 0.364091s
+// x-request-id: Fel7JOoLJbmDHVwAAAAC
+// Request duration: 0.638511s
 #+END_SRC
 
 An inbox and outbox has been created for the actor. Both can be accessed:
@@ -92,10 +92,10 @@ Authorization: Basic YWxpY2U6MTIz
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 335
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 09 Jan 2020 18:39:39 GMT
+// date: Mon, 13 Jan 2020 15:15:47 GMT
 // server: Cowboy
-// x-request-id: FehFfcA-zG1tJ3cAAAXh
-// Request duration: 0.363181s
+// x-request-id: Fel7Jh_ckpFziTwAAABi
+// Request duration: 0.368419s
 #+END_SRC
 
 #+BEGIN_SRC restclient :exports both
@@ -120,18 +120,57 @@ Authorization: Basic YWxpY2U6MTIz
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 335
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 09 Jan 2020 18:39:48 GMT
+// date: Mon, 13 Jan 2020 15:15:52 GMT
 // server: Cowboy
-// x-request-id: FehFf9pu7wo0L-cAAAYB
-// Request duration: 0.363611s
+// x-request-id: Fel7J0FvaO4j5J0AAACC
+// Request duration: 0.363593s
 #+END_SRC
 
 Note that currently the inbox and outbox are Linked Data Platform basic containers and not ActivityStreams Collections. In the future they will be both.
 
 ** Posting an Activity
 
+We create another user ~bob~:
+
+#+BEGIN_SRC elixir
+CPub.Users.create_user(username: "bob", password: "123")
+#+END_SRC
+
+As before an inbox and outbox was created for Bob:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/users/bob/inbox
+Accept: text/turtle
+Authorization: Basic Ym9iOjEyMw==
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/users/bob/inbox>
+    a ldp:BasicContainer .
+
+// GET http://localhost:4000/users/bob/inbox
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 333
+// content-type: text/turtle; charset=utf-8
+// date: Mon, 13 Jan 2020 15:16:02 GMT
+// server: Cowboy
+// x-request-id: Fel7Kax8ePHlaOIAAACi
+// Request duration: 0.367809s
+#+END_SRC
+
+Now Alice can post a note to Bob:
+
 #+BEGIN_SRC restclient :exports both
 POST http://localhost:4000/users/alice/outbox
+Authorization: Basic YWxpY2U6MTIz
 Accept: text/turtle
 Content-type: text/turtle
 
@@ -139,7 +178,7 @@ Content-type: text/turtle
 
 <>
     a as:Create ;
-    as:actor <http://localhost:4000/users/alice> ;
+    as:to <http://localhost:4000/users/bob> ;
     as:object _:object .
 
 _:object
@@ -154,19 +193,20 @@ _:object
 #+BEGIN_SRC js
 // POST http://localhost:4000/users/alice/outbox
 // HTTP/1.1 201 Created
-// Location: http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38
+// Location: http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 0
-// date: Tue, 07 Jan 2020 12:37:26 GMT
+// date: Mon, 13 Jan 2020 15:16:14 GMT
 // server: Cowboy
-// x-request-id: FeebBmkWuuPgNwQAAASB
-// Request duration: 0.029260s
+// x-request-id: Fel7LGEXC5UXSm0AAADC
+// Request duration: 0.394329s
 #+END_SRC
 
 The activity has been created and can be accessed:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38
+GET http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d
+Authorization: Basic YWxpY2U6MTIz
 Accept: text/turtle
 #+END_SRC
 
@@ -178,26 +218,28 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38>
+<http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d>
     a as:Create ;
     as:actor <http://localhost:4000/users/alice> ;
-    as:object <http://localhost:4000/objects/83a3a097-42d7-4b3b-91b5-a8d7ba97971c> .
+    as:object <http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77> ;
+    as:to <http://localhost:4000/users/bob> .
 
-// GET http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38
+// GET http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 489
+// content-length: 538
 // content-type: text/turtle; charset=utf-8
-// date: Tue, 07 Jan 2020 12:37:50 GMT
+// date: Mon, 13 Jan 2020 15:17:10 GMT
 // server: Cowboy
-// x-request-id: FeebDA4Ac24Cd0MAAATB
-// Request duration: 0.008027s
+// x-request-id: Fel7OVj8X-5DpVUAAAEC
+// Request duration: 0.362603s
 #+END_SRC
 
-Note that the object has received an id for itself and can be accessed directly:
+The object has received an id for itself and can be accessed directly:
 
 #+BEGIN_SRC restclient :exports both
-GET <http://localhost:4000/objects/83a3a097-42d7-4b3b-91b5-a8d7ba97971c> .
+GET http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77
+Authorization: Basic YWxpY2U6MTIz
 Accept: text/turtle
 #+END_SRC
 
@@ -209,25 +251,88 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/objects/d695695c-c9a5-4426-a47b-df8544cf8e68>
+<http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77>
     a as:Note ;
     as:content "Guten Tag!"@de, "Good day!"@en, "Grüezi"@gsw, "Bun di!"@roh .
 
-// GET http://localhost:4000/objects/d695695c-c9a5-4426-a47b-df8544cf8e68
+// GET http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 430
 // content-type: text/turtle; charset=utf-8
-// date: Thu, 19 Dec 2019 11:40:03 GMT
+// date: Mon, 13 Jan 2020 15:17:23 GMT
 // server: Cowboy
-// x-request-id: FeHC3fvJbMtGHC4AAAFC
-// Request duration: 0.013231s
+// x-request-id: Fel7PGbVge-3k_sAAAFC
+// Request duration: 0.368027s
 #+END_SRC
 
-The activity has also been placed in the actor's outbox:
+We uses Alice's credentials (encoded as ~YWxpY2U6MTIz~) to get the activity and object, but we could also use Bob's. Bob has been given read access to the created activity and object:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d
+Authorization: Basic Ym9iOjEyMw==
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d>
+    a as:Create ;
+    as:actor <http://localhost:4000/users/alice> ;
+    as:object <http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77> ;
+    as:to <http://localhost:4000/users/bob> .
+
+// GET http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 538
+// content-type: text/turtle; charset=utf-8
+// date: Mon, 13 Jan 2020 15:17:40 GMT
+// server: Cowboy
+// x-request-id: Fel7QIk12z1GHC4AAAFi
+// Request duration: 0.365966s
+#+END_SRC
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77
+Authorization: Basic Ym9iOjEyMw==
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77>
+    a as:Note ;
+    as:content "Guten Tag!"@de, "Good day!"@en, "Grüezi"@gsw, "Bun di!"@roh .
+
+// GET http://localhost:4000/objects/3fc8e8b6-5d25-4978-86e2-b13175e95c77
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 430
+// content-type: text/turtle; charset=utf-8
+// date: Mon, 13 Jan 2020 15:18:17 GMT
+// server: Cowboy
+// x-request-id: Fel7SPsjb0rCC4oAAAHh
+// Request duration: 0.364123s
+#+END_SRC
+
+The activity has also been placed in the Alice's outbox:
 
 #+BEGIN_SRC restclient :exports both
 GET http://localhost:4000/users/alice/outbox
+Authorization: Basic YWxpY2U6MTIz
 Accept: text/turtle
 #+END_SRC
 
@@ -241,15 +346,46 @@ Accept: text/turtle
 
 <http://localhost:4000/users/alice/outbox>
     a ldp:BasicContainer ;
-    ldp:contains <http://localhost:4000/objects/be150bdb-d95d-4bf3-9203-ff4e82577b38> .
+    ldp:contains <http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d> .
 
 // GET http://localhost:4000/users/alice/outbox
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
+// content-length: 427
+// content-type: text/turtle; charset=utf-8
+// date: Mon, 13 Jan 2020 15:18:33 GMT
+// server: Cowboy
+// x-request-id: Fel7TOS9zjxdOyEAAAIB
+// Request duration: 0.363977s
+#+END_SRC
+
+And in Bob's inbox:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/users/bob/inbox
+Authorization: Basic Ym9iOjEyMw==
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/users/bob/inbox>
+    a ldp:BasicContainer ;
+    ldp:contains <http://localhost:4000/activities/fa1db1ed-8a6a-43b4-97dc-1358fbb5622d> .
+
+// GET http://localhost:4000/users/bob/inbox
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
 // content-length: 424
 // content-type: text/turtle; charset=utf-8
-// date: Tue, 07 Jan 2020 12:38:28 GMT
+// date: Mon, 13 Jan 2020 15:19:10 GMT
 // server: Cowboy
-// x-request-id: FeebFPHWQ0oEDbQAAATh
-// Request duration: 0.008352s
+// x-request-id: Fel7VVi4tf7luDMAAAIh
+// Request duration: 0.360935s
 #+END_SRC

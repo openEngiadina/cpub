@@ -22,6 +22,10 @@ defmodule CPub.ActivityPub.Activity do
   @foreign_key_type :binary_id
   schema "ldp_rs" do
     field :data, RDF.Description.EctoType
+
+    has_many :authorizations, CPub.Users.Authorization,
+      foreign_key: :resource_id
+
     timestamps()
   end
 

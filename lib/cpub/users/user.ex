@@ -5,7 +5,7 @@ defmodule CPub.Users.User do
   alias CPub.ActivityPub.Actor
 
   alias CPub.Users.User
-  alias CPub.WebACL.Authorization
+  alias CPub.Users.Authorization
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type CPub.ID

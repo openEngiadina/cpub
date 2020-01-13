@@ -4,15 +4,15 @@ defmodule CPub.Users do
 
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
-  alias CPub.NS.ACL
 
   alias CPub.Repo
   alias CPub.ID
+
   alias CPub.Users.User
+  alias CPub.Users.Authorization
+
   alias CPub.ActivityPub.Actor
   alias CPub.LDP.BasicContainer
-  alias CPub.WebACL.Authorization
-  alias CPub.WebACL.AuthorizationResource
 
   def create_user(opts \\ []) do
     username = Keyword.get(opts, :username)
@@ -41,8 +41,6 @@ defmodule CPub.Users do
       |> RDF.Description.add(RDF.type, AS.Person)
       |> RDF.Description.add(LDP.inbox, inbox.id)
       |> RDF.Description.add(AS.outbox, outbox.id)
-      # Use ACL.default to specify the Authorization that has access to newly created objects
-      |> RDF.Description.add(ACL.default, id |> ID.extend("authorizations/full"))
       |> Actor.new()
       |> Actor.changeset()
     end)
@@ -57,39 +55,20 @@ defmodule CPub.Users do
             actor_id: actor.id})
     end)
 
-    # create default authorizations for user
-    |> insert_authorization("authorizations/read", %{mode_read: true})
-    |> insert_authorization("authorizations/write", %{mode_write: true})
-    |> insert_authorization("authorizations/full", %{mode_read: true,
-                                                    mode_write: true,
-                                                    mode_append: true,
-                                                    mode_control: true})
-
     # grant read authorization to inbox and outbox
-    |> grant_authorization("authorizations/read", to: :inbox)
-    |> grant_authorization("authorizations/read", to: :outbox)
+    |> grant_authorization("authorize read/write on inbox", :inbox, read: true, write: true)
+    |> grant_authorization("authorize read/write on outbox", :outbox, read: true, write: true)
 
     # grant read/write access to actor profile
-    |> grant_authorization("authorizations/full", to: :actor)
+    |> grant_authorization("authorize read/write on actor", :actor, read: true, write: true)
 
     |> Repo.transaction
   end
 
-  defp grant_authorization(multi, auth_key, [to: ressource_key]) do
-    name = "grant " <> to_string(auth_key) <> " to " <> to_string(ressource_key)
+  defp grant_authorization(multi, name, ressource_key, opts) do
     multi
-    |> Multi.insert(name, fn %{^auth_key => authorization, ^ressource_key => ressource} ->
-      AuthorizationResource.new(authorization.id, ressource.id)
-    end)
-  end
-
-  defp insert_authorization(multi, name, attrs) do
-    multi
-    |> Multi.insert(name, fn %{user: user} ->
-      %Authorization{
-        id: user.id |> CPub.ID.extend(name),
-        user_id: user.id}
-      |> Authorization.changeset(attrs)
+    |> Multi.insert(name, fn %{:user => user, ^ressource_key => ressource} ->
+      Authorization.new(user.id, ressource.id, opts)
     end)
   end
 

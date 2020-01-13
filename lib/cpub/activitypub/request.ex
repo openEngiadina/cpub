@@ -8,9 +8,9 @@ defmodule CPub.ActivityPub.Request do
   alias Ecto.Multi
 
   alias CPub.Repo
-  alias CPub.Users.User
 
-  alias CPub.WebACL.AuthorizationResource
+  alias CPub.Users.User
+  alias CPub.Users.Authorization
 
   alias CPub.ActivityPub.Request
 
@@ -58,17 +58,30 @@ defmodule CPub.ActivityPub.Request do
   @doc """
   Grant authorization access to a resource
   """
-  def authorize(request, %RDF.IRI{} = authorizaton_id, %RDF.IRI{} = resource_id) do
-    name = "grant " <> to_string(authorizaton_id) <> " to " <> to_string(resource_id)
+  def authorize(request, %RDF.IRI{} = user_id, %RDF.IRI{} = resource_id, opts) do
+    # TODO: ensure name is unique by including read/write fields
+    name = "grant " <> to_string(user_id) <> " access to " <> to_string(resource_id)
     request
-    |> insert(name, AuthorizationResource.new(authorizaton_id, resource_id))
+    |> insert(name, Authorization.new(user_id, resource_id, opts))
   end
 
-  def authorize(request, authorizations, %RDF.IRI{} = resource_id) do
-    authorizations
-    |> List.foldl(request, fn authorizaton_id, request ->
+  def authorize(request, %User{} = user, %RDF.IRI{} = resource_id, opts) do
+    authorize(request, user.id, resource_id, opts)
+  end
+
+  def authorize(request, users, %RDF.IRI{} = resource_id, opts) do
+    users
+    |> List.foldl(request, fn user_id, request ->
       request
-      |> authorize(authorizaton_id, resource_id)
+      |> authorize(user_id, resource_id, opts)
+    end)
+  end
+
+  def authorize(request, user, resources, opts) do
+    resources
+    |> List.foldl(request, fn resource_id, request ->
+      request
+      |> authorize(user, resource_id, opts)
     end)
   end
 

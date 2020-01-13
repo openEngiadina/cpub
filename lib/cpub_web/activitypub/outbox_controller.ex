@@ -13,15 +13,14 @@ defmodule CPubWeb.ActivityPub.OutboxController do
     end
   end
 
-  def post(conn, %{"user_id" => actor_id}) do
-    with _actor_id <- CPub.ID.merge_with_base_url("actor/" <> actor_id),
+  def post(conn, _params) do
+    with user <- conn.assigns.user,
          activity_id <- CPub.ID.generate(type: :activity),
          {:ok, data, conn} <- read_rdf_body(conn, base_iri: activity_id),
-         # TODO make sure actor field is properly set in new activity
-         {:ok, %{activity: _activity}} <- ActivityPub.create_activity(activity_id, data)
+         {:ok, %{activity: activity}} <- ActivityPub.create_activity(activity_id, data, user)
       do
       conn
-      |> put_resp_header("Location", activity_id |> RDF.IRI.to_string)
+      |> put_resp_header("Location", activity.id |> RDF.IRI.to_string)
       |> send_resp(:created, "")
     end
   end
