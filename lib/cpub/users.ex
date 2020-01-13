@@ -4,6 +4,7 @@ defmodule CPub.Users do
 
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
+  alias CPub.NS.ACL
 
   alias CPub.Repo
   alias CPub.ID
@@ -40,6 +41,8 @@ defmodule CPub.Users do
       |> RDF.Description.add(RDF.type, AS.Person)
       |> RDF.Description.add(LDP.inbox, inbox.id)
       |> RDF.Description.add(AS.outbox, outbox.id)
+      # Use ACL.default to specify the Authorization that has access to newly created objects
+      |> RDF.Description.add(ACL.default, id |> ID.extend("authorizations/full"))
       |> Actor.new()
       |> Actor.changeset()
     end)
@@ -57,14 +60,17 @@ defmodule CPub.Users do
     # create default authorizations for user
     |> insert_authorization("authorizations/read", %{mode_read: true})
     |> insert_authorization("authorizations/write", %{mode_write: true})
+    |> insert_authorization("authorizations/full", %{mode_read: true,
+                                                    mode_write: true,
+                                                    mode_append: true,
+                                                    mode_control: true})
 
     # grant read authorization to inbox and outbox
     |> grant_authorization("authorizations/read", to: :inbox)
     |> grant_authorization("authorizations/read", to: :outbox)
 
     # grant read/write access to actor profile
-    |> grant_authorization("authorizations/read", to: :actor)
-    |> grant_authorization("authorizations/write", to: :actor)
+    |> grant_authorization("authorizations/full", to: :actor)
 
     |> Repo.transaction
   end
