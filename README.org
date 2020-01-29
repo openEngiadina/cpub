@@ -389,3 +389,206 @@ Accept: text/turtle
 // x-request-id: Fel7VVi4tf7luDMAAAIh
 // Request duration: 0.360935s
 #+END_SRC
+** Generality
+
+CPub has an understanding of what activities are (as defined in ActivityStreams) and uses this understanding to figure out what to do when you post something to an outbox.
+
+Other than that, CPub is completely oblivious to what kind of data you create, share or link to (as long as it is RDF).
+*** Event
+
+For example we can create an event instead of a note (using the schema.org vocabulary):
+
+#+BEGIN_SRC restclient :exports both
+POST http://localhost:4000/users/alice/outbox
+Authorization: Basic YWxpY2U6MTIz
+Accept: text/turtle
+Content-type: text/turtle
+
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix schema: <http://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema> .
+
+<>
+    a as:Create ;
+    as:to <http://localhost:4000/users/bob> ;
+    as:object _:object .
+
+_:object
+    a schema:Event ;
+    schema:name "My super cool event" ;
+    schema:url "http://website-to-my-event" ;
+    schema:startDate "2020-01-31T00:00:00+01:00"^^xsd:date ;
+    schema:endDate "2020-02-02T00:00:00+01:00"^^xsd:date .
+
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+// POST http://localhost:4000/users/alice/outbox
+// HTTP/1.1 201 Created
+// Location: http://localhost:4000/activities/d778c801-c690-4839-b76a-7bb327262b8f
+// access-control-allow-credentials: true
+// access-control-allow-origin: *
+// access-control-expose-headers: 
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 0
+// date: Wed, 29 Jan 2020 15:55:53 GMT
+// server: Cowboy
+// x-request-id: Fe5HlD4n5wuqDHQAAEgB
+// Request duration: 0.385480s
+#+END_SRC
+
+The activity:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/activities/d778c801-c690-4839-b76a-7bb327262b8f
+Authorization: Basic YWxpY2U6MTIz
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/activities/d778c801-c690-4839-b76a-7bb327262b8f>
+    a as:Create ;
+    as:actor <http://localhost:4000/users/alice> ;
+    as:object <http://localhost:4000/objects/d6da85d4-d3fd-4ae9-b079-851594100dbf> ;
+    as:to <http://localhost:4000/users/bob> .
+
+// GET http://localhost:4000/activities/d778c801-c690-4839-b76a-7bb327262b8f
+// HTTP/1.1 200 OK
+// access-control-allow-credentials: true
+// access-control-allow-origin: *
+// access-control-expose-headers: 
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 538
+// content-type: text/turtle; charset=utf-8
+// date: Wed, 29 Jan 2020 15:57:10 GMT
+// server: Cowboy
+// x-request-id: Fe5HplY91yG0IdEAAEhB
+// Request duration: 0.375856s
+#+END_SRC
+
+And the object (our event!) has got it's own id:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/objects/d6da85d4-d3fd-4ae9-b079-851594100dbf
+Authorization: Basic YWxpY2U6MTIz
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/objects/d6da85d4-d3fd-4ae9-b079-851594100dbf>
+    a <http://schema.org/Event> ;
+    <http://schema.org/endDate> "2020-02-02T00:00:00+01:00"^^<http://www.w3.org/2001/XMLSchemadate> ;
+    <http://schema.org/name> "My super cool event" ;
+    <http://schema.org/startDate> "2020-01-31T00:00:00+01:00"^^<http://www.w3.org/2001/XMLSchemadate> ;
+    <http://schema.org/url> "http://website-to-my-event" .
+
+// GET http://localhost:4000/objects/d6da85d4-d3fd-4ae9-b079-851594100dbf
+// HTTP/1.1 200 OK
+// access-control-allow-credentials: true
+// access-control-allow-origin: *
+// access-control-expose-headers: 
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 687
+// content-type: text/turtle; charset=utf-8
+// date: Wed, 29 Jan 2020 15:58:06 GMT
+// server: Cowboy
+// x-request-id: Fe5Hs71KVA0TUrIAAEhh
+// Request duration: 0.372090s
+#+END_SRC
+
+The event can be commented on, liked or shared, like any other ActivityPub object.
+
+*** Geo data
+
+It is also possible to post geospatial data. For example a geo-tagged note:
+
+#+BEGIN_SRC restclient :exports both
+POST http://localhost:4000/users/alice/outbox
+Authorization: Basic YWxpY2U6MTIz
+Accept: text/turtle
+Content-type: text/turtle
+
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+
+<>
+    a as:Create ;
+    as:to <http://localhost:4000/users/bob> ;
+    as:object _:object .
+
+_:object
+    a as:Note ;
+    as:content "The water here is amazing!"@en ;
+    geo:lat 46.794932821448725 ;
+    geo:long 10.300304889678957 .
+
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+// POST http://localhost:4000/users/alice/outbox
+// HTTP/1.1 201 Created
+// Location: http://localhost:4000/activities/5619343f-cefd-4d01-beed-b5147422b01c
+// access-control-allow-credentials: true
+// access-control-allow-origin: *
+// access-control-expose-headers: 
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 0
+// date: Wed, 29 Jan 2020 16:08:00 GMT
+// server: Cowboy
+// x-request-id: Fe5IP1jD5ufXnUEAAEjB
+// Request duration: 0.386719s
+#+END_SRC
+
+A geo-tagged note has been created:
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/objects/4ba93119-b210-4f6f-aab6-db9a3124c73b
+Authorization: Basic YWxpY2U6MTIz
+Accept: text/turtle
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix as: <http://www.w3.org/ns/activitystreams#> .
+@prefix ldp: <http://www.w3.org/ns/ldp#> .
+
+<http://localhost:4000/objects/4ba93119-b210-4f6f-aab6-db9a3124c73b>
+    a as:Note ;
+    <http://www.w3.org/2003/01/geo/wgs84_pos#lat> 46.794932821448725 ;
+    <http://www.w3.org/2003/01/geo/wgs84_pos#long> 10.300304889678957 ;
+    as:content "The water here is amazing!"@en .
+
+// GET http://localhost:4000/objects/4ba93119-b210-4f6f-aab6-db9a3124c73b
+// HTTP/1.1 200 OK
+// access-control-allow-credentials: true
+// access-control-allow-origin: *
+// access-control-expose-headers: 
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 543
+// content-type: text/turtle; charset=utf-8
+// date: Wed, 29 Jan 2020 16:09:02 GMT
+// server: Cowboy
+// x-request-id: Fe5ITewk2M_dR4QAAEkB
+// Request duration: 0.372565s
+#+END_SRC
+
+A client that understands what ~geo:lat~ and ~geo:long~ means could show this note on a map. See also https://github.com/miaEngiadina/geopub.
