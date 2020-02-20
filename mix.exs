@@ -47,7 +47,8 @@ defmodule CPub.MixProject do
       {:json_ld, "~> 0.3.0"},
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir , "~> 1.0.2"},
-      {:basic_auth, "~> 2.2.2"}
+      {:basic_auth, "~> 2.2.2"},
+      {:cors_plug, "~> 2.0"}
     ]
   end
 
