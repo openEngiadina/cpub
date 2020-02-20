@@ -43,7 +43,6 @@ defmodule CPubWeb.Endpoint do
 
 
   plug CORSPlug
-  plug BasicAuth, callback: &CPubWeb.Authentication.verify_user/3
 
   plug CPubWeb.Router
 end

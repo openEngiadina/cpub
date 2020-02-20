@@ -25,7 +25,7 @@ defmodule CPubWeb do
       import CPubWeb.Gettext
       alias CPubWeb.Router.Helpers, as: Routes
 
-      alias CPubWeb.LDP.RDFSourceView
+      alias CPubWeb.RDFView
     end
   end
 

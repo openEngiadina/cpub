@@ -8,10 +8,7 @@ defmodule CPub.Repo.Migrations.CreateUsers do
       add :username, :string
       add :password, :string
 
-      add :actor_id, references(:ldp_rs,
-        # do not allow actor to be deleted without deleting user
-        on_delete: :restrict,
-        type: :string)
+      add :profile, :map
 
       timestamps()
     end

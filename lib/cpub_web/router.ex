@@ -21,19 +21,30 @@ defmodule CPubWeb.Router do
     plug :assign_id
   end
 
+  pipeline :authenticated do
+    plug BasicAuth, callback: &CPubWeb.Authentication.verify_user/3
+  end
+
   scope "/", CPubWeb do
     pipe_through :api
 
     resources "/objects", LDP.RDFSourceController, only: [:index, :show]
-    resources "/activities", LDP.RDFSourceController, only: [:show]
-    resources "/containers", LDP.BasicContainerController, only: [:show]
+    # resources "/activities", LDP.RDFSourceController, only: [:show]
+    # resources "/containers", LDP.BasicContainerController, only: [:show]
 
-    resources "/users", UserController, only: [:show] do
-      get "/inbox", LDP.BasicContainerController, :show
-      get "/outbox", LDP.BasicContainerController, :show
-      post "/outbox", ActivityPub.OutboxController, :post
-    end
+    # resources "/users", UserController, only: [:show] do
+    #   get "/inbox", LDP.BasicContainerController, :show
+    #   get "/outbox", LDP.BasicContainerController, :show
+    #   post "/outbox", ActivityPub.OutboxController, :post
+    # end
 
+  end
+
+  scope "/users", CPubWeb do
+    pipe_through :api
+    pipe_through :authenticated
+
+    resources "/", UserController, only: [:show]
   end
 
 end

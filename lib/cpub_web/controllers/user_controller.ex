@@ -1,15 +1,13 @@
 defmodule CPubWeb.UserController do
   use CPubWeb, :controller
 
-  alias CPub.ActivityPub
-
   action_fallback CPubWeb.FallbackController
 
   def show(conn, _params) do
-    actor = ActivityPub.get_actor!(conn.assigns[:id])
+    user = CPub.Repo.get!(CPub.User, conn.assigns[:id])
     conn
-    |> put_view(RDFSourceView)
-    |> render(:show, rdf_source: actor)
+    |> put_view(RDFView)
+    |> render(:show, data: user.profile)
   end
 
 
