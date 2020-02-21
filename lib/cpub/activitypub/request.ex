@@ -24,7 +24,7 @@ defmodule CPub.ActivityPub.Request do
     %Request{
       multi: Multi.new(),
       id: id,
-      activity: data[id] |> Activity.new(),
+      activity: data[id],
       object_id: CPub.ID.generate(type: :object),
       data: data,
       user: user

@@ -44,4 +44,16 @@ defmodule CPubWeb.UserController do
     |> render(:show, data: data)
   end
 
+  def get_outbox(conn, _params) do
+    user = conn.assigns.user
+
+    data = CPub.User.get_outbox(user)
+    |> Enum.map(&CPub.Activity.to_rdf/1)
+    |> Enum.reduce(RDF.Graph.new, &(RDF.Data.merge(&1,&2)))
+
+    conn
+    |> put_view(RDFView)
+    |> render(:show, data: data)
+  end
+
 end

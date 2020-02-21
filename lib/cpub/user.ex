@@ -65,6 +65,16 @@ defmodule CPub.User do
   end
 
   @doc """
+  Returns activities that have been performed by user.
+  """
+  def get_outbox(user) do
+    outbox_query = from a in CPub.Activity,
+      where: ^user.id == a.actor
+    CPub.Repo.all(outbox_query)
+    |> CPub.Repo.preload(:object)
+  end
+
+  @doc """
   See `RDF.Description.fetch`.
   """
   @impl Access

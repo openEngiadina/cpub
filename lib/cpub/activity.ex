@@ -13,7 +13,14 @@ defmodule CPub.Activity do
   @primary_key {:id, CPub.ID, autogenerate: true}
   schema "activities" do
     field :type, RDF.IRI.EctoType
+
+    # Actor who performed activity
+    # NOTE: ActivityStreams Vocabulary spec says there can be multiple actors. For now we only allow one.
+    field :actor, RDF.IRI.EctoType
+
+    # Recipients of the activity. This includes bcc and bto and should not be made public.
     field :recipients, {:array, RDF.IRI.EctoType}
+
     field :data, RDF.Description.EctoType
 
     has_one :object, CPub.Object
@@ -25,6 +32,7 @@ defmodule CPub.Activity do
     %Activity{data: activity}
     |> extract_id
     |> extract_type
+    |> extract_actor
     |> extract_recipients
     |> remove_bcc
   end
@@ -32,7 +40,7 @@ defmodule CPub.Activity do
   def changeset(activity) do
     activity
     |> change()
-    |> validate_required([:id, :data])
+    |> validate_required([:id, :actor, :data])
     |> unique_constraint(:id, name: "activities_pkey")
     |> validate_activity_type()
     |> CPub.ID.validate()
@@ -48,6 +56,18 @@ defmodule CPub.Activity do
       type: activity.data
       |> Access.get(RDF.type, [])
       |> Enum.find(&(&1 in ActivityPub.activity_types))}
+  end
+
+  defp extract_actor(activity) do
+    case activity.data[AS.actor] do
+
+      [actor] ->
+        %{activity | actor: actor}
+
+      _ ->
+        activity
+
+    end
   end
 
   @doc """

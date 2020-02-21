@@ -71,7 +71,7 @@ defmodule CPub.ActivityPub do
       nil ->
         # set actor
         %{request | activity: request.activity
-          |> Activity.add(AS.actor, request.user.id)
+          |> RDF.Description.add(AS.actor, request.user.id)
          }
 
       [actor_in_activity] ->
@@ -89,15 +89,15 @@ defmodule CPub.ActivityPub do
 
   defp insert_activity(%Request{} = request) do
     request
-    |> Request.insert(:activity, request.activity |> Activity.changeset())
+    |> Request.insert(:activity, request.activity |> Activity.new() |> Activity.changeset())
   end
 
   defp set_object_id(%Request{} = request) do
     if RDF.iri(AS.Create) in request.activity[RDF.type] do
       %{request |
         activity: request.activity
-        |> Activity.delete_predicates(AS.object)
-        |> Activity.add(AS.object, request.object_id)
+        |> RDF.Description.delete_predicates(AS.object)
+        |> RDF.Description.add(AS.object, request.object_id)
       }
     else
       # don't do anything if not a Create activity

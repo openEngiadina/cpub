@@ -38,6 +38,7 @@ defmodule CPubWeb.Router do
 
     resources "/", UserController, only: [:show] do
       post "/outbox", UserController, :post_to_outbox
+      get "/outbox", UserController, :get_outbox
       get "/inbox", UserController, :get_inbox
     end
 
