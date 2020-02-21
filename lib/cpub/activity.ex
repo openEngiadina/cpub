@@ -88,6 +88,24 @@ defmodule CPub.Activity do
   end
 
   @doc """
+  Add objects to a predicate of an `CPub.Activity`.
+  """
+  def add(%Activity{} = activity, predicate, objects) do
+    %{activity |
+      data: activity.data
+      |> RDF.Description.add(predicate, objects)}
+  end
+
+  @doc """
+  Deletes all statements with the given predicates.
+  """
+  def delete_predicates(%Activity{} = activity, predicates) do
+    %{activity |
+      data: activity.data
+      |> RDF.Description.delete_predicates(predicates)}
+  end
+
+  @doc """
   See `RDF.Description.fetch`.
   """
   @impl Access

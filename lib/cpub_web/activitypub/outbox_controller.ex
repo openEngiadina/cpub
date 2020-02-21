@@ -17,7 +17,7 @@ defmodule CPubWeb.ActivityPub.OutboxController do
     with user <- conn.assigns.user,
          activity_id <- CPub.ID.generate(type: :activity),
          {:ok, data, conn} <- read_rdf_body(conn, base_iri: activity_id),
-         {:ok, %{activity: activity}} <- ActivityPub.create_activity(activity_id, data, user)
+         {:ok, %{activity: activity}} <- ActivityPub.handle_activity(activity_id, data, user)
       do
       conn
       |> put_resp_header("Location", activity.id |> RDF.IRI.to_string)

@@ -27,24 +27,16 @@ defmodule CPubWeb.Router do
 
   scope "/", CPubWeb do
     pipe_through :api
-
-    resources "/objects", LDP.RDFSourceController, only: [:index, :show]
-    # resources "/activities", LDP.RDFSourceController, only: [:show]
-    # resources "/containers", LDP.BasicContainerController, only: [:show]
-
-    # resources "/users", UserController, only: [:show] do
-    #   get "/inbox", LDP.BasicContainerController, :show
-    #   get "/outbox", LDP.BasicContainerController, :show
-    #   post "/outbox", ActivityPub.OutboxController, :post
-    # end
-
   end
 
   scope "/users", CPubWeb do
     pipe_through :api
     pipe_through :authenticated
 
-    resources "/", UserController, only: [:show]
+    resources "/", UserController, only: [:show] do
+      post "/outbox", ActivityPub.OutboxController, :post
+    end
+
   end
 
 end
