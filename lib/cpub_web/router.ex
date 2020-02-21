@@ -27,6 +27,9 @@ defmodule CPubWeb.Router do
 
   scope "/", CPubWeb do
     pipe_through :api
+
+    resources "/activities", ActivityController, only: [:show]
+
   end
 
   scope "/users", CPubWeb do
