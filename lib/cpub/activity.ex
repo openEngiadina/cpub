@@ -15,6 +15,9 @@ defmodule CPub.Activity do
     field :type, RDF.IRI.EctoType
     field :recipients, {:array, RDF.IRI.EctoType}
     field :data, RDF.Description.EctoType
+
+    has_one :object, CPub.Object
+
     timestamps()
   end
 
@@ -134,6 +137,27 @@ defmodule CPub.Activity do
 
       {value, new_graph} ->
         {value, %{activity | data: new_graph}}
+    end
+  end
+
+  @doc """
+  Returns the activity as `RDF.Data`.
+
+  If object is loaded it will be included in returned data.
+  """
+  def to_rdf(activity) do
+
+    activity_description =
+      activity.data
+      |> RDF.Description.add(AS.published, activity.inserted_at)
+
+    case activity.object do
+      %CPub.Object{} = object ->
+        activity_description
+        |> RDF.Data.merge(object.data)
+
+      _ ->
+        activity_description
     end
   end
 

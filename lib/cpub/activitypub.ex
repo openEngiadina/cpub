@@ -116,7 +116,8 @@ defmodule CPub.ActivityPub do
           |> Request.insert(request.object_id,
           Object.new(
             id: request.object_id,
-            data: request.data[original_object_id])
+            data: %{request.data[original_object_id] | subject: request.object_id},
+            activity_id: request.id)
           |> Object.changeset())
 
         _ ->
