@@ -1,6 +1,8 @@
 defmodule CPubWeb.UserController do
   use CPubWeb, :controller
 
+  alias CPub.ActivityPub
+
   action_fallback CPubWeb.FallbackController
 
   def show(conn, _params) do
@@ -10,18 +12,23 @@ defmodule CPubWeb.UserController do
     |> render(:show, data: user.profile)
   end
 
+  defp read_rdf_body(conn, opts \\ []) do
+    with {:ok, body, conn} <- read_body(conn),
+         {:ok, data} <- body |> RDF.Turtle.Decoder.decode(opts) do
+      {:ok, data, conn}
+    end
+  end
 
-  # TODO move code to create an actor to a create user endpoint
-  # def create(conn, _params) do
-  #   with id <- CPub.ID.generate(type: :actor),
-  #        {:ok, data, conn} <- read_rdf_body(conn, base_iri: id),
-  #        description <- data[id],
-  #        {:ok, %{actor: actor}} <- ActivityPub.create_actor(description: description)
-  #     do
-  #     conn
-  #     |> put_resp_header("Location", actor.id |> RDF.IRI.to_string)
-  #     |> send_resp(:created, "")
-  #   end
-  # end
+  def post_to_outbox(conn, _params) do
+    with user <- conn.assigns.user,
+         activity_id <- CPub.ID.generate(type: :activity),
+         {:ok, data, conn} <- read_rdf_body(conn, base_iri: activity_id),
+         {:ok, %{activity: activity}} <- ActivityPub.handle_activity(activity_id, data, user)
+      do
+      conn
+      |> put_resp_header("Location", activity.id |> RDF.IRI.to_string)
+      |> send_resp(:created, "")
+    end
+  end
 
 end

@@ -37,7 +37,7 @@ defmodule CPubWeb.Router do
     pipe_through :authenticated
 
     resources "/", UserController, only: [:show] do
-      post "/outbox", ActivityPub.OutboxController, :post
+      post "/outbox", UserController, :post_to_outbox
     end
 
   end
