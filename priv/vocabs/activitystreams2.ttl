@@ -968,4 +968,7 @@ as:Video a owl:Class ;
   rdfs:comment "A Video document of any kind."@en ;
   rdfs:subClassOf as:Document .
 
+as:Public a owl:Class ;
+    rdfs:label "Public collection"@en .
+
 rdf:nil a as:OrderedItems .
