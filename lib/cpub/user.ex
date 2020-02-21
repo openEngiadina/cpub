@@ -1,6 +1,9 @@
 defmodule CPub.User do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
+
+  @behaviour Access
 
   alias CPub.User
 
@@ -51,4 +54,45 @@ defmodule CPub.User do
     CPub.Repo.get_by(User, username: username)
   end
 
+  @doc """
+  Returns a list of activities that are in the users inbox.
+  """
+  def get_inbox(user) do
+    inbox_query = from a in CPub.Activity,
+      where: ^user.id in a.recipients
+    CPub.Repo.all(inbox_query)
+    |> CPub.Repo.preload(:object)
+  end
+
+  @doc """
+  See `RDF.Description.fetch`.
+  """
+  @impl Access
+  def fetch(%User{profile: profile}, key) do
+    Access.fetch(profile, key)
+  end
+
+  @doc """
+  See `RDF.Description.get_and_update`
+  """
+  @impl Access
+  def get_and_update(%User{} = user, key, fun) do
+    with {get_value, new_profile} <- Access.get_and_update(user.profile, key, fun) do
+      {get_value, %{user | profile: new_profile}}
+    end
+  end
+
+  @doc """
+  See `RDF.Description.pop`.
+  """
+  @impl Access
+  def pop(%User{} = user, key) do
+    case Access.pop(user.profile, key) do
+      {nil, _} ->
+        {nil, user}
+
+      {value, new_profile} ->
+        {value, %{user | profile: new_profile}}
+    end
+  end
 end
