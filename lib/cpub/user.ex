@@ -3,6 +3,9 @@ defmodule CPub.User do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
+  alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.NS.LDP
+
   @behaviour Access
 
   alias CPub.User
@@ -37,7 +40,17 @@ defmodule CPub.User do
     id = "users/" <> username
     |> CPub.ID.merge_with_base_url()
 
-    profile = Keyword.get(opts, :profile, RDF.Description.new(id))
+    inbox_id = "users/" <> username <> "/inbox"
+    |> CPub.ID.merge_with_base_url()
+
+    outbox_id = "users/" <> username <> "/outbox"
+    |> CPub.ID.merge_with_base_url()
+
+    profile = Keyword.get(opts, :profile,
+      RDF.Description.new(id)
+      |> RDF.Description.add(RDF.type, AS.Person)
+      |> RDF.Description.add(LDP.inbox, inbox_id)
+      |> RDF.Description.add(AS.outbox, outbox_id))
 
     %User{id: id}
     |> changeset(%{username: username, password: password, profile: profile})
