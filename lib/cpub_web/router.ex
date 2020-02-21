@@ -29,6 +29,7 @@ defmodule CPubWeb.Router do
     pipe_through :api
 
     resources "/activities", ActivityController, only: [:show]
+    resources "/objects", ObjectController, only: [:show]
     get "/public", PublicController, :get_public
 
   end
