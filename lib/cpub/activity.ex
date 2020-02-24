@@ -1,5 +1,4 @@
 defmodule CPub.Activity do
-
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -47,26 +46,25 @@ defmodule CPub.Activity do
   end
 
   defp extract_id(activity) do
-    %{activity |
-      id: activity.data.subject}
+    %{activity | id: activity.data.subject}
   end
 
   defp extract_type(activity) do
-    %{activity |
-      type: activity.data
-      |> Access.get(RDF.type, [])
-      |> Enum.find(&(&1 in ActivityPub.activity_types))}
+    type =
+      activity.data
+      |> Access.get(RDF.type(), [])
+      |> Enum.find(&(&1 in ActivityPub.activity_types()))
+
+    %{activity | type: type}
   end
 
   defp extract_actor(activity) do
-    case activity.data[AS.actor] do
-
+    case activity.data[AS.actor()] do
       [actor] ->
         %{activity | actor: actor}
 
       _ ->
         activity
-
     end
   end
 
@@ -75,30 +73,35 @@ defmodule CPub.Activity do
   """
   def get_all(container, keys, default \\ nil) do
     keys
-    |> Enum.reduce([], &([Access.get(container, &1, default) | &2]))
+    |> Enum.reduce([], &[Access.get(container, &1, default) | &2])
   end
 
   defp extract_recipients(activity) do
-    %{activity |
-      recipients: activity.data
-      |> get_all([AS.to, AS.bto, AS.cc, AS.bcc, AS.audience], [])
-      |> Enum.concat
+    %{
+      activity
+      | recipients:
+          activity.data
+          |> get_all([AS.to(), AS.bto(), AS.cc(), AS.bcc(), AS.audience()], [])
+          |> Enum.concat()
     }
   end
 
   defp remove_bcc(activity) do
-    %{activity |
-      data: activity.data
-      |> RDF.Description.delete_predicates(AS.bto)
-      |> RDF.Description.delete_predicates(AS.bcc)}
+    %{
+      activity
+      | data:
+          activity.data
+          |> RDF.Description.delete_predicates(AS.bto())
+          |> RDF.Description.delete_predicates(AS.bcc())
+    }
   end
 
   @doc """
   Returns true if description is an ActivityStreams activity, false otherwise.
   """
   def is_activity?(description) do
-    description[RDF.type]
-    |> Enum.any?(&(&1 in ActivityPub.activity_types))
+    description[RDF.type()]
+    |> Enum.any?(&(&1 in ActivityPub.activity_types()))
   end
 
   defp validate_activity_type(changeset) do
@@ -114,18 +117,24 @@ defmodule CPub.Activity do
   Add objects to a predicate of an `CPub.Activity`.
   """
   def add(%Activity{} = activity, predicate, objects) do
-    %{activity |
-      data: activity.data
-      |> RDF.Description.add(predicate, objects)}
+    %{
+      activity
+      | data:
+          activity.data
+          |> RDF.Description.add(predicate, objects)
+    }
   end
 
   @doc """
   Deletes all statements with the given predicates.
   """
   def delete_predicates(%Activity{} = activity, predicates) do
-    %{activity |
-      data: activity.data
-      |> RDF.Description.delete_predicates(predicates)}
+    %{
+      activity
+      | data:
+          activity.data
+          |> RDF.Description.delete_predicates(predicates)
+    }
   end
 
   @doc """
@@ -166,10 +175,9 @@ defmodule CPub.Activity do
   If object is loaded it will be included in returned data.
   """
   def to_rdf(activity) do
-
     activity_description =
       activity.data
-      |> RDF.Description.add(AS.published, activity.inserted_at)
+      |> RDF.Description.add(AS.published(), activity.inserted_at)
 
     case activity.object do
       %CPub.Object{} = object ->
@@ -180,5 +188,4 @@ defmodule CPub.Activity do
         activity_description
     end
   end
-
 end

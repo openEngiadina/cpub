@@ -1,5 +1,4 @@
 defmodule RDF.IRI.EctoType do
-
   use Ecto.Type
 
   alias RDF.IRI
@@ -11,7 +10,7 @@ defmodule RDF.IRI.EctoType do
   # cast from string
   def cast(id) when is_binary(id) do
     with iri <- IRI.new(id) do
-      if IRI.valid? iri do
+      if IRI.valid?(iri) do
         {:ok, iri}
       else
         {:error, "invalid IRI"}
@@ -20,7 +19,7 @@ defmodule RDF.IRI.EctoType do
   end
 
   # cast from IRI
-  def cast(%IRI{} = iri)  do
+  def cast(%IRI{} = iri) do
     {:ok, iri}
   end
 
@@ -41,5 +40,4 @@ defmodule RDF.IRI.EctoType do
   def load(data) when is_binary(data) do
     {:ok, IRI.new(data)}
   end
-
 end

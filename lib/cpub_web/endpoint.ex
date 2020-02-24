@@ -5,7 +5,6 @@ defmodule CPubWeb.Endpoint do
     websocket: true,
     longpoll: false
 
-
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phx.digest
@@ -40,7 +39,6 @@ defmodule CPubWeb.Endpoint do
     store: :cookie,
     key: "_cpub_key",
     signing_salt: "uME3vEPr"
-
 
   plug CORSPlug
 

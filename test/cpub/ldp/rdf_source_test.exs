@@ -8,9 +8,10 @@ defmodule CPub.LDP.RDFSourceTest do
   alias CPub.LDP
 
   test "create and get RDF data" do
-    check all data <- RDF.StreamData.graph(),
-      max_run_time: 500 do
-
+    check all(
+            data <- RDF.StreamData.graph(),
+            max_run_time: 500
+          ) do
       # generate an id
       id = CPub.ID.generate()
 
@@ -25,12 +26,11 @@ defmodule CPub.LDP.RDFSourceTest do
   end
 
   test "autogenerate id if none specified" do
-    assert {:ok, rdf_source} = LDP.create_rdf_source(data: RDF.Graph.new)
+    assert {:ok, rdf_source} = LDP.create_rdf_source(data: RDF.Graph.new())
   end
 
   test "RDF Source ids are unique" do
-    assert {:ok, rdf_source} = LDP.create_rdf_source(data: RDF.Graph.new)
-    assert {:error, _} = LDP.create_rdf_source(data: RDF.Graph.new, id: rdf_source.id)
+    assert {:ok, rdf_source} = LDP.create_rdf_source(data: RDF.Graph.new())
+    assert {:error, _} = LDP.create_rdf_source(data: RDF.Graph.new(), id: rdf_source.id)
   end
-
 end

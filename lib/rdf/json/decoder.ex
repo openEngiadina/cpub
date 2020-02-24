@@ -17,9 +17,10 @@ defmodule RDF.JSON.Decoder do
     {:ok,
      Enum.reduce(
        rdf_json_object,
-       Graph.new,
-       fn ({subject_key, subject_object}, graph) ->
-         Graph.add(graph,
+       Graph.new(),
+       fn {subject_key, subject_object}, graph ->
+         Graph.add(
+           graph,
            subject_key
            |> coerce_subject
            |> subject_object_to_triples(subject_object)
@@ -46,20 +47,22 @@ defmodule RDF.JSON.Decoder do
     Enum.reduce(
       subject_object,
       [],
-      (fn ({predicate, value_array}, triples) ->
+      fn {predicate, value_array}, triples ->
         triples ++
-          value_array_to_triples(subject,
+          value_array_to_triples(
+            subject,
             RDF.IRI.new!(predicate),
             value_array
           )
-      end)
+      end
     )
   end
 
   defp value_array_to_triples(subject, predicate, value_array) do
     value_array
-    |> Enum.map(fn (value_object) ->
-      value_object_to_triple(subject, predicate, value_object) end)
+    |> Enum.map(fn value_object ->
+      value_object_to_triple(subject, predicate, value_object)
+    end)
   end
 
   defp value_object_to_triple(subject, predicate, value_object) do
@@ -75,24 +78,23 @@ defmodule RDF.JSON.Decoder do
 
           # NOTE: must be a nicer syntax or way of doing this (?)
           |> (fn literal ->
-            case Map.get(value_object, "datatype") do
-              nil -> literal
-              datatype -> RDF.Literal.new!(literal.value, datatype: datatype)
-            end
-          end).()
-
+                case Map.get(value_object, "datatype") do
+                  nil -> literal
+                  datatype -> RDF.Literal.new!(literal.value, datatype: datatype)
+                end
+              end).()
           |> (fn literal ->
-            case Map.get(value_object, "lang") do
-              nil -> literal
-              language -> RDF.LangString.new!(literal, language: language)
-            end
-          end).()
+                case Map.get(value_object, "lang") do
+                  nil -> literal
+                  language -> RDF.LangString.new!(literal, language: language)
+                end
+              end).()
 
         "bnode" ->
           with "_:" <> id <- Map.get(value_object, "value") do
             RDF.BlankNode.new(id)
           end
-      end)
+      end
+    )
   end
-
 end

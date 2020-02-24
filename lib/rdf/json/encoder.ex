@@ -6,17 +6,20 @@ defmodule RDF.JSON.Encoder do
   @impl RDF.Serialization.Encoder
   def encode(data, opts \\ []) do
     with {:ok, as_map} <- from_rdf(data, opts) do
-      as_map |> Jason.encode
+      as_map |> Jason.encode()
     end
   end
 
   def from_rdf(data, _opts \\ []) do
-    {:ok, data
-    |> RDF.Data.descriptions
-    |> Enum.reduce(%{},
-     fn (%RDF.Description{subject: subject} = description, root_object) ->
-       Map.put(root_object, subject_key(subject), subject_object(description))
-     end)}
+    {:ok,
+     data
+     |> RDF.Data.descriptions()
+     |> Enum.reduce(
+       %{},
+       fn %RDF.Description{subject: subject} = description, root_object ->
+         Map.put(root_object, subject_key(subject), subject_object(description))
+       end
+     )}
   end
 
   def from_rdf!(data, opts \\ []) do
@@ -36,11 +39,13 @@ defmodule RDF.JSON.Encoder do
 
   defp subject_object(description) do
     description
-    |> RDF.Description.predicates
-    |> Enum.reduce(%{},
-    fn (predicate, subject_object) ->
-      Map.put(subject_object, RDF.IRI.to_string(predicate), value_array(description, predicate))
-    end)
+    |> RDF.Description.predicates()
+    |> Enum.reduce(
+      %{},
+      fn predicate, subject_object ->
+        Map.put(subject_object, RDF.IRI.to_string(predicate), value_array(description, predicate))
+      end
+    )
   end
 
   defp value_array(description, predicate) do
@@ -60,19 +65,18 @@ defmodule RDF.JSON.Encoder do
     # %{type: "literal", value: RDF.Literal.lexical(literal)}
     %{type: "literal", value: literal.value}
     |> (fn value_object ->
-      if RDF.Literal.has_language? literal do
-        Map.put(value_object, "lang", literal.language)
-      else
-        value_object
-      end
-    end).()
+          if RDF.Literal.has_language?(literal) do
+            Map.put(value_object, "lang", literal.language)
+          else
+            value_object
+          end
+        end).()
     |> (fn value_object ->
-      if RDF.Literal.has_datatype? literal do
-        Map.put(value_object, "datatype", literal.datatype.value)
-      else
-        value_object
-      end
-    end).()
+          if RDF.Literal.has_datatype?(literal) do
+            Map.put(value_object, "datatype", literal.datatype.value)
+          else
+            value_object
+          end
+        end).()
   end
-
 end

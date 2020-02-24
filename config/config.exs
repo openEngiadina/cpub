@@ -28,13 +28,10 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 # Set up mime-type for RDF/Turtle
-config :mime, :types, %{
-  "text/turtle" => ["ttl"]
-}
+config :mime, :types, %{"text/turtle" => ["ttl"]}
 
 # Configure CORS
-config :cors_plug,
-  origin: ["*"]
+config :cors_plug, origin: ["*"]
 
 # Default prefixes for RDF
 config :rdf,
@@ -43,13 +40,11 @@ config :rdf,
     ldp: "http://www.w3.org/ns/ldp#"
   }
 
-# 
+#
 
 # Password hashing function
-config :comeonin,
-  # Use Pbkdf2 because it does not require any C code
-  Ecto.Password, Pbkdf2
-
+# Use Pbkdf2 because it does not require any C code
+config :comeonin, Ecto.Password, Pbkdf2
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

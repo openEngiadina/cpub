@@ -1,5 +1,4 @@
 defmodule CPub.Object do
-
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -16,7 +15,7 @@ defmodule CPub.Object do
   end
 
   def new(opts \\ []) do
-    id =  Keyword.get(opts, :id, CPub.ID.generate())
+    id = Keyword.get(opts, :id, CPub.ID.generate())
     data = Keyword.get(opts, :data, RDF.Description.new(id))
     activity_id = Keyword.get(opts, :activity_id)
     %Object{id: id, data: data, activity_id: activity_id}
@@ -25,10 +24,9 @@ defmodule CPub.Object do
   def changeset(%Object{} = object) do
     object
     |> change
-    |> CPub.ID.validate
+    |> CPub.ID.validate()
     |> validate_required([:id, :data, :activity_id])
     |> assoc_constraint(:activity)
     |> unique_constraint(:id, name: "objects_pkey")
   end
-
 end

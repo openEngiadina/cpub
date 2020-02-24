@@ -12,13 +12,7 @@ defmodule CPub.ActivityPub.Request do
   alias CPub.Activity
   alias CPub.ActivityPub.Request
 
-  defstruct [:multi,
-              :id,
-              :object_id,
-              :activity,
-              :data,
-              :user,
-            ]
+  defstruct [:multi, :id, :object_id, :activity, :data, :user]
 
   def new(%RDF.IRI{} = id, %RDF.Graph{} = data, %User{} = user) do
     %Request{
@@ -54,7 +48,6 @@ defmodule CPub.ActivityPub.Request do
 
   def commit(%Request{} = request) do
     request.multi
-    |> Repo.transaction
+    |> Repo.transaction()
   end
-
 end

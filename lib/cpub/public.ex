@@ -8,6 +8,7 @@ defmodule CPub.Public do
   """
   def get_public() do
     public_collection = AS.Public |> RDF.IRI.new()
+
     CPub.Repo.all(from a in CPub.Activity, where: ^public_collection in a.recipients)
     |> CPub.Repo.preload(:object)
   end

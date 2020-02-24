@@ -13,7 +13,6 @@ defmodule CPub.User do
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type CPub.ID
   schema "users" do
-
     field :username, :string
     field :password, Comeonin.Ecto.Password
 
@@ -37,25 +36,31 @@ defmodule CPub.User do
     password = Keyword.get(opts, :password)
 
     # set the ID to "/users/<username>"
-    id = "users/" <> username
-    |> CPub.ID.merge_with_base_url()
+    id =
+      ("users/" <> username)
+      |> CPub.ID.merge_with_base_url()
 
-    inbox_id = "users/" <> username <> "/inbox"
-    |> CPub.ID.merge_with_base_url()
+    inbox_id =
+      ("users/" <> username <> "/inbox")
+      |> CPub.ID.merge_with_base_url()
 
-    outbox_id = "users/" <> username <> "/outbox"
-    |> CPub.ID.merge_with_base_url()
+    outbox_id =
+      ("users/" <> username <> "/outbox")
+      |> CPub.ID.merge_with_base_url()
 
-    profile = Keyword.get(opts, :profile,
-      RDF.Description.new(id)
-      |> RDF.Description.add(RDF.type, AS.Person)
-      |> RDF.Description.add(LDP.inbox, inbox_id)
-      |> RDF.Description.add(AS.outbox, outbox_id))
+    profile =
+      Keyword.get(
+        opts,
+        :profile,
+        RDF.Description.new(id)
+        |> RDF.Description.add(RDF.type(), AS.Person)
+        |> RDF.Description.add(LDP.inbox(), inbox_id)
+        |> RDF.Description.add(AS.outbox(), outbox_id)
+      )
 
     %User{id: id}
     |> changeset(%{username: username, password: password, profile: profile})
-    |> CPub.Repo.insert
-
+    |> CPub.Repo.insert()
   end
 
   def verify_user(username, password) do
@@ -71,8 +76,10 @@ defmodule CPub.User do
   Returns a list of activities that are in the users inbox.
   """
   def get_inbox(user) do
-    inbox_query = from a in CPub.Activity,
-      where: ^user.id in a.recipients
+    inbox_query =
+      from a in CPub.Activity,
+        where: ^user.id in a.recipients
+
     CPub.Repo.all(inbox_query)
     |> CPub.Repo.preload(:object)
   end
@@ -81,8 +88,10 @@ defmodule CPub.User do
   Returns activities that have been performed by user.
   """
   def get_outbox(user) do
-    outbox_query = from a in CPub.Activity,
-      where: ^user.id == a.actor
+    outbox_query =
+      from a in CPub.Activity,
+        where: ^user.id == a.actor
+
     CPub.Repo.all(outbox_query)
     |> CPub.Repo.preload(:object)
   end

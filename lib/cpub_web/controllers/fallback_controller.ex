@@ -14,7 +14,7 @@ defmodule CPubWeb.FallbackController do
   end
 
   # Handles error response from an Repo.transaction
-  def call(conn, {:error, _,  %Ecto.Changeset{} = changeset, _}) do
+  def call(conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(CPubWeb.ChangesetView)

@@ -22,14 +22,16 @@ defmodule CPub.ActivityPub do
   """
   def get_actor!(id), do: Repo.get!(Actor, id)
 
-  @activity_types (SPARQL.execute_query(@activitystreams,
-    SPARQL.query("""
-    select ?activity_type
-    where {
-      ?activity_type rdfs:subClassOf as:Activity .
-    }
-    """
-    ))).results |> Enum.map(&(&1["activity_type"]))
+  @activity_types SPARQL.execute_query(
+                    @activitystreams,
+                    SPARQL.query("""
+                    select ?activity_type
+                    where {
+                      ?activity_type rdfs:subClassOf as:Activity .
+                    }
+                    """)
+                  ).results
+                  |> Enum.map(& &1["activity_type"])
   @doc """
   List of all ActivityStreams Activity types
   """
@@ -61,18 +63,19 @@ defmodule CPub.ActivityPub do
     # |> place_in_outbox
 
     # commit the request
-    |> Request.commit
-
+    |> Request.commit()
   end
 
   defp ensure_correct_actor(%Request{} = request) do
-    case request.activity[AS.actor] do
-
+    case request.activity[AS.actor()] do
       nil ->
         # set actor
-        %{request | activity: request.activity
-          |> RDF.Description.add(AS.actor, request.user.id)
-         }
+        %{
+          request
+          | activity:
+              request.activity
+              |> RDF.Description.add(AS.actor(), request.user.id)
+        }
 
       [actor_in_activity] ->
         if actor_in_activity != request.user.id do
@@ -83,7 +86,6 @@ defmodule CPub.ActivityPub do
       _ ->
         request
         |> Request.error(:ensure_correct_actor, "multiple actors in activity")
-
     end
   end
 
@@ -93,11 +95,13 @@ defmodule CPub.ActivityPub do
   end
 
   defp set_object_id(%Request{} = request) do
-    if RDF.iri(AS.Create) in request.activity[RDF.type] do
-      %{request |
-        activity: request.activity
-        |> RDF.Description.delete_predicates(AS.object)
-        |> RDF.Description.add(AS.object, request.object_id)
+    if RDF.iri(AS.Create) in request.activity[RDF.type()] do
+      %{
+        request
+        | activity:
+            request.activity
+            |> RDF.Description.delete_predicates(AS.object())
+            |> RDF.Description.add(AS.object(), request.object_id)
       }
     else
       # don't do anything if not a Create activity
@@ -107,27 +111,27 @@ defmodule CPub.ActivityPub do
 
   # Creates an object if it is a Create activity
   defp create_object(request) do
-    if RDF.iri(AS.Create) in request.activity[RDF.type] do
-      case request.data[request.id][AS.object] do
-
+    if RDF.iri(AS.Create) in request.activity[RDF.type()] do
+      case request.data[request.id][AS.object()] do
         [original_object_id] ->
           # replace subject
           request
-          |> Request.insert(request.object_id,
-          Object.new(
-            id: request.object_id,
-            data: %{request.data[original_object_id] | subject: request.object_id},
-            activity_id: request.id)
-          |> Object.changeset())
+          |> Request.insert(
+            request.object_id,
+            Object.new(
+              id: request.object_id,
+              data: %{request.data[original_object_id] | subject: request.object_id},
+              activity_id: request.id
+            )
+            |> Object.changeset()
+          )
 
         _ ->
           request
           |> Request.error(:create_object, "could not find object")
-
       end
     else
       request
     end
   end
-
 end

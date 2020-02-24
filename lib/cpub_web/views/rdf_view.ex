@@ -6,12 +6,11 @@ defmodule CPubWeb.RDFView do
 
   def render("show.json", %{data: data}) do
     data
-    |> RDF.JSON.Encoder.from_rdf!
+    |> RDF.JSON.Encoder.from_rdf!()
   end
 
   def render("show.ttl", %{data: data}) do
     data
-    |> RDF.Turtle.Encoder.encode!
+    |> RDF.Turtle.Encoder.encode!()
   end
-
 end

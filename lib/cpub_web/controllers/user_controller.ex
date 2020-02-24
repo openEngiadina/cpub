@@ -8,6 +8,7 @@ defmodule CPubWeb.UserController do
 
   def show(conn, _params) do
     user = CPub.Repo.get!(CPub.User, conn.assigns[:id])
+
     conn
     |> put_view(RDFView)
     |> render(:show, data: user.profile)
@@ -24,10 +25,9 @@ defmodule CPubWeb.UserController do
     with user <- conn.assigns.user,
          activity_id <- CPub.ID.generate(type: :activity),
          {:ok, data, conn} <- read_rdf_body(conn, base_iri: activity_id),
-         {:ok, %{activity: activity}} <- ActivityPub.handle_activity(activity_id, data, user)
-      do
+         {:ok, %{activity: activity}} <- ActivityPub.handle_activity(activity_id, data, user) do
       conn
-      |> put_resp_header("Location", activity.id |> RDF.IRI.to_string)
+      |> put_resp_header("Location", activity.id |> RDF.IRI.to_string())
       |> send_resp(:created, "")
     end
   end
@@ -35,9 +35,10 @@ defmodule CPubWeb.UserController do
   def get_inbox(conn, _params) do
     user = conn.assigns.user
 
-    data = CPub.User.get_inbox(user)
-    |> Enum.map(&CPub.Activity.to_rdf/1)
-    |> Enum.reduce(RDF.Graph.new, &(RDF.Data.merge(&1,&2)))
+    data =
+      CPub.User.get_inbox(user)
+      |> Enum.map(&CPub.Activity.to_rdf/1)
+      |> Enum.reduce(RDF.Graph.new(), &RDF.Data.merge(&1, &2))
 
     conn
     |> put_view(RDFView)
@@ -47,13 +48,13 @@ defmodule CPubWeb.UserController do
   def get_outbox(conn, _params) do
     user = conn.assigns.user
 
-    data = CPub.User.get_outbox(user)
-    |> Enum.map(&CPub.Activity.to_rdf/1)
-    |> Enum.reduce(RDF.Graph.new, &(RDF.Data.merge(&1,&2)))
+    data =
+      CPub.User.get_outbox(user)
+      |> Enum.map(&CPub.Activity.to_rdf/1)
+      |> Enum.reduce(RDF.Graph.new(), &RDF.Data.merge(&1, &2))
 
     conn
     |> put_view(RDFView)
     |> render(:show, data: data)
   end
-
 end

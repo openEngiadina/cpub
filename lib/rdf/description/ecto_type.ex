@@ -52,5 +52,4 @@ defmodule RDF.Description.EctoType do
         {:error, "could not load description"}
     end
   end
-
 end

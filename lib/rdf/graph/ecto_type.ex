@@ -27,5 +27,4 @@ defmodule RDF.Graph.EctoType do
   def load(data) when is_map(data) do
     RDF.JSON.Decoder.to_rdf(data)
   end
-
 end

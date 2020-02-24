@@ -13,5 +13,4 @@ defmodule RDF.JSON do
   @name :rdf_json
   @extension "rj"
   @media_type "application/rdf+json"
-
 end

@@ -22,12 +22,12 @@ defmodule RDF.StreamData do
   def iri() do
     scheme = one_of([constant("http"), constant("https")])
     host = string(:alphanumeric)
-    path =  map(list_of(string(:alphanumeric)), &(Enum.join(&1, "/")))
+    path = map(list_of(string(:alphanumeric)), &Enum.join(&1, "/"))
 
     tuple({scheme, host, path})
     |> map(fn {scheme, host, path} ->
-      scheme <> "://" <> host <> "/" <> path
-      |> RDF.IRI.new!
+      (scheme <> "://" <> host <> "/" <> path)
+      |> RDF.IRI.new!()
     end)
   end
 
@@ -52,5 +52,4 @@ defmodule RDF.StreamData do
     list_of(triple())
     |> map(&RDF.Graph.new/1)
   end
-
 end

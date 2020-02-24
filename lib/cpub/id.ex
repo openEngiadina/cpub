@@ -1,5 +1,4 @@
 defmodule CPub.ID do
-
   use Ecto.Type
 
   alias RDF.IRI
@@ -11,7 +10,7 @@ defmodule CPub.ID do
   # cast from string
   def cast(id) when is_binary(id) do
     with iri <- IRI.new(id) do
-      if IRI.valid? iri do
+      if IRI.valid?(iri) do
         {:ok, iri}
       else
         {:error, "invalid IRI"}
@@ -20,7 +19,7 @@ defmodule CPub.ID do
   end
 
   # cast from IRI
-  def cast(%IRI{} = iri)  do
+  def cast(%IRI{} = iri) do
     {:ok, iri}
   end
 
@@ -59,15 +58,16 @@ defmodule CPub.ID do
   end
 
   def extend(%IRI{} = base, rel) do
-    (base |> IRI.to_string()) <> "/" <> rel
-    |> IRI.new!
+    ((base |> IRI.to_string()) <> "/" <> rel)
+    |> IRI.new!()
   end
 
   def merge_with_base_url(rel) do
     URI.merge(
       Application.get_env(:cpub, :base_url),
-      rel)
-      |> IRI.new!
+      rel
+    )
+    |> IRI.new!()
   end
 
   def generate(opts \\ []) do
@@ -87,7 +87,7 @@ defmodule CPub.ID do
   """
   def is_local?(%IRI{} = iri) do
     iri
-    |> IRI.to_string
+    |> IRI.to_string()
     |> String.starts_with?(Application.get_env(:cpub, :base_url))
   end
 
@@ -99,22 +99,22 @@ defmodule CPub.ID do
 
     # autogenerate an id if not set
     |> (fn changeset ->
-      if is_nil(Ecto.Changeset.get_field(changeset, :id)) do
-        changeset
-        |> Ecto.Changeset.put_change(:id, generate())
-      else
-        changeset
-      end
-    end).()
+          if is_nil(Ecto.Changeset.get_field(changeset, :id)) do
+            changeset
+            |> Ecto.Changeset.put_change(:id, generate())
+          else
+            changeset
+          end
+        end).()
 
     # check that id is local
     |> (fn changeset ->
-      if is_local?(Ecto.Changeset.get_field(changeset, :id)) do
-        changeset
-      else
-        changeset
-        |> Ecto.Changeset.add_error(:id, "not a local id")
-      end
-    end).()
+          if is_local?(Ecto.Changeset.get_field(changeset, :id)) do
+            changeset
+          else
+            changeset
+            |> Ecto.Changeset.add_error(:id, "not a local id")
+          end
+        end).()
   end
 end

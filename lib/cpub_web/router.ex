@@ -11,6 +11,7 @@ defmodule CPubWeb.Router do
       {:ok, id} ->
         conn
         |> assign(:id, id)
+
       _ ->
         conn
     end
@@ -31,7 +32,6 @@ defmodule CPubWeb.Router do
     resources "/activities", ActivityController, only: [:show]
     resources "/objects", ObjectController, only: [:show]
     get "/public", PublicController, :get_public
-
   end
 
   scope "/users", CPubWeb do
@@ -43,7 +43,5 @@ defmodule CPubWeb.Router do
       get "/outbox", UserController, :get_outbox
       get "/inbox", UserController, :get_inbox
     end
-
   end
-
 end

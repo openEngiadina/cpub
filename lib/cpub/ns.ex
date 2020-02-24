@@ -5,22 +5,25 @@ defmodule CPub.NS do
 
   use RDF.Vocabulary.Namespace
 
-  defvocab ActivityStreams,
+  defvocab(ActivityStreams,
     base_iri: "http://www.w3.org/ns/activitystreams#",
     file: "activitystreams2.ttl"
+  )
 
-  defvocab LDP,
+  defvocab(LDP,
     base_iri: "http://www.w3.org/ns/ldp#",
     file: "ldp.ttl",
     ignore: ["PreferEmptyContainer"]
+  )
 
-  defvocab DCTERMS,
+  defvocab(DCTERMS,
     base_iri: "http://purl.org/dc/terms/",
     file: "dcterms.ttl",
     ignore: ["ISO639-2", "ISO639-3"]
+  )
 
-  defvocab ACL,
+  defvocab(ACL,
     base_iri: "http://www.w3.org/ns/auth/acl#",
     file: "acl.ttl"
-
+  )
 end
