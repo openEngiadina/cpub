@@ -48,7 +48,8 @@ defmodule CPub.MixProject do
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.0.2"},
       {:basic_auth, "~> 2.2.2"},
-      {:cors_plug, "~> 2.0"}
+      {:cors_plug, "~> 2.0"},
+      {:credo, "~> 1.2", only: [:dev, :test], runtime: false}
     ]
   end
 
