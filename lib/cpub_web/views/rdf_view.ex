@@ -5,12 +5,10 @@ defmodule CPubWeb.RDFView do
   use CPubWeb, :view
 
   def render("show.json", %{data: data}) do
-    data
-    |> RDF.JSON.Encoder.from_rdf!()
+    RDF.JSON.Encoder.from_rdf!(data)
   end
 
   def render("show.ttl", %{data: data}) do
-    data
-    |> RDF.Turtle.Encoder.encode!()
+    RDF.Turtle.Encoder.encode!(data)
   end
 end

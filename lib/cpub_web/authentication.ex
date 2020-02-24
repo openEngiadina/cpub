@@ -11,12 +11,10 @@ defmodule CPubWeb.Authentication do
   def verify_user(conn, username, password) do
     case CPub.User.verify_user(username, password) do
       {:ok, user} ->
-        conn
-        |> assign(:user, user)
+        assign(conn, :user, user)
 
       _ ->
-        conn
-        |> halt
+        halt(conn)
     end
   end
 end

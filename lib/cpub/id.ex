@@ -1,4 +1,8 @@
 defmodule CPub.ID do
+  @moduledoc """
+  Implements the `Ecto.Type` behaviour for `CPub.ID`.
+  """
+
   use Ecto.Type
 
   alias RDF.IRI
@@ -9,12 +13,12 @@ defmodule CPub.ID do
 
   # cast from string
   def cast(id) when is_binary(id) do
-    with iri <- IRI.new(id) do
-      if IRI.valid?(iri) do
-        {:ok, iri}
-      else
+    with iri <- IRI.new(id),
+         true <- IRI.valid?(iri) do
+      {:ok, iri}
+    else
+      _ ->
         {:error, "invalid IRI"}
-      end
     end
   end
 
@@ -41,41 +45,28 @@ defmodule CPub.ID do
     {:ok, IRI.new(data)}
   end
 
-  defp get_id_prefix(type) do
-    case type do
-      :actor ->
-        "actors"
-
-      :container ->
-        "containers"
-
-      :activity ->
-        "activities"
-
-      _ ->
-        "objects"
-    end
-  end
+  defp get_id_prefix(:actor), do: "actors"
+  defp get_id_prefix(:container), do: "containers"
+  defp get_id_prefix(:activity), do: "activities"
+  defp get_id_prefix(_), do: "objects"
 
   def extend(%IRI{} = base, rel) do
-    ((base |> IRI.to_string()) <> "/" <> rel)
-    |> IRI.new!()
+    IRI.new!("#{IRI.to_string(base)}/#{rel}")
   end
 
   def merge_with_base_url(rel) do
-    URI.merge(
-      Application.get_env(:cpub, :base_url),
-      rel
-    )
+    Application.get_env(:cpub, :base_url)
+    |> URI.merge(rel)
     |> IRI.new!()
   end
 
   def generate(opts \\ []) do
     id_prefix =
-      Keyword.get(opts, :type, :objects)
+      opts
+      |> Keyword.get(:type, :objects)
       |> get_id_prefix()
 
-    merge_with_base_url(id_prefix <> "/" <> Ecto.UUID.generate())
+    merge_with_base_url("#{id_prefix}/#{Ecto.UUID.generate()}")
   end
 
   def autogenerate(opts \\ []) do
@@ -96,25 +87,23 @@ defmodule CPub.ID do
   """
   def validate(changeset) do
     changeset
+    |> ensure_id()
+    |> validate_local_id()
+  end
 
-    # autogenerate an id if not set
-    |> (fn changeset ->
-          if is_nil(Ecto.Changeset.get_field(changeset, :id)) do
-            changeset
-            |> Ecto.Changeset.put_change(:id, generate())
-          else
-            changeset
-          end
-        end).()
+  defp ensure_id(%Ecto.Changeset{} = changeset) do
+    if is_nil(Ecto.Changeset.get_field(changeset, :id)) do
+      Ecto.Changeset.put_change(changeset, :id, generate())
+    else
+      changeset
+    end
+  end
 
-    # check that id is local
-    |> (fn changeset ->
-          if is_local?(Ecto.Changeset.get_field(changeset, :id)) do
-            changeset
-          else
-            changeset
-            |> Ecto.Changeset.add_error(:id, "not a local id")
-          end
-        end).()
+  defp validate_local_id(%Ecto.Changeset{} = changeset) do
+    if is_local?(Ecto.Changeset.get_field(changeset, :id)) do
+      changeset
+    else
+      Ecto.Changeset.add_error(changeset, :id, "not a local id")
+    end
   end
 end

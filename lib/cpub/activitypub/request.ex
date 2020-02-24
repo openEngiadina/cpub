@@ -5,12 +5,10 @@ defmodule CPub.ActivityPub.Request do
   Inspired by Plug.
   """
 
-  alias Ecto.Multi
-
-  alias CPub.Repo
-  alias CPub.User
-  alias CPub.Activity
   alias CPub.ActivityPub.Request
+  alias CPub.{Repo, User}
+
+  alias Ecto.Multi
 
   defstruct [:multi, :id, :object_id, :activity, :data, :user]
 
@@ -43,11 +41,10 @@ defmodule CPub.ActivityPub.Request do
   Cause the request to fail with error.
   """
   def error(request, name, error) do
-    %{request | multi: request.multi |> Multi.error(name, error)}
+    %{request | multi: Multi.error(request.multi, name, error)}
   end
 
   def commit(%Request{} = request) do
-    request.multi
-    |> Repo.transaction()
+    Repo.transaction(request.multi)
   end
 end

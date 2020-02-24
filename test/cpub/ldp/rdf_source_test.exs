@@ -3,9 +3,9 @@ defmodule CPub.LDP.RDFSourceTest do
   use ExUnitProperties
   use CPub.DataCase
 
-  doctest CPub.LDP.RDFSource
-
   alias CPub.LDP
+
+  doctest CPub.LDP.RDFSource
 
   test "create and get RDF data" do
     check all(

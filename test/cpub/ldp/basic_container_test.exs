@@ -3,10 +3,10 @@ defmodule CPub.LDP.BasicContainerTest do
   use ExUnitProperties
   use CPub.DataCase
 
-  doctest CPub.LDP.BasicContainer
-
-  alias CPub.LDP.BasicContainer
   alias CPub.LDP
+  alias CPub.LDP.BasicContainer
+
+  doctest CPub.LDP.BasicContainer
 
   test "create" do
     assert {:ok, %BasicContainer{}} = LDP.create_basic_container()

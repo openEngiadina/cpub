@@ -1,14 +1,14 @@
 defmodule CPub.User do
+  @behaviour Access
+
   use Ecto.Schema
+
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
-
-  @behaviour Access
-
-  alias CPub.User
+  alias CPub.{Repo, User}
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   @foreign_key_type CPub.ID
@@ -36,40 +36,31 @@ defmodule CPub.User do
     password = Keyword.get(opts, :password)
 
     # set the ID to "/users/<username>"
-    id =
-      ("users/" <> username)
-      |> CPub.ID.merge_with_base_url()
+    id = CPub.ID.merge_with_base_url("users/#{username}")
+    inbox_id = CPub.ID.merge_with_base_url("users/#{username}/inbox")
+    outbox_id = CPub.ID.merge_with_base_url("users/#{username}/outbox")
 
-    inbox_id =
-      ("users/" <> username <> "/inbox")
-      |> CPub.ID.merge_with_base_url()
+    default_profile =
+      RDF.Description.new(id)
+      |> RDF.Description.add(RDF.type(), AS.Person)
+      |> RDF.Description.add(LDP.inbox(), inbox_id)
+      |> RDF.Description.add(AS.outbox(), outbox_id)
 
-    outbox_id =
-      ("users/" <> username <> "/outbox")
-      |> CPub.ID.merge_with_base_url()
-
-    profile =
-      Keyword.get(
-        opts,
-        :profile,
-        RDF.Description.new(id)
-        |> RDF.Description.add(RDF.type(), AS.Person)
-        |> RDF.Description.add(LDP.inbox(), inbox_id)
-        |> RDF.Description.add(AS.outbox(), outbox_id)
-      )
+    profile = Keyword.get(opts, :profile, default_profile)
 
     %User{id: id}
     |> changeset(%{username: username, password: password, profile: profile})
-    |> CPub.Repo.insert()
+    |> Repo.insert()
   end
 
   def verify_user(username, password) do
-    CPub.Repo.get_by(User, username: username)
+    User
+    |> Repo.get_by(username: username)
     |> Pbkdf2.check_pass(password, hash_key: :password)
   end
 
   def get_user(username) do
-    CPub.Repo.get_by(User, username: username)
+    Repo.get_by(User, username: username)
   end
 
   @doc """
@@ -80,8 +71,9 @@ defmodule CPub.User do
       from a in CPub.Activity,
         where: ^user.id in a.recipients
 
-    CPub.Repo.all(inbox_query)
-    |> CPub.Repo.preload(:object)
+    inbox_query
+    |> Repo.all()
+    |> Repo.preload(:object)
   end
 
   @doc """
@@ -92,8 +84,9 @@ defmodule CPub.User do
       from a in CPub.Activity,
         where: ^user.id == a.actor
 
-    CPub.Repo.all(outbox_query)
-    |> CPub.Repo.preload(:object)
+    outbox_query
+    |> Repo.all()
+    |> Repo.preload(:object)
   end
 
   @doc """

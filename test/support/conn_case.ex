@@ -15,6 +15,8 @@ defmodule CPubWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  alias Ecto.Adapters.SQL
+
   using do
     quote do
       # Import conveniences for testing with connections
@@ -27,10 +29,10 @@ defmodule CPubWeb.ConnCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(CPub.Repo)
+    :ok = SQL.Sandbox.checkout(CPub.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(CPub.Repo, {:shared, self()})
+      SQL.Sandbox.mode(CPub.Repo, {:shared, self()})
     end
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}

@@ -7,7 +7,7 @@ defmodule RDF.Graph.EctoType do
 
   use Ecto.Type
 
-  alias RDF.Graph
+  alias RDF.{Graph, JSON}
 
   def type do
     :map
@@ -21,10 +21,10 @@ defmodule RDF.Graph.EctoType do
   def cast(_), do: :error
 
   def dump(%Graph{} = data) do
-    RDF.JSON.Encoder.from_rdf(data)
+    JSON.Encoder.from_rdf(data)
   end
 
   def load(data) when is_map(data) do
-    RDF.JSON.Decoder.to_rdf(data)
+    JSON.Decoder.to_rdf(data)
   end
 end

@@ -6,10 +6,15 @@ defmodule CPub.Public do
   @doc """
   Returns all public activities.
   """
-  def get_public() do
-    public_collection = AS.Public |> RDF.IRI.new()
+  def get_public do
+    public_collection = RDF.IRI.new(AS.Public)
 
-    CPub.Repo.all(from a in CPub.Activity, where: ^public_collection in a.recipients)
+    public_query =
+      from a in CPub.Activity,
+        where: ^public_collection in a.recipients
+
+    public_query
+    |> CPub.Repo.all()
     |> CPub.Repo.preload(:object)
   end
 end

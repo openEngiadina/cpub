@@ -1,4 +1,8 @@
 defmodule RDF.IRI.EctoType do
+  @moduledoc """
+  Implements the `Ecto.Type` behaviour for `RDF.IRI`.
+  """
+
   use Ecto.Type
 
   alias RDF.IRI
@@ -9,12 +13,12 @@ defmodule RDF.IRI.EctoType do
 
   # cast from string
   def cast(id) when is_binary(id) do
-    with iri <- IRI.new(id) do
-      if IRI.valid?(iri) do
-        {:ok, iri}
-      else
+    with iri <- IRI.new(id),
+         true <- IRI.valid?(iri) do
+      {:ok, iri}
+    else
+      _ ->
         {:error, "invalid IRI"}
-      end
     end
   end
 

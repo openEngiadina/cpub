@@ -8,48 +8,49 @@ defmodule RDF.StreamData do
 
   import StreamData
 
-  def literal() do
-    one_of([integer(), string(:printable)])
+  def literal do
+    [integer(), string(:printable)]
+    |> one_of()
     |> map(&RDF.Literal.new/1)
   end
 
-  def bnode() do
-    # note we add ":" to blank node identifier so it gets the same value when deserialized from RDF/JSON.LD. Better would be an equality that can handle mismatch in blank node naming.
-    positive_integer()
-    |> map(&RDF.BlankNode.new/1)
+  def bnode do
+    # Note we add ":" to blank node identifier so it gets the same value when deserialized from RDF/JSON.LD.
+    # Better would be an equality that can handle mismatch in blank node naming.
+    map(positive_integer(), &RDF.BlankNode.new/1)
   end
 
-  def iri() do
+  def iri do
     scheme = one_of([constant("http"), constant("https")])
     host = string(:alphanumeric)
     path = map(list_of(string(:alphanumeric)), &Enum.join(&1, "/"))
 
-    tuple({scheme, host, path})
-    |> map(fn {scheme, host, path} ->
-      (scheme <> "://" <> host <> "/" <> path)
-      |> RDF.IRI.new!()
-    end)
+    {scheme, host, path}
+    |> tuple()
+    |> map(fn {scheme, host, path} -> RDF.IRI.new!("#{scheme}://#{host}/#{path}") end)
   end
 
-  def subject() do
+  def subject do
     one_of([iri(), bnode()])
   end
 
-  def object() do
+  def object do
     one_of([iri(), bnode(), literal()])
   end
 
-  def predicate() do
+  def predicate do
     iri()
   end
 
-  def triple() do
-    tuple({subject(), predicate(), object()})
+  def triple do
+    {subject(), predicate(), object()}
+    |> tuple()
     |> map(&RDF.Triple.new/1)
   end
 
-  def graph() do
-    list_of(triple())
+  def graph do
+    triple()
+    |> list_of()
     |> map(&RDF.Graph.new/1)
   end
 end

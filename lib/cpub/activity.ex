@@ -1,13 +1,12 @@
 defmodule CPub.Activity do
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  alias CPub.ActivityPub
-  alias CPub.NS.ActivityStreams, as: AS
-
   @behaviour Access
 
-  alias CPub.Activity
+  use Ecto.Schema
+
+  import Ecto.Changeset
+
+  alias CPub.{Activity, ActivityPub}
+  alias CPub.NS.ActivityStreams, as: AS
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   schema "activities" do
@@ -72,44 +71,39 @@ defmodule CPub.Activity do
   Like `Access.get` but takes a list of keys and returns list of values.
   """
   def get_all(container, keys, default \\ nil) do
-    keys
-    |> Enum.reduce([], &[Access.get(container, &1, default) | &2])
+    Enum.reduce(keys, [], &[Access.get(container, &1, default) | &2])
   end
 
   defp extract_recipients(activity) do
-    %{
-      activity
-      | recipients:
-          activity.data
-          |> get_all([AS.to(), AS.bto(), AS.cc(), AS.bcc(), AS.audience()], [])
-          |> Enum.concat()
-    }
+    recipients =
+      activity.data
+      |> get_all([AS.to(), AS.bto(), AS.cc(), AS.bcc(), AS.audience()], [])
+      |> Enum.concat()
+
+    %{activity | recipients: recipients}
   end
 
   defp remove_bcc(activity) do
-    %{
-      activity
-      | data:
-          activity.data
-          |> RDF.Description.delete_predicates(AS.bto())
-          |> RDF.Description.delete_predicates(AS.bcc())
-    }
+    data =
+      activity.data
+      |> RDF.Description.delete_predicates(AS.bto())
+      |> RDF.Description.delete_predicates(AS.bcc())
+
+    %{activity | data: data}
   end
 
   @doc """
   Returns true if description is an ActivityStreams activity, false otherwise.
   """
   def is_activity?(description) do
-    description[RDF.type()]
-    |> Enum.any?(&(&1 in ActivityPub.activity_types()))
+    Enum.any?(description[RDF.type()], &(&1 in ActivityPub.activity_types()))
   end
 
   defp validate_activity_type(changeset) do
     if is_activity?(get_field(changeset, :data)) do
       changeset
     else
-      changeset
-      |> add_error(:data, "not an ActivityPub activity")
+      add_error(changeset, :data, "not an ActivityPub activity")
     end
   end
 
@@ -117,24 +111,14 @@ defmodule CPub.Activity do
   Add objects to a predicate of an `CPub.Activity`.
   """
   def add(%Activity{} = activity, predicate, objects) do
-    %{
-      activity
-      | data:
-          activity.data
-          |> RDF.Description.add(predicate, objects)
-    }
+    %{activity | data: RDF.Description.add(activity.data, predicate, objects)}
   end
 
   @doc """
   Deletes all statements with the given predicates.
   """
   def delete_predicates(%Activity{} = activity, predicates) do
-    %{
-      activity
-      | data:
-          activity.data
-          |> RDF.Description.delete_predicates(predicates)
-    }
+    %{activity | data: RDF.Description.delete_predicates(activity.data, predicates)}
   end
 
   @doc """
@@ -176,13 +160,11 @@ defmodule CPub.Activity do
   """
   def to_rdf(activity) do
     activity_description =
-      activity.data
-      |> RDF.Description.add(AS.published(), activity.inserted_at)
+      RDF.Description.add(activity.data, AS.published(), activity.inserted_at)
 
     case activity.object do
       %CPub.Object{} = object ->
-        activity_description
-        |> RDF.Data.merge(object.data)
+        RDF.Data.merge(activity_description, object.data)
 
       _ ->
         activity_description

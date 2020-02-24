@@ -1,17 +1,18 @@
 defmodule CPubWeb.ActivityController do
   use CPubWeb, :controller
 
-  alias CPub.Activity
+  alias CPub.{Activity, Repo}
 
   action_fallback CPubWeb.FallbackController
 
   def show(conn, _params) do
     activity =
-      CPub.Repo.get!(Activity, conn.assigns[:id])
-      |> CPub.Repo.preload(:object)
+      Activity
+      |> Repo.get!(conn.assigns[:id])
+      |> Repo.preload(:object)
 
     conn
     |> put_view(RDFView)
-    |> render(:show, data: activity |> Activity.to_rdf())
+    |> render(:show, data: Activity.to_rdf(activity))
   end
 end

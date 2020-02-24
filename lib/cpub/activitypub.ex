@@ -3,13 +3,9 @@ defmodule CPub.ActivityPub do
   ActivityPub context
   """
 
-  alias CPub.NS.ActivityStreams, as: AS
-
-  alias CPub.Repo
-  alias CPub.User
-  alias CPub.Activity
-  alias CPub.Object
+  alias CPub.{Activity, Object, Repo, User}
   alias CPub.ActivityPub.Request
+  alias CPub.NS.ActivityStreams, as: AS
 
   @activitystreams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
   @doc """
@@ -70,39 +66,39 @@ defmodule CPub.ActivityPub do
     case request.activity[AS.actor()] do
       nil ->
         # set actor
-        %{
-          request
-          | activity:
-              request.activity
-              |> RDF.Description.add(AS.actor(), request.user.id)
-        }
+        %{request | activity: RDF.Description.add(request.activity, AS.actor(), request.user.id)}
 
       [actor_in_activity] ->
         if actor_in_activity != request.user.id do
-          request
-          |> Request.error(:ensure_correct_actor, "actor set in activity does not match user")
+          Request.error(
+            request,
+            :ensure_correct_actor,
+            "actor set in activity does not match user"
+          )
         end
 
       _ ->
-        request
-        |> Request.error(:ensure_correct_actor, "multiple actors in activity")
+        Request.error(request, :ensure_correct_actor, "multiple actors in activity")
     end
   end
 
   defp insert_activity(%Request{} = request) do
-    request
-    |> Request.insert(:activity, request.activity |> Activity.new() |> Activity.changeset())
+    activity =
+      request.activity
+      |> Activity.new()
+      |> Activity.changeset()
+
+    Request.insert(request, :activity, activity)
   end
 
   defp set_object_id(%Request{} = request) do
     if RDF.iri(AS.Create) in request.activity[RDF.type()] do
-      %{
-        request
-        | activity:
-            request.activity
-            |> RDF.Description.delete_predicates(AS.object())
-            |> RDF.Description.add(AS.object(), request.object_id)
-      }
+      activity =
+        request.activity
+        |> RDF.Description.delete_predicates(AS.object())
+        |> RDF.Description.add(AS.object(), request.object_id)
+
+      %{request | activity: activity}
     else
       # don't do anything if not a Create activity
       request
@@ -114,21 +110,18 @@ defmodule CPub.ActivityPub do
     if RDF.iri(AS.Create) in request.activity[RDF.type()] do
       case request.data[request.id][AS.object()] do
         [original_object_id] ->
-          # replace subject
-          request
-          |> Request.insert(
-            request.object_id,
+          object =
             Object.new(
               id: request.object_id,
               data: %{request.data[original_object_id] | subject: request.object_id},
               activity_id: request.id
             )
-            |> Object.changeset()
-          )
+
+          # replace subject
+          Request.insert(request, request.object_id, Object.changeset(object))
 
         _ ->
-          request
-          |> Request.error(:create_object, "could not find object")
+          Request.error(request, :create_object, "could not find object")
       end
     else
       request

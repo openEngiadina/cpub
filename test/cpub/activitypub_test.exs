@@ -2,21 +2,18 @@ defmodule CPub.ActivityPubTest do
   use ExUnit.Case
   use CPub.DataCase
 
-  doctest CPub.ActivityPub
-
   import RDF.Sigils
-  alias RDF.Graph
-  alias RDF.Description
 
-  alias CPub.Users
+  alias RDF.{Description, Graph}
 
   alias CPub.ActivityPub
   alias CPub.ActivityPub.Activity
   alias CPub.LDP
-  alias CPub.LDP.BasicContainer
-  alias CPub.LDP.RDFSource
-
+  alias CPub.LDP.{BasicContainer, RDFSource}
   alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.Users
+
+  doctest CPub.ActivityPub
 
   test "create activity" do
     # Create a user
