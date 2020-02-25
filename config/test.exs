@@ -16,3 +16,6 @@ config :cpub, CPub.Repo,
   database: "cpub_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :stream_data,
+  max_runs: if(System.get_env("CI"), do: 1_000, else: 50)

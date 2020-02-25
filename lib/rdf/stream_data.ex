@@ -48,6 +48,17 @@ defmodule RDF.StreamData do
     |> map(&RDF.Triple.new/1)
   end
 
+  def description do
+    {subject(), {predicate(), object()} |> list_of}
+    |> map(fn {subject, predicate_objects} ->
+      Enum.reduce(
+        predicate_objects,
+        RDF.Description.new(subject),
+        &RDF.Description.add(&2, elem(&1, 0), elem(&1, 1))
+      )
+    end)
+  end
+
   def graph do
     triple()
     |> list_of()
