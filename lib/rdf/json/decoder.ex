@@ -78,15 +78,15 @@ defmodule RDF.JSON.Decoder do
     with "_:" <> id <- Map.get(value_object, "value"), do: BlankNode.new(id)
   end
 
-  defp put_literal_datatype(literal, %{"datatype" => nil}), do: literal
-
   defp put_literal_datatype(literal, %{"datatype" => datatype}) do
     Literal.new!(literal.value, datatype: datatype)
   end
 
-  defp put_literal_language(literal, %{"lang" => nil}), do: literal
+  defp put_literal_datatype(literal, _value_object), do: literal
 
   defp put_literal_language(literal, %{"lang" => language}) do
     LangString.new!(literal, language: language)
   end
+
+  defp put_literal_language(literal, _value_object), do: literal
 end
