@@ -18,4 +18,5 @@ config :cpub, CPub.Repo,
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :stream_data,
-  max_runs: if(System.get_env("CI"), do: 1_000, else: 50)
+  # Run every property test for at most 10s in CI and 1.5s otherwise
+  max_run_time: if(System.get_env("CI"), do: 10_000, else: 1500)

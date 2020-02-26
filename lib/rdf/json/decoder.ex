@@ -8,8 +8,8 @@ defmodule RDF.JSON.Decoder do
   @impl Serialization.Decoder
   def decode(content, opts \\ []) do
     with {:ok, json_object} <- Jason.decode(content),
-         graph <- to_rdf(json_object, opts) do
-      {:ok, graph}
+         ok_graph <- to_rdf(json_object, opts) do
+      ok_graph
     end
   end
 
