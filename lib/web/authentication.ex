@@ -1,9 +1,9 @@
-defmodule CPubWeb.Authentication do
+defmodule CPub.Web.Authentication do
   @moduledoc """
   Authentication helpers
   """
 
-  use CPubWeb, :controller
+  use CPub.Web, :controller
 
   @doc """
   Verify username and password and assign user to connection or halt connection.

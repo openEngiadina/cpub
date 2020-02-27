@@ -1,10 +1,10 @@
-defmodule CPubWeb.PublicController do
-  use CPubWeb, :controller
+defmodule CPub.Web.PublicController do
+  use CPub.Web, :controller
 
   alias CPub.{Activity, Public}
   alias RDF.{Data, Graph}
 
-  action_fallback CPubWeb.FallbackController
+  action_fallback CPub.Web.FallbackController
 
   def get_public(conn, _params) do
     data =

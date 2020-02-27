@@ -1,10 +1,10 @@
-defmodule CPubWeb.UserController do
-  use CPubWeb, :controller
+defmodule CPub.Web.UserController do
+  use CPub.Web, :controller
 
   alias CPub.{Activity, ActivityPub, ID, Repo, User}
   alias RDF.{Data, Graph, IRI, Turtle}
 
-  action_fallback CPubWeb.FallbackController
+  action_fallback CPub.Web.FallbackController
 
   def show(conn, _params) do
     user = Repo.get!(User, conn.assigns[:id])

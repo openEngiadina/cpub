@@ -1,8 +1,8 @@
-defmodule CPubWeb.RDFView do
+defmodule CPub.Web.RDFView do
   @moduledoc """
   A generic view for anything that implements the `RDF.Data` protocol.
   """
-  use CPubWeb, :view
+  use CPub.Web, :view
 
   def render("show.json", %{data: data}) do
     RDF.JSON.Encoder.from_rdf!(data)

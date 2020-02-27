@@ -11,7 +11,7 @@ defmodule CPub.Application do
       # Start the Ecto repository
       CPub.Repo,
       # Start the endpoint when the application starts
-      CPubWeb.Endpoint
+      CPub.Web.Endpoint
       # Starts a worker by calling: CPub.Worker.start_link(arg)
       # {CPub.Worker, arg},
     ]
@@ -25,7 +25,7 @@ defmodule CPub.Application do
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   def config_change(changed, _new, removed) do
-    CPubWeb.Endpoint.config_change(changed, removed)
+    CPub.Web.Endpoint.config_change(changed, removed)
     :ok
   end
 end

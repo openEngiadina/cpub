@@ -1,12 +1,12 @@
-defmodule CPubWeb do
+defmodule CPub.Web do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use CPubWeb, :controller
-      use CPubWeb, :view
+      use CPub.Web, :controller
+      use CPub.Web, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,13 +19,13 @@ defmodule CPubWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: CPubWeb
+      use Phoenix.Controller, namespace: CPub.Web
 
       import Plug.Conn
-      import CPubWeb.Gettext
-      alias CPubWeb.Router.Helpers, as: Routes
+      import CPub.Web.Gettext
+      alias CPub.Web.Router.Helpers, as: Routes
 
-      alias CPubWeb.RDFView
+      alias CPub.Web.RDFView
     end
   end
 
@@ -33,14 +33,14 @@ defmodule CPubWeb do
     quote do
       use Phoenix.View,
         root: "lib/cpub_web/templates",
-        namespace: CPubWeb
+        namespace: CPub.Web
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
 
-      import CPubWeb.ErrorHelpers
-      import CPubWeb.Gettext
-      alias CPubWeb.Router.Helpers, as: Routes
+      import CPub.Web.ErrorHelpers
+      import CPub.Web.Gettext
+      alias CPub.Web.Router.Helpers, as: Routes
     end
   end
 
@@ -55,7 +55,7 @@ defmodule CPubWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import CPubWeb.Gettext
+      import CPub.Web.Gettext
     end
   end
 

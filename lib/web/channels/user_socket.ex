@@ -1,8 +1,8 @@
-defmodule CPubWeb.UserSocket do
+defmodule CPub.Web.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", CPubWeb.RoomChannel
+  # channel "room:*", CPub.Web.RoomChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -26,7 +26,7 @@ defmodule CPubWeb.UserSocket do
   # Would allow you to broadcast a "disconnect" event and terminate
   # all active sockets and channels for a given user:
   #
-  #     CPubWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
+  #     CPub.Web.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
   def id(_socket), do: nil
