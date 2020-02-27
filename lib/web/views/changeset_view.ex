@@ -1,5 +1,5 @@
-defmodule CPubWeb.ChangesetView do
-  use CPubWeb, :view
+defmodule CPub.Web.ChangesetView do
+  use CPub.Web, :view
 
   @doc """
   Traverses and translates changeset errors.

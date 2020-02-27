@@ -1,5 +1,5 @@
-defmodule CPubWeb.ErrorView do
-  use CPubWeb, :view
+defmodule CPub.Web.ErrorView do
+  use CPub.Web, :view
 
   # If you want to customize a particular status code
   # for a certain format, you may uncomment below.

@@ -1,7 +1,7 @@
-defmodule CPubWeb.Endpoint do
+defmodule CPub.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :cpub
 
-  socket "/socket", CPubWeb.UserSocket,
+  socket "/socket", CPub.Web.UserSocket,
     websocket: true,
     longpoll: false
 
@@ -42,5 +42,5 @@ defmodule CPubWeb.Endpoint do
 
   plug CORSPlug
 
-  plug CPubWeb.Router
+  plug CPub.Web.Router
 end

@@ -1,5 +1,5 @@
-defmodule CPubWeb.Router do
-  use CPubWeb, :router
+defmodule CPub.Web.Router do
+  use CPub.Web, :router
 
   @doc """
   Cast the request URL to a valid ID (IRI) and assign to connection.
@@ -23,10 +23,10 @@ defmodule CPubWeb.Router do
   end
 
   pipeline :authenticated do
-    plug BasicAuth, callback: &CPubWeb.Authentication.verify_user/3
+    plug BasicAuth, callback: &CPub.Web.Authentication.verify_user/3
   end
 
-  scope "/", CPubWeb do
+  scope "/", CPub.Web do
     pipe_through :api
 
     resources "/activities", ActivityController, only: [:show]
@@ -34,7 +34,7 @@ defmodule CPubWeb.Router do
     get "/public", PublicController, :get_public
   end
 
-  scope "/users", CPubWeb do
+  scope "/users", CPub.Web do
     pipe_through :api
     pipe_through :authenticated
 

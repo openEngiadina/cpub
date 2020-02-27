@@ -1,9 +1,9 @@
-defmodule CPubWeb.ActivityController do
-  use CPubWeb, :controller
+defmodule CPub.Web.ActivityController do
+  use CPub.Web, :controller
 
   alias CPub.{Activity, Repo}
 
-  action_fallback CPubWeb.FallbackController
+  action_fallback CPub.Web.FallbackController
 
   def show(conn, _params) do
     activity =
