@@ -13,7 +13,7 @@ config :cpub,
   base_url: "http://localhost:4000/"
 
 # Configures the endpoint
-config :cpub, CPubWeb.Endpoint,
+config :cpub, CPub.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "tohOUv9KpQMbJJ4XMCUhibCzI/kt6yhXXwkeWYCHy+FfDx55PHnkoqAe11nOk6fq",
   render_errors: [view: CPubWeb.ErrorView, accepts: ~w(json)],
