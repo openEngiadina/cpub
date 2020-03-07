@@ -1,30 +1,6 @@
-#+TITLE: CPub
+#+TITLE: Example
 
-A semantic ActivityPub server.
-
-* About
-
-CPub is a general [[https://www.w3.org/TR/activitypub/][ActivityPub]] server built upon Semantic Web ideas. Most notably it also implements a [[https://www.w3.org/TR/ldp/][Linked Data Platform (LDP)]] and uses [[https://www.w3.org/TR/turtle/][RDF Turtle]] as serialization for data.
-
-The project goals are:
-
-- Develop a general ActivityPub server that can be used to create any kind of structured content.
-- Experiment with using Linked Data (RDF) as data model for everything.
-
-CPub is developed as part of the [[https://openengiadina.net/][openEngiadina]] platform for open local knowledge.
-
-* Quick start
-
-To start the CPub server:
-
-  * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.setup`
-  * Start Phoenix endpoint with `mix phx.server`
-
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
-
-* Example
-** Create a User
+* Create a User
 
 Users can be created from the Elixir shell.
 
@@ -140,7 +116,7 @@ Both inbox and outbox are still empty.
 
 Note that the inbox and outbox are both a Linked Data Platform basic containers and ActivityStreams collection.
 
-** Posting an Activity
+* Posting an Activity
 
 We create another user ~bob~:
 
@@ -389,7 +365,7 @@ Accept: text/turtle
 // Request duration: 0.371612s
 #+END_SRC
 
-** Public addressing
+* Public addressing
 
 Alice can create a note that should be publicly accessible by addressing it to the special public collection (~https://www.w3.org/ns/activitystreams#Public~).
 
@@ -529,12 +505,12 @@ Accept: text/turtle
 // Request duration: 0.008554s
 #+END_SRC
 
-** Generality
+* Generality
 
 CPub has an understanding of what activities are (as defined in ActivityStreams) and uses this understanding to figure out what to do when you post something to an outbox.
 
 Other than that, CPub is completely oblivious to what kind of data you create, share or link to (as long as it is RDF).
-*** Event
+** Event
 
 For example we can create an event instead of a note (using the schema.org vocabulary):
 
@@ -623,7 +599,7 @@ Accept: text/turtle
 
 The event can be commented on, liked or shared, like any other ActivityPub object.
 
-*** Geo data
+** Geo data
 
 It is also possible to post geospatial data. For example a geo-tagged note:
 

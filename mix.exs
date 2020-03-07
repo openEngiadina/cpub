@@ -17,8 +17,8 @@ defmodule CPub.MixProject do
       homepage_url: "https://openengiadina.net/",
       source_url: "https://gitlab.com/openengiadina/cpub",
       docs: [
-        extras: ["CHANGELOG.md"] ++ Path.wildcard("docs/*.md"),
-        main: "changelog",
+        extras: ["README.md", "CHANGELOG.md"] ++ Path.wildcard("docs/*.md"),
+        main: "readme",
         # TODO: to some nicer grouping
         groups_for_modules: [
           Schema: [CPub.Object, CPub.User, CPub.Activity],
