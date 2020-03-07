@@ -10,7 +10,23 @@ defmodule CPub.MixProject do
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+
+      # Docs
+      name: "CPub",
+      homepage_url: "https://openengiadina.net/",
+      source_url: "https://gitlab.com/openengiadina/cpub",
+      docs: [
+        extras: ["CHANGELOG.md"] ++ Path.wildcard("docs/*.md"),
+        main: "changelog",
+        # TODO: to some nicer grouping
+        groups_for_modules: [
+          Schema: [CPub.Object, CPub.User, CPub.Activity],
+          Namespaces: [CPub.NS],
+          Types: [CPub.ID],
+          RDF: [RDF.JSON]
+        ]
+      ]
     ]
   end
 
@@ -49,7 +65,8 @@ defmodule CPub.MixProject do
       {:pbkdf2_elixir, "~> 1.0.2"},
       {:basic_auth, "~> 2.2.2"},
       {:cors_plug, "~> 2.0"},
-      {:credo, "~> 1.2", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
     ]
   end
 
