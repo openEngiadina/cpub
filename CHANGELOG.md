@@ -4,7 +4,10 @@
 
 Initial alpha release.
 
-- Implement ActivityPub Client-to-Server (C2S) protocol (with RDF/Turtle
+### Added
+
+- Initial ActivityPub Client-to-Server (C2S) protocol (with RDF/Turtle
   serialization)
 - Expose collections of a activities as Linked Data Platform BasicContainer and
   ActivityStreams Collections
+- Authentication with Basic Auth

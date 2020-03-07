@@ -63,14 +63,12 @@ defmodule CPub.User do
     Repo.get_by(User, username: username)
   end
 
-  defp get_inbox_id(user) do
-    user[LDP.inbox()]
-    |> List.first()
+  def get_inbox_id(user) do
+    CPub.ID.merge_with_base_url("users/#{user.username}/inbox")
   end
 
-  defp get_outbox_id(user) do
-    user[AS.outbox()]
-    |> List.first()
+  def get_outbox_id(user) do
+    CPub.ID.merge_with_base_url("users/#{user.username}/outbox")
   end
 
   @doc """

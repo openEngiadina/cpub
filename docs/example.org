@@ -12,12 +12,9 @@ CPub.User.create_user(username: "alice", password: "123")
 
 This creates the user, an actor profile, inbox and outbox for the user and inserts it into the database in a transaction.
 
-Public access to the profile is not yet implemented and we need to authenticate to the system. We can do this with HTTP Basic Authentication. We base64 encode the string ~alice:123~ and add it as a header to our HTTP requests:
-
 #+BEGIN_SRC restclient :exports both
 GET http://localhost:4000/users/alice
 Accept: text/turtle
-Authorization: Basic YWxpY2U6MTIz
 #+END_SRC
 
 #+RESULTS:
@@ -41,13 +38,16 @@ Authorization: Basic YWxpY2U6MTIz
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 437
 // content-type: text/turtle; charset=utf-8
-// date: Sat, 07 Mar 2020 10:39:30 GMT
+// date: Sat, 07 Mar 2020 20:51:31 GMT
 // server: Cowboy
-// x-request-id: Ffn_aObK8hktf70AAAJB
-// Request duration: 0.677490s
+// x-request-id: FfoIPjpTWqxtFTQAAELD
+// Request duration: 0.027563s
 #+END_SRC
 
-An inbox and outbox has been created for the actor. Both can be accessed:
+An inbox and outbox has been created for the actor. Both can be accessed, but we
+need to be authenticated first.
+
+We can authenticate as Alice with HTTP Basic Authentication. We base64 encode the string ~alice:123~ and add it as a header to our HTTP requests:
 
 #+BEGIN_SRC restclient :exports both
 GET http://localhost:4000/users/alice/inbox
@@ -74,14 +74,14 @@ Authorization: Basic YWxpY2U6MTIz
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 350
 // content-type: text/turtle; charset=utf-8
-// date: Sat, 07 Mar 2020 10:39:36 GMT
+// date: Sat, 07 Mar 2020 21:14:10 GMT
 // server: Cowboy
-// x-request-id: Ffn_aoJyVfScFnwAAAKB
-// Request duration: 0.372242s
+// x-request-id: FfoJfbJBXkV2EY0AAFUi
+// Request duration: 0.527346s
 #+END_SRC
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/users/alice/inbox
+GET http://localhost:4000/users/alice/outbox
 Accept: text/turtle
 Authorization: Basic YWxpY2U6MTIz
 #+END_SRC
@@ -94,21 +94,21 @@ Authorization: Basic YWxpY2U6MTIz
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/users/alice/inbox>
+<http://localhost:4000/users/alice/outbox>
     a as:Collection, ldp:BasicContainer .
 
-// GET http://localhost:4000/users/alice/inbox
+// GET http://localhost:4000/users/alice/outbox
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
 // access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 350
+// content-length: 351
 // content-type: text/turtle; charset=utf-8
-// date: Sat, 07 Mar 2020 10:39:43 GMT
+// date: Sat, 07 Mar 2020 21:17:25 GMT
 // server: Cowboy
-// x-request-id: Ffn_bC-lgtsoHEsAAALB
-// Request duration: 0.370901s
+// x-request-id: FfoiOIC8C1_gNwQAAABC
+// Request duration: 0.760115s
 #+END_SRC
 
 

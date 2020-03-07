@@ -35,20 +35,30 @@ defmodule CPub.Web.UserController do
   def get_inbox(conn, _params) do
     user = conn.assigns.user
 
-    data = User.get_inbox(user)
+    if User.get_inbox_id(user) == conn.assigns.id do
+      data = User.get_inbox(user)
 
-    conn
-    |> put_view(RDFView)
-    |> render(:show, data: data)
+      conn
+      |> put_view(RDFView)
+      |> render(:show, data: data)
+    else
+      conn
+      |> unauthorized
+    end
   end
 
   def get_outbox(conn, _params) do
     user = conn.assigns.user
 
-    data = User.get_outbox(user)
+    if User.get_outbox_id(user) == conn.assigns.id do
+      data = User.get_outbox(user)
 
-    conn
-    |> put_view(RDFView)
-    |> render(:show, data: data)
+      conn
+      |> put_view(RDFView)
+      |> render(:show, data: data)
+    else
+      conn
+      |> unauthorized
+    end
   end
 end

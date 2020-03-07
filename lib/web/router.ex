@@ -22,8 +22,18 @@ defmodule CPub.Web.Router do
     plug :assign_id
   end
 
+  pipeline :optionally_authenticated do
+    # This pipeline authenticates a user but does not fail.
+    # This is useful for endpoints that can be accessed by non-authenticated
+    # users and authenticated users. But authenticated users get a different
+    # response.
+    plug CPub.Web.Authentication
+  end
+
   pipeline :authenticated do
-    plug BasicAuth, callback: &CPub.Web.Authentication.verify_user/3
+    # This pipeline requires connection to be authenticated.
+    # If not a 401 is returned and connection is halted.
+    plug CPub.Web.Authentication.Required
   end
 
   scope "/", CPub.Web do
@@ -36,9 +46,10 @@ defmodule CPub.Web.Router do
 
   scope "/users", CPub.Web do
     pipe_through :api
-    pipe_through :authenticated
+    pipe_through :optionally_authenticated
 
     resources "/", UserController, only: [:show] do
+      pipe_through :authenticated
       post "/outbox", UserController, :post_to_outbox
       get "/outbox", UserController, :get_outbox
       get "/inbox", UserController, :get_inbox
