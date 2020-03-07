@@ -1,4 +1,7 @@
 defmodule CPub.Activity do
+  @moduledoc """
+  Schema for Activity.
+  """
   @behaviour Access
 
   use Ecto.Schema

@@ -1,4 +1,7 @@
 defmodule CPub.Public do
+  @moduledoc """
+  Query to access public activities (aka the public timeline).
+  """
   import Ecto.Query, only: [from: 2]
 
   alias CPub.NS.ActivityStreams, as: AS

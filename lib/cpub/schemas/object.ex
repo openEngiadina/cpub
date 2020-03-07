@@ -1,4 +1,7 @@
 defmodule CPub.Object do
+  @moduledoc """
+  Schema for objects.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 

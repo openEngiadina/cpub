@@ -1,4 +1,7 @@
 defmodule CPub.User do
+  @moduledoc """
+  Schema for CPub user.
+  """
   @behaviour Access
 
   use Ecto.Schema
