@@ -61,14 +61,14 @@ Authorization: Basic YWxpY2U6MTIz
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 437
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:36:53 GMT
+// date: Sat, 07 Mar 2020 10:39:30 GMT
 // server: Cowboy
-// x-request-id: FfWCB0y520Ws_McAAAAD
-// Request duration: 2.581157s
+// x-request-id: Ffn_aObK8hktf70AAAJB
+// Request duration: 0.677490s
 #+END_SRC
 
 An inbox and outbox has been created for the actor. Both can be accessed:
@@ -87,19 +87,21 @@ Authorization: Basic YWxpY2U6MTIz
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
+<http://localhost:4000/users/alice/inbox>
+    a as:Collection, ldp:BasicContainer .
 
 // GET http://localhost:4000/users/alice/inbox
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 266
+// content-length: 350
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:37:29 GMT
+// date: Sat, 07 Mar 2020 10:39:36 GMT
 // server: Cowboy
-// x-request-id: FfWCD7XUpnRyEw4AAAAj
-// Request duration: 1.601806s
+// x-request-id: Ffn_aoJyVfScFnwAAAKB
+// Request duration: 0.372242s
 #+END_SRC
 
 #+BEGIN_SRC restclient :exports both
@@ -116,24 +118,27 @@ Authorization: Basic YWxpY2U6MTIz
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
+<http://localhost:4000/users/alice/inbox>
+    a as:Collection, ldp:BasicContainer .
 
 // GET http://localhost:4000/users/alice/inbox
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 266
+// content-length: 350
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:37:36 GMT
+// date: Sat, 07 Mar 2020 10:39:43 GMT
 // server: Cowboy
-// x-request-id: FfWCEWpX0tvHtsQAAABj
-// Request duration: 1.622297s
+// x-request-id: Ffn_bC-lgtsoHEsAAALB
+// Request duration: 0.370901s
 #+END_SRC
 
-Both inbox and outbox are emtpy.
 
-Note that currently the inbox and outbox are neither Linked Data Platform basic containers, nor ActivityStreams Collections. In the future they will be both.
+Both inbox and outbox are still empty.
+
+Note that the inbox and outbox are both a Linked Data Platform basic containers and ActivityStreams collection.
 
 ** Posting an Activity
 
@@ -168,14 +173,14 @@ Authorization: Basic Ym9iOjEyMw==
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 431
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:38:59 GMT
+// date: Sat, 07 Mar 2020 10:40:41 GMT
 // server: Cowboy
-// x-request-id: FfWCJOMN8W6xPW8AAACj
-// Request duration: 1.602624s
+// x-request-id: Ffn_eZQacpYEDbQAAALh
+// Request duration: 0.373162s
 #+END_SRC
 
 Now Alice can post a note to Bob:
@@ -205,22 +210,22 @@ _:object
 #+BEGIN_SRC js
 // POST http://localhost:4000/users/alice/outbox
 // HTTP/1.1 201 Created
-// Location: http://localhost:4000/activities/bc014788-a99a-456a-a6a9-aa23e56cbef0
+// Location: http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 0
-// date: Fri, 21 Feb 2020 19:39:31 GMT
+// date: Sat, 07 Mar 2020 10:40:48 GMT
 // server: Cowboy
-// x-request-id: FfWCLE7dzkUsxewAAAJh
-// Request duration: 1.723882s
+// x-request-id: Ffn_eyCsAx9uy0cAAAMB
+// Request duration: 0.400039s
 #+END_SRC
 
 The activity has been created and can be accessed:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/activities/bc014788-a99a-456a-a6a9-aa23e56cbef0
+GET http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6
 Accept: text/turtle
 #+END_SRC
 
@@ -232,29 +237,29 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/activities/bc014788-a99a-456a-a6a9-aa23e56cbef0>
+<http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6>
     a as:Create ;
     as:actor <http://localhost:4000/users/alice> ;
-    as:object <http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925> ;
-    as:published "2020-02-21T19:39:32"^^xsd:dateTime ;
+    as:object <http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a> ;
+    as:published "2020-03-07T10:40:48"^^xsd:dateTime ;
     as:to <http://localhost:4000/users/bob> .
 
-<http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925>
+<http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a>
     a as:Note ;
     as:content "Guten Tag!"@de, "Good day!"@en, "Grüezi"@gsw, "Bun di!"@roh .
 
-// GET http://localhost:4000/activities/bc014788-a99a-456a-a6a9-aa23e56cbef0
+// GET http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 758
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:40:01 GMT
+// date: Sat, 07 Mar 2020 10:41:08 GMT
 // server: Cowboy
-// x-request-id: FfWCM4AtBy7vSTsAAAKB
-// Request duration: 0.072606s
+// x-request-id: Ffn_gAMCH3jCyBgAAANh
+// Request duration: 0.015514s
 #+END_SRC
 
 Note that no authentication is required to access the activity. Simply the fact of knowing the id (which is not guessable) is enough to gain access.
@@ -262,7 +267,7 @@ Note that no authentication is required to access the activity. Simply the fact 
 The object has been included in the response, but has an id of it's own and can be accessed directly:
 
 #+BEGIN_SRC restclient :exports both
-GET http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925
+GET http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a
 Accept: text/turtle
 #+END_SRC
 
@@ -274,22 +279,22 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925>
+<http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a>
     a as:Note ;
     as:content "Guten Tag!"@de, "Good day!"@en, "Grüezi"@gsw, "Bun di!"@roh .
 
-// GET http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925
+// GET http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 430
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:44:27 GMT
+// date: Sat, 07 Mar 2020 10:41:40 GMT
 // server: Cowboy
-// x-request-id: FfWCcUNPCz6HsykAAATi
-// Request duration: 0.603724s
+// x-request-id: Ffn_h30fk5RW-vkAAAOh
+// Request duration: 0.007906s
 #+END_SRC
 
 The activity has also been placed in the Alice's outbox:
@@ -308,29 +313,34 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/activities/bc014788-a99a-456a-a6a9-aa23e56cbef0>
+<http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6>
     a as:Create ;
     as:actor <http://localhost:4000/users/alice> ;
-    as:object <http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925> ;
-    as:published "2020-02-21T19:39:32"^^xsd:dateTime ;
+    as:object <http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a> ;
+    as:published "2020-03-07T10:40:48"^^xsd:dateTime ;
     as:to <http://localhost:4000/users/bob> .
 
-<http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925>
+<http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a>
     a as:Note ;
     as:content "Guten Tag!"@de, "Good day!"@en, "Grüezi"@gsw, "Bun di!"@roh .
+
+<http://localhost:4000/users/alice/outbox>
+    a as:Collection, ldp:BasicContainer ;
+    as:items <http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6> ;
+    ldp:member <http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6> .
 
 // GET http://localhost:4000/users/alice/outbox
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 758
+// content-length: 1020
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:45:18 GMT
+// date: Sat, 07 Mar 2020 10:41:47 GMT
 // server: Cowboy
-// x-request-id: FfWCfPNE8DZ11-QAAAPh
-// Request duration: 1.574444s
+// x-request-id: Ffn_iQ5bfHZYKgkAAAPh
+// Request duration: 0.371201s
 #+END_SRC
 
 And in Bob's inbox:
@@ -349,29 +359,34 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/activities/bc014788-a99a-456a-a6a9-aa23e56cbef0>
+<http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6>
     a as:Create ;
     as:actor <http://localhost:4000/users/alice> ;
-    as:object <http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925> ;
-    as:published "2020-02-21T19:39:32"^^xsd:dateTime ;
+    as:object <http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a> ;
+    as:published "2020-03-07T10:40:48"^^xsd:dateTime ;
     as:to <http://localhost:4000/users/bob> .
 
-<http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925>
+<http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a>
     a as:Note ;
     as:content "Guten Tag!"@de, "Good day!"@en, "Grüezi"@gsw, "Bun di!"@roh .
+
+<http://localhost:4000/users/bob/inbox>
+    a as:Collection, ldp:BasicContainer ;
+    as:items <http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6> ;
+    ldp:member <http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6> .
 
 // GET http://localhost:4000/users/bob/inbox
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 758
+// content-length: 1017
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:45:30 GMT
+// date: Sat, 07 Mar 2020 10:41:57 GMT
 // server: Cowboy
-// x-request-id: FfWCf7k4yfu5dEcAAAQB
-// Request duration: 1.592423s
+// x-request-id: Ffn_i0wJXjtA0UMAAAQh
+// Request duration: 0.371612s
 #+END_SRC
 
 ** Public addressing
@@ -400,16 +415,16 @@ _:object
 #+BEGIN_SRC js
 // POST http://localhost:4000/users/alice/outbox
 // HTTP/1.1 201 Created
-// Location: http://localhost:4000/activities/a9ccba57-ae50-42dc-b2e9-62f2e175a1ed
+// Location: http://localhost:4000/activities/f8441b0b-734f-4aff-9aae-dd187e83949b
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
 // content-length: 0
-// date: Fri, 21 Feb 2020 19:47:51 GMT
+// date: Sat, 07 Mar 2020 10:42:13 GMT
 // server: Cowboy
-// x-request-id: FfWCoIhE1ITKGfsAAAVi
-// Request duration: 1.586085s
+// x-request-id: Ffn_jxZBZtab6sgAAARB
+// Request duration: 0.387603s
 #+END_SRC
 
 This activity has been placed in Alice's outbox:
@@ -428,40 +443,45 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/activities/a9ccba57-ae50-42dc-b2e9-62f2e175a1ed>
+<http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6>
     a as:Create ;
     as:actor <http://localhost:4000/users/alice> ;
-    as:object <http://localhost:4000/objects/e3869406-203a-463d-88b4-859bf5fba2b5> ;
-    as:published "2020-02-21T19:47:51"^^xsd:dateTime ;
-    as:to as:Public .
-
-<http://localhost:4000/activities/bc014788-a99a-456a-a6a9-aa23e56cbef0>
-    a as:Create ;
-    as:actor <http://localhost:4000/users/alice> ;
-    as:object <http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925> ;
-    as:published "2020-02-21T19:39:32"^^xsd:dateTime ;
+    as:object <http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a> ;
+    as:published "2020-03-07T10:40:48"^^xsd:dateTime ;
     as:to <http://localhost:4000/users/bob> .
 
-<http://localhost:4000/objects/428128f5-1bb5-475f-8de8-bac8e1736925>
+<http://localhost:4000/activities/f8441b0b-734f-4aff-9aae-dd187e83949b>
+    a as:Create ;
+    as:actor <http://localhost:4000/users/alice> ;
+    as:object <http://localhost:4000/objects/2497aa72-06e3-4bb9-a84c-a5aa0497fae3> ;
+    as:published "2020-03-07T10:42:14"^^xsd:dateTime ;
+    as:to as:Public .
+
+<http://localhost:4000/objects/2497aa72-06e3-4bb9-a84c-a5aa0497fae3>
+    a as:Note ;
+    as:content "Hi! This is a public note." .
+
+<http://localhost:4000/objects/b261ef5c-fd21-46e2-b0b1-a6c1febd936a>
     a as:Note ;
     as:content "Guten Tag!"@de, "Good day!"@en, "Grüezi"@gsw, "Bun di!"@roh .
 
-<http://localhost:4000/objects/e3869406-203a-463d-88b4-859bf5fba2b5>
-    a as:Note ;
-    as:content "Hi! This is a public note." .
+<http://localhost:4000/users/alice/outbox>
+    a as:Collection, ldp:BasicContainer ;
+    as:items <http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6>, <http://localhost:4000/activities/f8441b0b-734f-4aff-9aae-dd187e83949b> ;
+    ldp:member <http://localhost:4000/activities/70478a98-f074-437c-b3af-7e4906aa29f6>, <http://localhost:4000/activities/f8441b0b-734f-4aff-9aae-dd187e83949b> .
 
 // GET http://localhost:4000/users/alice/outbox
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 1194
+// content-length: 1602
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:48:35 GMT
+// date: Sat, 07 Mar 2020 10:42:21 GMT
 // server: Cowboy
-// x-request-id: FfWCqsTEZ2NA0UMAAAQh
-// Request duration: 1.574214s
+// x-request-id: Ffn_kNq4PHk7AiAAAARh
+// Request duration: 0.371504s
 #+END_SRC
 
 It can also be accessed from the special endpoint for public activities:
@@ -479,29 +499,34 @@ Accept: text/turtle
 @prefix as: <http://www.w3.org/ns/activitystreams#> .
 @prefix ldp: <http://www.w3.org/ns/ldp#> .
 
-<http://localhost:4000/activities/a9ccba57-ae50-42dc-b2e9-62f2e175a1ed>
+<http://localhost:4000/activities/f8441b0b-734f-4aff-9aae-dd187e83949b>
     a as:Create ;
     as:actor <http://localhost:4000/users/alice> ;
-    as:object <http://localhost:4000/objects/e3869406-203a-463d-88b4-859bf5fba2b5> ;
-    as:published "2020-02-21T19:47:51"^^xsd:dateTime ;
+    as:object <http://localhost:4000/objects/2497aa72-06e3-4bb9-a84c-a5aa0497fae3> ;
+    as:published "2020-03-07T10:42:14"^^xsd:dateTime ;
     as:to as:Public .
 
-<http://localhost:4000/objects/e3869406-203a-463d-88b4-859bf5fba2b5>
+<http://localhost:4000/objects/2497aa72-06e3-4bb9-a84c-a5aa0497fae3>
     a as:Note ;
     as:content "Hi! This is a public note." .
+
+<http://localhost:4000/public>
+    a as:Collection, ldp:BasicContainer ;
+    as:items <http://localhost:4000/activities/f8441b0b-734f-4aff-9aae-dd187e83949b> ;
+    ldp:member <http://localhost:4000/activities/f8441b0b-734f-4aff-9aae-dd187e83949b> .
 
 // GET http://localhost:4000/public
 // HTTP/1.1 200 OK
 // access-control-allow-credentials: true
 // access-control-allow-origin: *
-// access-control-expose-headers: 
+// access-control-expose-headers:
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 701
+// content-length: 951
 // content-type: text/turtle; charset=utf-8
-// date: Fri, 21 Feb 2020 19:49:27 GMT
+// date: Sat, 07 Mar 2020 10:42:49 GMT
 // server: Cowboy
-// x-request-id: FfWCtzQjv8ub6sgAAARh
-// Request duration: 0.031754s
+// x-request-id: Ffn_l4CnlIyDIKUAAASh
+// Request duration: 0.008554s
 #+END_SRC
 
 ** Generality

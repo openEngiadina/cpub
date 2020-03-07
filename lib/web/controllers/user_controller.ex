@@ -1,8 +1,8 @@
 defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
-  alias CPub.{Activity, ActivityPub, ID, Repo, User}
-  alias RDF.{Data, Graph, IRI, Turtle}
+  alias CPub.{ActivityPub, ID, Repo, User}
+  alias RDF.{IRI, Turtle}
 
   action_fallback CPub.Web.FallbackController
 
@@ -35,10 +35,7 @@ defmodule CPub.Web.UserController do
   def get_inbox(conn, _params) do
     user = conn.assigns.user
 
-    data =
-      User.get_inbox(user)
-      |> Enum.map(&Activity.to_rdf/1)
-      |> Enum.reduce(Graph.new(), &Data.merge(&1, &2))
+    data = User.get_inbox(user)
 
     conn
     |> put_view(RDFView)
@@ -48,10 +45,7 @@ defmodule CPub.Web.UserController do
   def get_outbox(conn, _params) do
     user = conn.assigns.user
 
-    data =
-      User.get_outbox(user)
-      |> Enum.map(&Activity.to_rdf/1)
-      |> Enum.reduce(Graph.new(), &Data.merge(&1, &2))
+    data = User.get_outbox(user)
 
     conn
     |> put_view(RDFView)

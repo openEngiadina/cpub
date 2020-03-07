@@ -63,6 +63,16 @@ defmodule CPub.User do
     Repo.get_by(User, username: username)
   end
 
+  defp get_inbox_id(user) do
+    user[LDP.inbox()]
+    |> List.first()
+  end
+
+  defp get_outbox_id(user) do
+    user[AS.outbox()]
+    |> List.first()
+  end
+
   @doc """
   Returns a list of activities that are in the users inbox.
   """
@@ -74,6 +84,7 @@ defmodule CPub.User do
     inbox_query
     |> Repo.all()
     |> Repo.preload(:object)
+    |> CPub.Activity.as_container(get_inbox_id(user))
   end
 
   @doc """
@@ -87,6 +98,7 @@ defmodule CPub.User do
     outbox_query
     |> Repo.all()
     |> Repo.preload(:object)
+    |> CPub.Activity.as_container(get_outbox_id(user))
   end
 
   @doc """

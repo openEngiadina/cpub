@@ -6,6 +6,7 @@ defmodule CPub.Activity do
   import Ecto.Changeset
 
   alias CPub.{Activity, ActivityPub}
+  alias CPub.NS.LDP
   alias CPub.NS.ActivityStreams, as: AS
 
   @primary_key {:id, CPub.ID, autogenerate: true}
@@ -169,5 +170,24 @@ defmodule CPub.Activity do
       _ ->
         activity_description
     end
+  end
+
+  @doc """
+  Returns a RDF.Graph containing a list of Activities in a ldp:Container and in
+  an as:Collection.
+  """
+  def as_container(activities, id) do
+    activities
+    |> Enum.reduce(
+      RDF.Graph.new()
+      |> RDF.Graph.add(id, RDF.type(), LDP.BasicContainer)
+      |> RDF.Graph.add(id, RDF.type(), AS.Collection),
+      fn activity, graph ->
+        graph
+        |> RDF.Graph.add(id, LDP.member(), activity.id)
+        |> RDF.Graph.add(id, AS.items(), activity.id)
+        |> RDF.Data.merge(to_rdf(activity))
+      end
+    )
   end
 end
