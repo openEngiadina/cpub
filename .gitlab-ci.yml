@@ -26,8 +26,8 @@ mix:
 pages:
   script:
     - mix docs
-  artefacts:
+  artifacts:
     paths:
       - docs
-    only:
-      - master
+  only:
+    - master
