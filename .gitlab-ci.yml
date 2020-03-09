@@ -23,11 +23,11 @@ mix:
   script:
     - mix test
 
-pages:
-  script:
-    - mix docs
-  artifacts:
-    paths:
-      - docs
-  only:
-    - master
+# pages:
+#   script:
+#     - mix docs
+#   artifacts:
+#     paths:
+#       - docs
+#   only:
+#     - master
