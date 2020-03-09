@@ -1,0 +1,33 @@
+# GitLab CI configuration
+
+image: elixir:latest
+
+services:
+  - postgres:latest
+
+variables:
+  POSTGRES_DB: cpub_test
+  POSTGRES_HOST: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: "postgres"
+  MIX_ENV: "test"
+
+before_script:
+  # ensure that rebar and hex are available before getting deps
+  - mix local.rebar --force
+  - mix local.hex --force
+  - mix deps.get
+  - mix ecto.reset
+
+mix:
+  script:
+    - mix test
+
+pages:
+  script:
+    - mix docs
+  artefacts:
+    paths:
+      - docs
+    only:
+      - master

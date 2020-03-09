@@ -11,10 +11,10 @@ config :logger, level: :warn
 
 # Configure your database
 config :cpub, CPub.Repo,
-  username: "postgres",
-  password: "postgres",
-  database: "cpub_test",
-  hostname: "localhost",
+  username: System.get_env("POSTGRES_USER") || "postgres",
+  password: System.get_env("POSTGRES_PASSWORD") || "postgres",
+  database: System.get_env("POSTGRES_DB") || "cpub_test",
+  hostname: System.get_env("POSTGRES_HOST") || "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :stream_data,
