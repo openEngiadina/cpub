@@ -9,8 +9,8 @@ defmodule CPub.Activity do
   import Ecto.Changeset
 
   alias CPub.{Activity, ActivityPub}
-  alias CPub.NS.LDP
   alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.NS.LDP
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   schema "activities" do
