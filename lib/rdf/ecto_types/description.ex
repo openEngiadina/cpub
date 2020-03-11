@@ -10,21 +10,22 @@ defmodule RDF.Description.EctoType do
 
   alias RDF.{Description, Graph, IRI, JSON}
 
-  def type do
-    :map
-  end
+  @spec type :: :map
+  def type, do: :map
 
   @doc false
-  def cast(%Description{} = data) do
-    {:ok, data}
-  end
-
+  @spec cast(Description.t() | any) :: {:ok, Description.t()} | :error
+  def cast(%Description{} = data), do: {:ok, data}
   def cast(_), do: :error
 
+  @spec dump(Description.t()) ::
+          {:ok, %{String.t() => %{String.t() => [JSON.Encoder.value_object()]}}}
   def dump(%Description{} = data) do
     JSON.Encoder.from_rdf(data)
   end
 
+  @spec load(%{String.t() => %{String.t() => [JSON.Decoder.object()]}}) ::
+          {:ok, Description.t()} | :error
   def load(data) when is_map(data) do
     with {:ok, graph} <- JSON.Decoder.to_rdf(data) do
       case Graph.descriptions(graph) do
@@ -38,11 +39,13 @@ defmodule RDF.Description.EctoType do
 
         _ ->
           # If there are multiple descriptions we are probably trying to decode an RDF.Graph.
-          {:error, "more than one description in data"}
+          :error
       end
     end
   end
 
+  @spec load_empty_description(%{String.t() => %{String.t() => [JSON.Decoder.object()]}}) ::
+          {:ok, Description.t()} | :error
   defp load_empty_description(data) do
     case Map.keys(data) |> Enum.map(&IRI.new/1) do
       [subject] ->
@@ -50,7 +53,7 @@ defmodule RDF.Description.EctoType do
 
       _ ->
         # If there is no or multiple possible subject, fail
-        {:error, "could not load description"}
+        :error
     end
   end
 end

@@ -7,41 +7,27 @@ defmodule RDF.IRI.EctoType do
 
   alias RDF.IRI
 
-  def type do
-    :string
-  end
+  @spec type :: :string
+  def type, do: :string
 
-  # cast from string
+  @spec cast(IRI.t() | String.t() | any) :: {:ok, IRI.t()} | :error
   def cast(id) when is_binary(id) do
     with iri <- IRI.new(id),
          true <- IRI.valid?(iri) do
       {:ok, iri}
     else
       _ ->
-        {:error, "invalid IRI"}
+        :error
     end
   end
 
-  # cast from IRI
-  def cast(%IRI{} = iri) do
-    {:ok, iri}
-  end
+  def cast(%IRI{} = iri), do: {:ok, iri}
+  def cast(_), do: :error
 
-  # casting from anything else is an error
-  def cast(_) do
-    :error
-  end
+  @spec dump(IRI.t() | any) :: {:ok, IRI.t()} | :error
+  def dump(%IRI{} = iri), do: {:ok, IRI.to_string(iri)}
+  def dump(_), do: :error
 
-  # encode as string
-  def dump(%IRI{} = iri) do
-    {:ok, IRI.to_string(iri)}
-  end
-
-  def dump(_) do
-    :error
-  end
-
-  def load(data) when is_binary(data) do
-    {:ok, IRI.new(data)}
-  end
+  @spec load(String.t()) :: {:ok, IRI.t()}
+  def load(data) when is_binary(data), do: {:ok, IRI.new(data)}
 end
