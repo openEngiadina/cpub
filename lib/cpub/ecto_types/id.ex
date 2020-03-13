@@ -7,59 +7,49 @@ defmodule CPub.ID do
 
   alias RDF.IRI
 
-  def type do
-    :string
-  end
+  @spec type :: :string
+  def type, do: :string
 
-  # cast from string
+  @spec cast(IRI.t() | String.t() | any) :: {:ok, IRI.t()} | :error
   def cast(id) when is_binary(id) do
     with iri <- IRI.new(id),
          true <- IRI.valid?(iri) do
       {:ok, iri}
     else
       _ ->
-        {:error, "invalid IRI"}
+        :error
     end
   end
 
-  # cast from IRI
-  def cast(%IRI{} = iri) do
-    {:ok, iri}
-  end
+  def cast(%IRI{} = iri), do: {:ok, iri}
+  def cast(_), do: :error
 
-  # casting from anything else is an error
-  def cast(_) do
-    :error
-  end
+  @spec dump(IRI.t() | any) :: {:ok, IRI.t()} | :error
+  def dump(%IRI{} = iri), do: {:ok, IRI.to_string(iri)}
+  def dump(_), do: :error
 
-  # encode as string
-  def dump(%IRI{} = iri) do
-    {:ok, IRI.to_string(iri)}
-  end
+  @spec load(String.t()) :: {:ok, IRI.t()}
+  def load(data) when is_binary(data), do: {:ok, IRI.new(data)}
 
-  def dump(_) do
-    :error
-  end
-
-  def load(data) when is_binary(data) do
-    {:ok, IRI.new(data)}
-  end
-
+  @spec get_id_prefix(atom) :: String.t()
   defp get_id_prefix(:actor), do: "actors"
   defp get_id_prefix(:container), do: "containers"
   defp get_id_prefix(:activity), do: "activities"
   defp get_id_prefix(_), do: "objects"
 
+  @spec extend(IRI.t(), URI.t() | String.t()) :: IRI.t()
   def extend(%IRI{} = base, rel) do
     IRI.new!("#{IRI.to_string(base)}/#{rel}")
   end
 
+  @spec merge_with_base_url(URI.t() | String.t()) :: IRI.t()
   def merge_with_base_url(rel) do
     Application.get_env(:cpub, :base_url)
     |> URI.merge(rel)
     |> IRI.new!()
   end
 
+  @spec generate(keyword) :: IRI.t()
   def generate(opts \\ []) do
     id_prefix =
       opts
@@ -69,6 +59,7 @@ defmodule CPub.ID do
     merge_with_base_url("#{id_prefix}/#{Ecto.UUID.generate()}")
   end
 
+  @spec autogenerate(keyword) :: IRI.t()
   def autogenerate(opts \\ []) do
     generate(opts)
   end
@@ -76,6 +67,7 @@ defmodule CPub.ID do
   @doc """
   Returns true if id is a for a local resource, false if not.
   """
+  @spec is_local?(IRI.t()) :: boolean
   def is_local?(%IRI{} = iri) do
     iri
     |> IRI.to_string()
@@ -85,12 +77,14 @@ defmodule CPub.ID do
   @doc """
   Validate changeset for a local id. If no id is set a valid id will be generated and set.
   """
+  @spec validate(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   def validate(changeset) do
     changeset
     |> ensure_id()
     |> validate_local_id()
   end
 
+  @spec ensure_id(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp ensure_id(%Ecto.Changeset{} = changeset) do
     if is_nil(Ecto.Changeset.get_field(changeset, :id)) do
       Ecto.Changeset.put_change(changeset, :id, generate())
@@ -99,6 +93,7 @@ defmodule CPub.ID do
     end
   end
 
+  @spec validate_local_id(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_local_id(%Ecto.Changeset{} = changeset) do
     if is_local?(Ecto.Changeset.get_field(changeset, :id)) do
       changeset

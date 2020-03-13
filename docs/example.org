@@ -7,7 +7,7 @@ Users can be created from the Elixir shell.
 For example we create the user "alice" with password "123":
 
 #+BEGIN_SRC elixir
-CPub.User.create_user(username: "alice", password: "123")
+CPub.User.create(username: "alice", password: "123")
 #+END_SRC
 
 This creates the user, an actor profile, inbox and outbox for the user and inserts it into the database in a transaction.
@@ -121,7 +121,7 @@ Note that the inbox and outbox are both a Linked Data Platform basic containers 
 We create another user ~bob~:
 
 #+BEGIN_SRC elixir
-CPub.User.create_user(username: "bob", password: "123")
+CPub.User.create(username: "bob", password: "123")
 #+END_SRC
 
 We can get Bob's profile
