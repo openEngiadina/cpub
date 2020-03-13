@@ -154,7 +154,7 @@ defmodule CPub.Activity do
   See `RDF.Description.fetch`.
   """
   @impl Access
-  @spec fetch(t, atom) :: {:ok, any} :: :error
+  @spec fetch(t, atom) :: {:ok, any} | :error
   def fetch(%__MODULE__{data: data}, key) do
     Access.fetch(data, key)
   end
