@@ -15,6 +15,7 @@ defmodule CPub.Web.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
+  @spec connect(map, Phoenix.Socket.t(), map) :: {:ok, Phoenix.Socket.t()} | :error
   def connect(_params, socket, _connect_info) do
     {:ok, socket}
   end
@@ -29,5 +30,6 @@ defmodule CPub.Web.UserSocket do
   #     CPub.Web.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
+  @spec id(Phoenix.Socket.t()) :: String.t() | nil
   def id(_socket), do: nil
 end

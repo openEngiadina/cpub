@@ -5,6 +5,7 @@ defmodule CPub.Web.ObjectController do
 
   action_fallback CPub.Web.FallbackController
 
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, _params) do
     object = Repo.get!(Object, conn.assigns[:id])
 
