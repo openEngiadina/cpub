@@ -5,6 +5,7 @@ defmodule CPub.Web.PublicController do
 
   action_fallback CPub.Web.FallbackController
 
+  @spec get_public(Plug.Conn.t(), map) :: Plug.Conn.t()
   def get_public(conn, _params) do
     data =
       Public.get_public()

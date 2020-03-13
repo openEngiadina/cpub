@@ -5,15 +5,34 @@ defmodule CPub.ActivityPub.Request do
   Inspired by Plug.
   """
 
-  alias CPub.ActivityPub.Request
   alias CPub.{Repo, User}
 
   alias Ecto.Multi
 
+  @type t :: %__MODULE__{
+          multi: Multi.t(),
+          id: RDF.IRI.t(),
+          activity: RDF.Description.t(),
+          object_id: RDF.IRI.t(),
+          data: RDF.Graph.t(),
+          user: User.t()
+        }
+
+  @type operation ::
+          Ecto.Changeset.t()
+          | Ecto.Schema.t()
+          | (Ecto.Changeset.t() | Ecto.Schema.t() -> Ecto.Schema.t())
+
+  @type commit_result ::
+          {:ok, any}
+          | {:error, any}
+          | {:error, Ecto.Multi.name(), any, %{required(Ecto.Multi.name()) => any}}
+
   defstruct [:multi, :id, :object_id, :activity, :data, :user]
 
+  @spec new(RDF.IRI.t(), RDF.Graph.t(), User.t()) :: t
   def new(%RDF.IRI{} = id, %RDF.Graph{} = data, %User{} = user) do
-    %Request{
+    %__MODULE__{
       multi: Multi.new(),
       id: id,
       activity: data[id],
@@ -26,25 +45,29 @@ defmodule CPub.ActivityPub.Request do
   @doc """
   Helper to run Multi.insert on a request
   """
-  def insert(request, name, changeset_or_struct_or_fun, opts \\ []) do
-    %{request | multi: Multi.insert(request.multi, name, changeset_or_struct_or_fun, opts)}
+  @spec insert(t, any, operation, keyword) :: t
+  def insert(request, name, operation, opts \\ []) do
+    %{request | multi: Multi.insert(request.multi, name, operation, opts)}
   end
 
   @doc """
   Helper to run Multi.update on a request
   """
-  def update(request, name, changeset_or_struct_or_fun, opts \\ []) do
-    %{request | multi: Multi.update(request.multi, name, changeset_or_struct_or_fun, opts)}
+  @spec update(t, any, operation, keyword) :: t
+  def update(request, name, operation, opts \\ []) do
+    %{request | multi: Multi.update(request.multi, name, operation, opts)}
   end
 
   @doc """
   Cause the request to fail with error.
   """
+  @spec error(t, any, any) :: t
   def error(request, name, error) do
     %{request | multi: Multi.error(request.multi, name, error)}
   end
 
-  def commit(%Request{} = request) do
+  @spec commit(t) :: commit_result
+  def commit(%__MODULE__{} = request) do
     Repo.transaction(request.multi)
   end
 end

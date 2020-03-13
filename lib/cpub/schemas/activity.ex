@@ -2,15 +2,24 @@ defmodule CPub.Activity do
   @moduledoc """
   Schema for Activity.
   """
+
   @behaviour Access
 
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias CPub.{Activity, ActivityPub}
-  alias CPub.NS.LDP
+  alias CPub.{ActivityPub, ID, Object}
   alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.NS.LDP
+
+  @type t :: %__MODULE__{
+          id: RDF.IRI.t() | nil,
+          type: RDF.IRI.t() | nil,
+          actor: RDF.IRI.t() | nil,
+          recipients: [RDF.IRI.t()] | nil,
+          data: RDF.Description.t() | nil
+        }
 
   @primary_key {:id, CPub.ID, autogenerate: true}
   schema "activities" do
@@ -25,13 +34,33 @@ defmodule CPub.Activity do
 
     field :data, RDF.Description.EctoType
 
-    has_one :object, CPub.Object
+    has_one :object, Object
 
     timestamps()
   end
 
+  @spec changeset(t) :: Ecto.Changeset.t()
+  def changeset(activity) do
+    activity
+    |> change()
+    |> validate_required([:id, :actor, :data])
+    |> unique_constraint(:id, name: "activities_pkey")
+    |> validate_activity_type()
+    |> ID.validate()
+  end
+
+  @spec validate_activity_type(Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  defp validate_activity_type(changeset) do
+    if is_activity?(get_field(changeset, :data)) do
+      changeset
+    else
+      add_error(changeset, :data, "not an ActivityPub activity")
+    end
+  end
+
+  @spec new(RDF.Description.t()) :: t
   def new(%RDF.Description{} = activity) do
-    %Activity{data: activity}
+    %__MODULE__{data: activity}
     |> extract_id
     |> extract_type
     |> extract_actor
@@ -39,19 +68,12 @@ defmodule CPub.Activity do
     |> remove_bcc
   end
 
-  def changeset(activity) do
-    activity
-    |> change()
-    |> validate_required([:id, :actor, :data])
-    |> unique_constraint(:id, name: "activities_pkey")
-    |> validate_activity_type()
-    |> CPub.ID.validate()
-  end
-
+  @spec extract_id(t) :: t
   defp extract_id(activity) do
     %{activity | id: activity.data.subject}
   end
 
+  @spec extract_type(t) :: t
   defp extract_type(activity) do
     type =
       activity.data
@@ -61,6 +83,7 @@ defmodule CPub.Activity do
     %{activity | type: type}
   end
 
+  @spec extract_actor(t) :: t
   defp extract_actor(activity) do
     case activity.data[AS.actor()] do
       [actor] ->
@@ -71,13 +94,7 @@ defmodule CPub.Activity do
     end
   end
 
-  @doc """
-  Like `Access.get` but takes a list of keys and returns list of values.
-  """
-  def get_all(container, keys, default \\ nil) do
-    Enum.reduce(keys, [], &[Access.get(container, &1, default) | &2])
-  end
-
+  @spec extract_recipients(t) :: t
   defp extract_recipients(activity) do
     recipients =
       activity.data
@@ -87,6 +104,7 @@ defmodule CPub.Activity do
     %{activity | recipients: recipients}
   end
 
+  @spec remove_bcc(t) :: t
   defp remove_bcc(activity) do
     data =
       activity.data
@@ -96,32 +114,39 @@ defmodule CPub.Activity do
     %{activity | data: data}
   end
 
+  @spec get_all(RDF.Description.t(), [RDF.IRI.t()], any) :: [any]
+  defp get_all(container, keys, default) do
+    Enum.map(keys, &Access.get(container, &1, default))
+  end
+
   @doc """
   Returns true if description is an ActivityStreams activity, false otherwise.
   """
+  @spec is_activity?(RDF.Description.t()) :: boolean
   def is_activity?(description) do
-    Enum.any?(description[RDF.type()], &(&1 in ActivityPub.activity_types()))
-  end
-
-  defp validate_activity_type(changeset) do
-    if is_activity?(get_field(changeset, :data)) do
-      changeset
-    else
-      add_error(changeset, :data, "not an ActivityPub activity")
-    end
+    Enum.any?(description[RDF.type()] || [], &(&1 in ActivityPub.activity_types()))
   end
 
   @doc """
   Add objects to a predicate of an `CPub.Activity`.
   """
-  def add(%Activity{} = activity, predicate, objects) do
+  @spec add(
+          t,
+          RDF.Statement.coercible_predicate(),
+          RDF.Statement.coercible_object() | [RDF.Statement.coercible_object()]
+        ) :: t
+  def add(%__MODULE__{} = activity, predicate, objects) do
     %{activity | data: RDF.Description.add(activity.data, predicate, objects)}
   end
 
   @doc """
   Deletes all statements with the given predicates.
   """
-  def delete_predicates(%Activity{} = activity, predicates) do
+  @spec delete_predicates(
+          t,
+          RDF.Statement.coercible_predicate() | [RDF.Statement.coercible_predicate()]
+        ) :: t
+  def delete_predicates(%__MODULE__{} = activity, predicates) do
     %{activity | data: RDF.Description.delete_predicates(activity.data, predicates)}
   end
 
@@ -129,7 +154,8 @@ defmodule CPub.Activity do
   See `RDF.Description.fetch`.
   """
   @impl Access
-  def fetch(%Activity{data: data}, key) do
+  @spec fetch(t, atom) :: {:ok, any} | :error
+  def fetch(%__MODULE__{data: data}, key) do
     Access.fetch(data, key)
   end
 
@@ -137,7 +163,8 @@ defmodule CPub.Activity do
   See `RDF.Description.get_and_update`
   """
   @impl Access
-  def get_and_update(%Activity{} = activity, key, fun) do
+  @spec get_and_update(t, atom, fun) :: {any, t}
+  def get_and_update(%__MODULE__{} = activity, key, fun) do
     with {get_value, new_data} <- Access.get_and_update(activity.data, key, fun) do
       {get_value, %{activity | data: new_data}}
     end
@@ -147,7 +174,8 @@ defmodule CPub.Activity do
   See `RDF.Description.pop`.
   """
   @impl Access
-  def pop(%Activity{} = activity, key) do
+  @spec pop(t, atom) :: {any | nil, t}
+  def pop(%__MODULE__{} = activity, key) do
     case Access.pop(activity.data, key) do
       {nil, _} ->
         {nil, activity}
@@ -162,12 +190,13 @@ defmodule CPub.Activity do
 
   If object is loaded it will be included in returned data.
   """
+  @spec to_rdf(t) :: RDF.Description.t()
   def to_rdf(activity) do
     activity_description =
       RDF.Description.add(activity.data, AS.published(), activity.inserted_at)
 
     case activity.object do
-      %CPub.Object{} = object ->
+      %Object{} = object ->
         RDF.Data.merge(activity_description, object.data)
 
       _ ->
@@ -179,12 +208,13 @@ defmodule CPub.Activity do
   Returns a RDF.Graph containing a list of Activities in a ldp:Container and in
   an as:Collection.
   """
+  @spec as_container([t], RDF.IRI.t()) :: RDF.Graph.t()
   def as_container(activities, id) do
     activities
     |> Enum.reduce(
       RDF.Graph.new()
-      |> RDF.Graph.add(id, RDF.type(), LDP.BasicContainer)
-      |> RDF.Graph.add(id, RDF.type(), AS.Collection),
+      |> RDF.Graph.add(id, RDF.type(), RDF.iri(LDP.BasicContainer))
+      |> RDF.Graph.add(id, RDF.type(), RDF.iri(AS.Collection)),
       fn activity, graph ->
         graph
         |> RDF.Graph.add(id, LDP.member(), activity.id)

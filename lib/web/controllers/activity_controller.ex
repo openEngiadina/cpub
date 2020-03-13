@@ -5,6 +5,7 @@ defmodule CPub.Web.ActivityController do
 
   action_fallback CPub.Web.FallbackController
 
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, _params) do
     activity =
       Activity

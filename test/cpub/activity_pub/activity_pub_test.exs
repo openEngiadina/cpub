@@ -13,7 +13,7 @@ defmodule CPub.ActivityPubTest do
 
   property "create object" do
     # Create a user
-    {:ok, user} = CPub.User.create_user(username: "alice", password: "123")
+    {:ok, user} = CPub.User.create(username: "alice", password: "123")
 
     check all(object <- RDF.StreamData.description()) do
       activity_id = CPub.ID.generate(type: :activity)
@@ -37,8 +37,8 @@ defmodule CPub.ActivityPubTest do
                from o in CPub.Object, where: o.id in ^request.activity[AS.object()]
              )
 
-      # TODO: check that activity was placed in user outbox
-      # TODO: add recipients and check for proper delivery
+      # T O D O: check that activity was placed in user outbox
+      # T O D O: add recipients and check for proper delivery
     end
   end
 end

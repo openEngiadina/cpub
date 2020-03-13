@@ -10,7 +10,9 @@ defmodule CPub.MixProject do
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      dialyzer: dialyzer(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
 
       # Docs
       name: "CPub",
@@ -57,7 +59,7 @@ defmodule CPub.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:rdf, "~> 0.7.0"},
+      {:rdf, "~> 0.7.1"},
       {:sparql, "~> 0.3.4"},
       {:stream_data, "~> 0.4.3"},
       {:json_ld, "~> 0.3.0"},
@@ -65,7 +67,19 @@ defmodule CPub.MixProject do
       {:pbkdf2_elixir, "~> 1.0.2"},
       {:cors_plug, "~> 2.0"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.12.2", only: :test},
+      {:dialyxir, "~> 0.5.1", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp dialyzer do
+    # Dialyzer will emit a warning when the name of the plt file is set
+    # as people misused it in the past. Without setting a name caching of
+    # this file is much more trickier, so we still use this functionality.
+    [
+      plt_add_apps: [:mix],
+      ignore_warnings: ".dialyzer_ignore"
     ]
   end
 

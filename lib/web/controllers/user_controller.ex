@@ -6,6 +6,7 @@ defmodule CPub.Web.UserController do
 
   action_fallback CPub.Web.FallbackController
 
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, _params) do
     user = Repo.get!(User, conn.assigns[:id])
 
@@ -14,13 +15,16 @@ defmodule CPub.Web.UserController do
     |> render(:show, data: user.profile)
   end
 
-  defp read_rdf_body(conn, opts \\ []) do
+  @spec read_rdf_body(Plug.Conn.t(), keyword) ::
+          {:ok, RDF.Graph.t() | RDF.Dataset.t(), Plug.Conn.t()} | {:error, any}
+  defp read_rdf_body(conn, opts) do
     with {:ok, body, conn} <- read_body(conn),
          {:ok, data} <- Turtle.Decoder.decode(body, opts) do
       {:ok, data, conn}
     end
   end
 
+  @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
   def post_to_outbox(conn, _params) do
     with user <- conn.assigns.user,
          activity_id <- ID.generate(type: :activity),
@@ -32,6 +36,7 @@ defmodule CPub.Web.UserController do
     end
   end
 
+  @spec get_inbox(Plug.Conn.t(), map) :: Plug.Conn.t()
   def get_inbox(conn, _params) do
     user = conn.assigns.user
 
@@ -42,11 +47,11 @@ defmodule CPub.Web.UserController do
       |> put_view(RDFView)
       |> render(:show, data: data)
     else
-      conn
-      |> unauthorized
+      unauthorized(conn)
     end
   end
 
+  @spec get_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
   def get_outbox(conn, _params) do
     user = conn.assigns.user
 
@@ -57,8 +62,7 @@ defmodule CPub.Web.UserController do
       |> put_view(RDFView)
       |> render(:show, data: data)
     else
-      conn
-      |> unauthorized
+      unauthorized(conn)
     end
   end
 end

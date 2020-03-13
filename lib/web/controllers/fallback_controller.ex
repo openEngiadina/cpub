@@ -4,12 +4,20 @@ defmodule CPub.Web.FallbackController do
 
   See `Phoenix.Controller.action_fallback/1` for more details.
   """
+
   use CPub.Web, :controller
 
+  alias CPub.Web.{ChangesetView, ErrorView}
+
+  @type error_tuple ::
+          {:error, Ecto.Changeset.t() | String.Chars.t() | atom}
+          | {:error, any, Ecto.Changeset.t(), any}
+
+  @spec call(Plug.Conn.t(), error_tuple) :: Plug.Conn.t()
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(CPub.Web.ChangesetView)
+    |> put_view(ChangesetView)
     |> render("error.json", changeset: changeset)
   end
 
@@ -17,14 +25,14 @@ defmodule CPub.Web.FallbackController do
   def call(conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(CPub.Web.ChangesetView)
+    |> put_view(ChangesetView)
     |> render("error.json", changeset: changeset)
   end
 
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> put_view(CPub.Web.ErrorView)
+    |> put_view(ErrorView)
     |> render(:"404")
   end
 

@@ -2,35 +2,44 @@ defmodule CPub.Object do
   @moduledoc """
   Schema for objects.
   """
+
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias CPub.Object
+  alias CPub.{Activity, ID}
 
-  @primary_key {:id, CPub.ID, autogenerate: true}
+  @type t :: %__MODULE__{
+          id: RDF.IRI.t() | nil,
+          data: RDF.Description.t() | nil,
+          activity_id: RDF.IRI.t() | nil
+        }
+
+  @primary_key {:id, ID, autogenerate: true}
   schema "objects" do
     field :data, RDF.Description.EctoType
 
     # Activity that caused creation of this Object
-    belongs_to :activity, CPub.Activity, type: CPub.ID
+    belongs_to :activity, Activity, type: ID
 
     timestamps()
   end
 
-  def new(opts \\ []) do
-    id = Keyword.get(opts, :id, CPub.ID.generate())
-    data = Keyword.get(opts, :data, RDF.Description.new(id))
-    activity_id = Keyword.get(opts, :activity_id)
-
-    %Object{id: id, data: data, activity_id: activity_id}
-  end
-
-  def changeset(%Object{} = object) do
+  @spec changeset(t) :: Ecto.Changeset.t()
+  def changeset(%__MODULE__{} = object) do
     object
     |> change
-    |> CPub.ID.validate()
+    |> ID.validate()
     |> validate_required([:id, :data, :activity_id])
     |> assoc_constraint(:activity)
     |> unique_constraint(:id, name: "objects_pkey")
+  end
+
+  @spec new(keyword) :: t
+  def new(opts \\ []) do
+    id = Keyword.get(opts, :id, ID.generate())
+    data = Keyword.get(opts, :data, RDF.Description.new(id))
+    activity_id = Keyword.get(opts, :activity_id)
+
+    %__MODULE__{id: id, data: data, activity_id: activity_id}
   end
 end

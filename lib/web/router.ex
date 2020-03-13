@@ -1,16 +1,18 @@
 defmodule CPub.Web.Router do
   use CPub.Web, :router
 
+  alias CPub.Web.{AuthenticationPlug, EnsureAuthenticationPlug}
+
   @doc """
   Cast the request URL to a valid ID (IRI) and assign to connection.
 
   This is useful as the id for an object being accessed is usually the request url.
   """
+  @spec assign_id(Plug.Conn.t(), Plug.opts()) :: Plug.opts()
   def assign_id(conn, _opts) do
     case request_url(conn) |> CPub.ID.cast() do
       {:ok, id} ->
-        conn
-        |> assign(:id, id)
+        assign(conn, :id, id)
 
       _ ->
         conn
@@ -27,13 +29,13 @@ defmodule CPub.Web.Router do
     # This is useful for endpoints that can be accessed by non-authenticated
     # users and authenticated users. But authenticated users get a different
     # response.
-    plug CPub.Web.Authentication
+    plug AuthenticationPlug
   end
 
   pipeline :authenticated do
     # This pipeline requires connection to be authenticated.
     # If not a 401 is returned and connection is halted.
-    plug CPub.Web.Authentication.Required
+    plug EnsureAuthenticationPlug
   end
 
   scope "/", CPub.Web do

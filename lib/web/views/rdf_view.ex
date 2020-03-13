@@ -4,6 +4,7 @@ defmodule CPub.Web.RDFView do
   """
   use CPub.Web, :view
 
+  @spec render(String.t(), map) :: String.t() | map
   def render("show.json", %{data: data}) do
     RDF.JSON.Encoder.from_rdf!(data)
   end
