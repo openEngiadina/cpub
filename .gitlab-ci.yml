@@ -10,17 +10,41 @@ variables:
   POSTGRES_HOST: postgres
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: "postgres"
-  MIX_ENV: "test"
 
-before_script:
-  # ensure that rebar and hex are available before getting deps
-  - mix local.rebar --force
-  - mix local.hex --force
-  - mix deps.get
-  - mix ecto.reset
+stages:
+  - code-quality
+  - test
 
-mix:
+standards:
+  stage: code-quality
+  before_script:
+    - mix local.rebar --force
+    - mix local.hex --force
+    - mix deps.get
   script:
+    - mix credo --strict
+    - mix format --check-formatted
+
+dialyzer:
+  stage: code-quality
+  before_script:
+    - mix local.rebar --force
+    - mix local.hex --force
+    - mix deps.get
+  script:
+    - mix dialyzer --halt-exit-status
+
+test:
+  stage: test
+  variables:
+    MIX_ENV: test
+  before_script:
+    - mix local.rebar --force
+    - mix local.hex --force
+    - mix deps.get
+    - mix ecto.reset
+  script:
+    - mix coveralls
     - mix test
 
 # pages:

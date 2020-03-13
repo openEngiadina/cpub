@@ -12,6 +12,7 @@ defmodule CPub.MixProject do
       aliases: aliases(),
       dialyzer: dialyzer(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
 
       # Docs
       name: "CPub",
@@ -67,6 +68,7 @@ defmodule CPub.MixProject do
       {:cors_plug, "~> 2.0"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.12.2", only: :test},
       {:dialyxir, "~> 0.5.1", only: [:dev, :test], runtime: false}
     ]
   end
