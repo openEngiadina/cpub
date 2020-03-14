@@ -34,4 +34,5 @@ run "mix deps.get"
 run "mix format --check-formatted" "mix format"
 run "mix credo --strict"
 mix_coveralls
-run "mix dialyzer --halt-exit-status"
+run "mix test"
+run "mix dialyzer"
