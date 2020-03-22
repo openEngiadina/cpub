@@ -1,7 +1,7 @@
 defmodule CPub.Web.Router do
   use CPub.Web, :router
 
-  alias CPub.Web.{AuthenticationPlug, EnsureAuthenticationPlug}
+  alias CPub.Web.{BasicAuthenticationPlug, EnsureAuthenticationPlug}
 
   @doc """
   Cast the request URL to a valid ID (IRI) and assign to connection.
@@ -29,7 +29,7 @@ defmodule CPub.Web.Router do
     # This is useful for endpoints that can be accessed by non-authenticated
     # users and authenticated users. But authenticated users get a different
     # response.
-    plug AuthenticationPlug
+    plug BasicAuthenticationPlug
   end
 
   pipeline :authenticated do
