@@ -36,7 +36,7 @@ config :cors_plug, origin: ["*"]
 # Default prefixes for RDF
 config :rdf,
   default_prefixes: %{
-    as: "http://www.w3.org/ns/activitystreams#",
+    as: "https://www.w3.org/ns/activitystreams#",
     ldp: "http://www.w3.org/ns/ldp#"
   }
 
