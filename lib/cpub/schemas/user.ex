@@ -58,8 +58,13 @@ defmodule CPub.User do
       |> RDF.Description.add(RDF.type(), RDF.iri(AS.Person))
       |> RDF.Description.add(LDP.inbox(), inbox_id)
       |> RDF.Description.add(AS.outbox(), outbox_id)
+      |> RDF.Description.add(AS.preferredUsername(), username)
 
-    profile = Keyword.get(opts, :profile, default_profile)
+    profile =
+      RDF.Data.merge(
+        default_profile,
+        Keyword.get(opts, :profile, RDF.Description.new(id))
+      )
 
     %__MODULE__{id: id}
     |> changeset(%{username: username, password: password, profile: profile})

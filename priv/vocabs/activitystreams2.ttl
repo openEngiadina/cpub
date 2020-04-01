@@ -40,6 +40,9 @@ as:actor a owl:ObjectProperty ;
 as:outbox a owl:ObjectProperty ;
     rdfs:label "outbox"@en .
 
+as:preferredUsername a owl:ObjectProperty ;
+    rdfs:label "preferredUsername"@en .
+
 as:following a owl:ObjectProperty .
 
 as:followers a owl:ObjectProperty .
