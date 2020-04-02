@@ -30,9 +30,6 @@ config :phoenix, :json_library, Jason
 # Set up mime-type for RDF/Turtle
 config :mime, :types, %{"text/turtle" => ["ttl"]}
 
-# Configure CORS
-config :cors_plug, origin: ["*"]
-
 # Default prefixes for RDF
 config :rdf,
   default_prefixes: %{

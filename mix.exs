@@ -65,7 +65,7 @@ defmodule CPub.MixProject do
       {:json_ld, "~> 0.3.0"},
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.0.2"},
-      {:cors_plug, "~> 2.0"},
+      {:corsica, "~> 1.1"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:excoveralls, "~> 0.12.2", only: :test},

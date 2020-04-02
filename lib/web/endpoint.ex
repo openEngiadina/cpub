@@ -40,7 +40,10 @@ defmodule CPub.Web.Endpoint do
     key: "_cpub_key",
     signing_salt: "uME3vEPr"
 
-  plug CORSPlug
+  plug Corsica,
+    origins: "*",
+    allow_headers: :all,
+    expose_headers: ~w(Location)
 
   plug CPub.Web.Router
 end
