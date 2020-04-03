@@ -1,4 +1,8 @@
 defmodule CPub.Release do
+  @moduledoc """
+  Helpers for migrating database from release builds.
+  """
+
   @app :cpub
 
   def migrate do
