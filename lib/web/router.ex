@@ -10,7 +10,12 @@ defmodule CPub.Web.Router do
   """
   @spec assign_id(Plug.Conn.t(), Plug.opts()) :: Plug.opts()
   def assign_id(conn, _opts) do
-    case request_url(conn) |> CPub.ID.cast() do
+    # Major hack: TODO fix.
+    request_url =
+      String.replace_suffix(Application.get_env(:cpub, :base_url), "/", "") <>
+        conn.request_path
+
+    case request_url |> CPub.ID.cast() do
       {:ok, id} ->
         assign(conn, :id, id)
 
