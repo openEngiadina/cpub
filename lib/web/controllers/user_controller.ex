@@ -2,17 +2,20 @@ defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
   alias CPub.{ActivityPub, ID, Repo, User}
-  alias RDF.{IRI, Turtle}
+  alias RDF.{Graph, IRI, Turtle}
 
   action_fallback CPub.Web.FallbackController
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, _params) do
-    user = Repo.get!(User, conn.assigns[:id])
+    id = conn.assigns[:id]
+    user = Repo.get!(User, id)
+
+    profile = Graph.set_base_iri(user.profile, IRI.new!("#{id}/"))
 
     conn
     |> put_view(RDFView)
-    |> render(:show, data: user.profile)
+    |> render(:show, data: profile)
   end
 
   @spec read_rdf_body(Plug.Conn.t(), keyword) ::

@@ -26,4 +26,9 @@ defmodule CPub.NS do
     base_iri: "http://www.w3.org/ns/auth/acl#",
     file: "acl.ttl"
   )
+
+  defvocab(FOAF,
+    base_iri: "http://xmlns.com/foaf/0.1/",
+    file: "foaf.ttl"
+  )
 end

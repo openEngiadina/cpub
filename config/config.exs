@@ -37,7 +37,8 @@ config :cors_plug, origin: ["*"]
 config :rdf,
   default_prefixes: %{
     as: "http://www.w3.org/ns/activitystreams#",
-    ldp: "http://www.w3.org/ns/ldp#"
+    ldp: "http://www.w3.org/ns/ldp#",
+    foaf: "http://xmlns.com/foaf/0.1/"
   }
 
 #

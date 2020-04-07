@@ -13,12 +13,13 @@ defmodule CPub.User do
   alias CPub.{Activity, ID, Repo}
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
+  alias CPub.Solid.WebID
 
   @type t :: %__MODULE__{
           id: RDF.IRI.t() | nil,
           username: String.t() | nil,
           password: String.t() | nil,
-          profile: RDF.Description.t() | nil
+          profile: RDF.Graph.t() | nil
         }
 
   @primary_key {:id, ID, autogenerate: true}
@@ -27,7 +28,7 @@ defmodule CPub.User do
     field :username, :string
     field :password, Comeonin.Ecto.Password
 
-    field :profile, RDF.Description.EctoType
+    field :profile, RDF.Graph.EctoType
 
     # has_many :authorizations, Authorization
 
@@ -58,6 +59,7 @@ defmodule CPub.User do
       |> RDF.Description.add(RDF.type(), RDF.iri(AS.Person))
       |> RDF.Description.add(LDP.inbox(), inbox_id)
       |> RDF.Description.add(AS.outbox(), outbox_id)
+      |> WebID.Profile.create(opts)
 
     profile = Keyword.get(opts, :profile, default_profile)
 
