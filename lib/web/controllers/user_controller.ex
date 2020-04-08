@@ -18,6 +18,26 @@ defmodule CPub.Web.UserController do
     |> render(:show, data: profile)
   end
 
+  @spec show_me(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show_me(conn, _params) do
+    id =
+      conn.assigns[:id].value
+      |> String.trim_trailing("/me")
+      |> IRI.new!()
+
+    user = Repo.get!(User, id)
+
+    {:ok, me} = Graph.fetch(user.profile, conn.assigns[:id])
+
+    me =
+      Graph.new(me)
+      |> Graph.set_base_iri(IRI.new!("#{id}/"))
+
+    conn
+    |> put_view(RDFView)
+    |> render(:show, data: me)
+  end
+
   @spec read_rdf_body(Plug.Conn.t(), keyword) ::
           {:ok, RDF.Graph.t() | RDF.Dataset.t(), Plug.Conn.t()} | {:error, any}
   defp read_rdf_body(conn, opts) do

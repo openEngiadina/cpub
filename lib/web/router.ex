@@ -51,6 +51,8 @@ defmodule CPub.Web.Router do
     pipe_through :optionally_authenticated
 
     resources "/", UserController, only: [:show] do
+      get "/me", UserController, :show_me
+
       pipe_through :authenticated
       post "/outbox", UserController, :post_to_outbox
       get "/outbox", UserController, :get_outbox

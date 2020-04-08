@@ -13,7 +13,7 @@ defmodule CPub.Solid.WebID.Profile do
   def create(default_profile, opts \\ []) do
     username = Keyword.get(opts, :username)
 
-    me = ID.merge_with_base_url("users/#{username}/#me")
+    me = ID.merge_with_base_url("users/#{username}/me")
 
     web_id_profile =
       me
