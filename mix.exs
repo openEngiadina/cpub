@@ -11,7 +11,7 @@ defmodule CPub.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       dialyzer: dialyzer(),
-      deps: deps(),
+      deps: deps() ++ oauth_deps(),
       test_coverage: [tool: ExCoveralls],
 
       # Docs
@@ -66,11 +66,27 @@ defmodule CPub.MixProject do
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.0.2"},
       {:cors_plug, "~> 2.0"},
+      {:ueberauth, "~> 0.6.3"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:excoveralls, "~> 0.12.2", only: :test},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
     ]
+  end
+
+  # Specifies OAuth dependencies.
+  def oauth_deps do
+    System.get_env("OAUTH_CONSUMER_STRATEGIES")
+    |> to_string()
+    |> String.split()
+    |> Enum.map(fn strategy_entry ->
+      with [_strategy, dependency] <- String.split(strategy_entry, ":") do
+        dependency
+      else
+        [strategy] -> "ueberauth_#{strategy}"
+      end
+    end)
+    |> Enum.map(&{String.to_atom(&1), ">= 0.0.0"})
   end
 
   defp dialyzer do

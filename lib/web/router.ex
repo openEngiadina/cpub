@@ -59,4 +59,11 @@ defmodule CPub.Web.Router do
       get "/inbox", UserController, :get_inbox
     end
   end
+
+  scope "/oauth", CPub.Web do
+    pipe_through :api
+
+    get "/:provider", OAuthController, :request
+    get "/:provider/callback", OAuthController, :callback
+  end
 end

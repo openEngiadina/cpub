@@ -41,7 +41,23 @@ config :rdf,
     foaf: "http://xmlns.com/foaf/0.1/"
   }
 
-#
+# Configure external OAuth providers
+oauth_consumer_strategies =
+  System.get_env("OAUTH_CONSUMER_STRATEGIES")
+  |> to_string()
+  |> String.split()
+  |> Enum.map(&hd(String.split(&1, ":")))
+
+ueberauth_providers =
+  for strategy <- oauth_consumer_strategies do
+    strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
+    strategy_module = String.to_atom(strategy_module_name)
+    {String.to_atom(strategy), {strategy_module, [allow_private_emails: true]}}
+  end
+
+config :ueberauth, Ueberauth,
+  base_path: "/oauth",
+  providers: ueberauth_providers
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code

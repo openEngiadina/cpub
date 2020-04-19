@@ -6,6 +6,8 @@ defmodule CPub.Web.BasicAuthenticationPlug do
   not the connection is just passed trough.
   """
 
+  import Plug.Conn
+
   @spec init(Plug.opts()) :: Plug.opts()
   def init(opts), do: opts
 
@@ -15,8 +17,8 @@ defmodule CPub.Web.BasicAuthenticationPlug do
          {:ok, credentials} <- Base.decode64(encoded),
          [username, password] <- String.split(credentials, ":", parts: 2),
          # Verify username and password and assign user to connection
-         {:ok, user} <- CPub.User.verify_user(username, password) do
-      Plug.Conn.assign(conn, :user, user)
+         {:ok, user} <- CPub.User.verify_password(username, password) do
+      assign(conn, :user, user)
     else
       _ ->
         unauthorise(conn)
