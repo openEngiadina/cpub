@@ -19,6 +19,10 @@ defmodule CPub.Web.Router do
     end
   end
 
+  pipeline :oauth do
+    plug :accepts, ["json"]
+  end
+
   pipeline :api do
     plug :accepts, ["json", "ttl"]
     plug :assign_id
@@ -61,7 +65,7 @@ defmodule CPub.Web.Router do
   end
 
   scope "/oauth", CPub.Web do
-    pipe_through :api
+    pipe_through :oauth
 
     get "/:provider", OAuthController, :request
     get "/:provider/callback", OAuthController, :callback

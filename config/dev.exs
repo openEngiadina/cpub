@@ -56,6 +56,22 @@ config :cpub, CPub.Repo,
   pool_size: 10
 
 # Configure external OAuth providers
+# config :ueberauth, Ueberauth,
+#   base_path: "/oauth",
+#   providers: [
+#     github: {Ueberauth.Strategy.Github, [allow_private_emails: true]},
+#     gitlab: {Ueberauth.Strategy.Gitlab, [default_scope: "read_user"]},
+#     gitlab: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}
+#   ]
+
 # config :ueberauth, Ueberauth.Strategy.Github.OAuth,
 #   client_id: System.get_env("GITHUB_CLIENT_ID"),
 #   client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+
+# config :ueberauth, Ueberauth.Strategy.Gitlab.OAuth,
+#   client_id: System.get_env("GITLAB_CLIENT_ID"),
+#   client_secret: System.get_env("GITLAB_CLIENT_SECRET")
+
+# config :ueberauth, Ueberauth.Strategy.Discord.OAuth,
+#   client_id: System.get_env("DISCORD_CLIENT_ID"),
+#   client_secret: System.get_env("DISCORD_CLIENT_SECRET")

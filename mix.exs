@@ -66,6 +66,8 @@ defmodule CPub.MixProject do
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.0.2"},
       {:cors_plug, "~> 2.0"},
+      {:poison, "~> 4.0"},
+      {:oauth2, "~> 0.8.2"},
       {:ueberauth, "~> 0.6.3"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},

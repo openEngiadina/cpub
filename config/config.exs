@@ -52,7 +52,7 @@ ueberauth_providers =
   for strategy <- oauth_consumer_strategies do
     strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
     strategy_module = String.to_atom(strategy_module_name)
-    {String.to_atom(strategy), {strategy_module, [allow_private_emails: true]}}
+    {String.to_atom(strategy), {strategy_module, []}}
   end
 
 config :ueberauth, Ueberauth,

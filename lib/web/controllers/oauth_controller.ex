@@ -25,19 +25,23 @@ defmodule CPub.Web.OAuthController do
   """
   @spec callback(Plug.Conn.t(), map) :: Plug.Conn.t()
   def callback(
-    %Plug.Conn{assigns: %{ueberauth_auth: %Auth{info: %Auth.Info{} = info}}} = conn,
-    %{"code" => _code, "provider" => provider}
-  ) do
-    case User.get_user(info.nickname, provider) do
+        %Plug.Conn{assigns: %{ueberauth_auth: %Auth{info: %Auth.Info{} = info}}} = conn,
+        %{"code" => _code, "provider" => provider}
+      ) do
+    username = info.nickname || info.name
+
+    case User.get_user(username, provider) do
       %User{} = user ->
         conn
+        |> assign(:user, user)
         |> put_view(RDFView)
         |> render(:show, data: user.profile)
 
       nil ->
-        case User.create_from_remote(username: info.nickname, provider: provider) do
+        case User.create_from_remote(username: username, provider: provider) do
           {:ok, %User{} = user} ->
             conn
+            |> assign(:user, user)
             |> put_view(RDFView)
             |> render(:show, data: user.profile)
 

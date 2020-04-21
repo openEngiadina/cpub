@@ -23,7 +23,7 @@ defmodule CPub.Web.EnsureAuthenticationPlug do
   def unauthorized(conn) do
     conn
     |> put_resp_content_type("text/plain")
-    |> send_resp(401, "401 Unauthorized")
+    |> send_resp(:unauthorized, "401 Unauthorized")
     |> halt()
   end
 end
