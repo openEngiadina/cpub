@@ -4,6 +4,7 @@ defmodule CPub.Object do
   """
 
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias CPub.{Activity, ID}

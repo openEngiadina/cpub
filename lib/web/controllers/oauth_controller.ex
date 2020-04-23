@@ -1,10 +1,10 @@
 defmodule CPub.Web.OAuthController do
   use CPub.Web, :controller
 
-  alias CPub.User
+  alias CPub.{Config, User}
   alias Ueberauth.Auth
 
-  plug Ueberauth
+  if Config.oauth_consumer_enabled?(), do: plug(Ueberauth)
 
   @spec request(Plug.Conn.t(), map) :: Plug.Conn.t()
   def request(%Plug.Conn{} = conn, %{"provider" => provider}) do

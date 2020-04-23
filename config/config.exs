@@ -59,6 +59,8 @@ config :ueberauth, Ueberauth,
   base_path: "/oauth",
   providers: ueberauth_providers
 
+config :cpub, :oauth, consumer_strategies: oauth_consumer_strategies
+
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code
 config :comeonin, Ecto.Password, Pbkdf2

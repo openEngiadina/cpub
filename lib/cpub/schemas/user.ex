@@ -10,7 +10,7 @@ defmodule CPub.User do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
-  alias CPub.{Activity, ID, Repo}
+  alias CPub.{Activity, Crypto, ID, Repo}
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
   alias CPub.Solid.WebID
@@ -85,7 +85,11 @@ defmodule CPub.User do
   defp default_profile(opts, is_remote \\ false) do
     username = Keyword.get(opts, :username)
 
-    id_string = if is_remote, do: "users/#{username}-#{UUID.uuid4()}", else: "users/#{username}"
+    id_string =
+      if is_remote,
+        do: "users/#{username}-#{Crypto.random_string(8)}",
+        else: "users/#{username}"
+
     id = ID.merge_with_base_url(id_string)
     inbox_id = ID.merge_with_base_url("users/#{username}/inbox")
     outbox_id = ID.merge_with_base_url("users/#{username}/outbox")
