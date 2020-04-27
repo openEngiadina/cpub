@@ -48,8 +48,10 @@ oauth_consumer_strategies =
   |> String.split()
   |> Enum.map(&hd(String.split(&1, ":")))
 
+strategies_with_dynamic_app_registration = ["pleroma"]
+
 ueberauth_providers =
-  for strategy <- oauth_consumer_strategies do
+  for strategy <- oauth_consumer_strategies -- strategies_with_dynamic_app_registration do
     strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
     strategy_module = String.to_atom(strategy_module_name)
     {String.to_atom(strategy), {strategy_module, []}}

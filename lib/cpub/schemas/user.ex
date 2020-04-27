@@ -38,53 +38,45 @@ defmodule CPub.User do
   end
 
   @spec create_changeset(t, map) :: Ecto.Changeset.t()
-  def create_changeset(%__MODULE__{} = user, attrs) do
+  def create_changeset(%__MODULE__{} = user, params) do
     user
-    |> cast(attrs, [:username, :password, :profile])
+    |> cast(params, [:username, :password, :profile])
     |> validate_required([:username, :password, :profile])
     |> unique_constraint(:username, name: "users_provider_username_index")
     |> unique_constraint(:id, name: "users_pkey")
   end
 
-  @spec create_from_remote_changeset(t, map) :: Ecto.Changeset.t()
-  def create_from_remote_changeset(%__MODULE__{} = user, attrs) do
+  @spec create_from_provider_changeset(t, map) :: Ecto.Changeset.t()
+  def create_from_provider_changeset(%__MODULE__{} = user, params) do
     user
-    |> cast(attrs, [:username, :provider, :profile])
+    |> cast(params, [:username, :provider, :profile])
     |> validate_required([:username, :provider, :profile])
     |> unique_constraint(:username, name: "users_provider_username_index")
     |> unique_constraint(:id, name: "users_pkey")
   end
 
-  @spec create(keyword) :: {:ok, t} | {:error, Ecto.Changeset.t()}
-  def create(opts \\ []) do
-    username = Keyword.get(opts, :username)
-    password = Keyword.get(opts, :password)
-
-    {id, default_profile} = default_profile(opts)
-    profile = Keyword.get(opts, :profile, default_profile)
+  @spec create(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
+  def create(%{username: username, password: password} = params) do
+    {id, default_profile} = default_profile(params)
+    profile = Map.get(params, :profile, default_profile)
 
     %__MODULE__{id: id}
     |> create_changeset(%{username: username, password: password, profile: profile})
     |> Repo.insert()
   end
 
-  @spec create_from_remote(keyword) :: {:ok, t} | {:error, Ecto.Changeset.t()}
-  def create_from_remote(opts \\ []) do
-    username = Keyword.get(opts, :username)
-    provider = Keyword.get(opts, :provider)
-
-    {id, default_profile} = default_profile(opts, true)
-    profile = Keyword.get(opts, :profile, default_profile)
+  @spec create_from_provider(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
+  def create_from_provider(%{username: username, provider: provider} = params) do
+    {id, default_profile} = default_profile(params, true)
+    profile = Map.get(params, :profile, default_profile)
 
     %__MODULE__{id: id}
-    |> create_from_remote_changeset(%{username: username, provider: provider, profile: profile})
+    |> create_from_provider_changeset(%{username: username, provider: provider, profile: profile})
     |> Repo.insert()
   end
 
-  @spec default_profile(keyword, boolean) :: {RDF.IRI.t(), RDF.Description.t()}
-  defp default_profile(opts, is_remote \\ false) do
-    username = Keyword.get(opts, :username)
-
+  @spec default_profile(map, boolean) :: {RDF.IRI.t(), RDF.Description.t()}
+  defp default_profile(%{username: username} = params, is_remote \\ false) do
     id_string =
       if is_remote,
         do: "users/#{username}-#{Crypto.random_string(8)}",
@@ -99,7 +91,7 @@ defmodule CPub.User do
       |> RDF.Description.add(RDF.type(), RDF.iri(AS.Person))
       |> RDF.Description.add(LDP.inbox(), inbox_id)
       |> RDF.Description.add(AS.outbox(), outbox_id)
-      |> WebID.Profile.create(opts)
+      |> WebID.Profile.create(params)
 
     {id, default_profile}
   end

@@ -78,9 +78,12 @@ defmodule CPub.MixProject do
 
   # Specifies OAuth dependencies.
   def oauth_deps do
+    oauth_strategies_with_dynamic_app_registration = ["pleroma"]
+
     System.get_env("OAUTH_CONSUMER_STRATEGIES")
     |> to_string()
     |> String.split()
+    |> Kernel.--(oauth_strategies_with_dynamic_app_registration)
     |> Enum.map(fn strategy_entry ->
       with [_strategy, dependency] <- String.split(strategy_entry, ":") do
         dependency

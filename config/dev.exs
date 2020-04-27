@@ -59,6 +59,7 @@ config :cpub, CPub.Repo,
 # config :ueberauth, Ueberauth,
 #   base_path: "/oauth",
 #   providers: [
+#     pleroma: {CPub.Web.OAuth.Strategy.Pleroma, []},
 #     github: {Ueberauth.Strategy.Github, [allow_private_emails: true]},
 #     gitlab: {Ueberauth.Strategy.Gitlab, [default_scope: "read_user"]},
 #     gitlab: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}

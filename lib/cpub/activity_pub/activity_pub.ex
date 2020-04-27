@@ -118,11 +118,11 @@ defmodule CPub.ActivityPub do
       case request.data[request.id][AS.object()] do
         [original_object_id] ->
           object =
-            Object.new(
+            Object.new(%{
               id: request.object_id,
               data: %{request.data[original_object_id] | subject: request.object_id},
               activity_id: request.id
-            )
+            })
 
           # replace subject
           Request.insert(request, request.object_id, Object.changeset(object))

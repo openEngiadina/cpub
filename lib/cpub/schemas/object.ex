@@ -35,11 +35,10 @@ defmodule CPub.Object do
     |> unique_constraint(:id, name: "objects_pkey")
   end
 
-  @spec new(keyword) :: t
-  def new(opts \\ []) do
-    id = Keyword.get(opts, :id, ID.generate())
-    data = Keyword.get(opts, :data, RDF.Description.new(id))
-    activity_id = Keyword.get(opts, :activity_id)
+  @spec new(map) :: t
+  def new(%{activity_id: activity_id} = params) do
+    id = Map.get(params, :id, ID.generate())
+    data = Map.get(params, :data, RDF.Description.new(id))
 
     %__MODULE__{id: id, data: data, activity_id: activity_id}
   end

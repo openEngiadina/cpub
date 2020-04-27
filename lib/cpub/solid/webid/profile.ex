@@ -9,10 +9,8 @@ defmodule CPub.Solid.WebID.Profile do
   alias CPub.ID
   alias CPub.NS.FOAF
 
-  @spec create(RDF.Description.t(), keyword) :: RDF.Description.t()
-  def create(default_profile, opts \\ []) do
-    username = Keyword.get(opts, :username)
-
+  @spec create(RDF.Description.t(), map) :: RDF.Description.t()
+  def create(default_profile, %{username: username}) do
     me = ID.merge_with_base_url("users/#{username}/me")
 
     web_id_profile =

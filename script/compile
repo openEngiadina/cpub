@@ -1,0 +1,12 @@
+#!/bin/sh
+
+OAUTH_CONSUMER_STRATEGIES="pleroma" \
+	mix deps.get \
+	mix deps.compile
+
+# OAUTH_CONSUMER_STRATEGIES="pleroma github gitlab discord" \
+# 	GITHUB_CLIENT_ID=<id> GITHUB_CLIENT_SECRET=<secret> \
+# 	GITLAB_CLIENT_ID=<id> GITLAB_CLIENT_SECRET=<secret> \
+# 	DISCORD_CLIENT_ID=<id> DISCORD_CLIENT_SECRET=<secret> \
+# 	mix deps.get \
+# 	mix deps.compile

@@ -64,10 +64,10 @@ defmodule CPub.Web.Router do
     end
   end
 
-  scope "/oauth", CPub.Web do
+  scope "/oauth", CPub.Web.OAuth do
     pipe_through :oauth
 
-    get "/:provider", OAuthController, :request
-    get "/:provider/callback", OAuthController, :callback
+    get "/:provider", OAuthController, :handle_request
+    get "/:provider/callback", OAuthController, :handle_callback
   end
 end
