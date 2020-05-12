@@ -26,6 +26,11 @@ defmodule CPub.Web.Router do
 
   pipeline :api do
     plug :accepts, ["json", "ttl"]
+
+    plug Plug.Parsers,
+      parsers: [CPub.Web.RDFParser],
+      pass: ["*/*"]
+
     plug :assign_id
   end
 
