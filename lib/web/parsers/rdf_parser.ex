@@ -33,4 +33,12 @@ defmodule CPub.Web.RDFParser do
       {:ok, %{graph: skolemized_graph}, conn}
     end
   end
+
+  def parse(conn, "application", "rdf+json", _params, _opts) do
+    with {:ok, body, conn} <- Plug.Conn.read_body(conn),
+         {:ok, data} <- RDF.JSON.Decoder.decode(body, base_iri: ~I<http://base-iri.dummy/>),
+         skolemized_graph <- data |> RDF.Skolem.skolemize_graph() do
+      {:ok, %{graph: skolemized_graph}, conn}
+    end
+  end
 end

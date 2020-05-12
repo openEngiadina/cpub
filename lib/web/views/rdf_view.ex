@@ -9,6 +9,10 @@ defmodule CPub.Web.RDFView do
     RDF.JSON.Encoder.from_rdf!(data)
   end
 
+  def render("show.rj", %{data: data}) do
+    RDF.JSON.Encoder.encode!(data)
+  end
+
   def render("show.ttl", %{data: data}) do
     RDF.Turtle.Encoder.encode!(data)
   end
