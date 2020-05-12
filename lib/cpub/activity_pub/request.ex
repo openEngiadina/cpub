@@ -13,7 +13,7 @@ defmodule CPub.ActivityPub.Request do
           multi: Multi.t(),
           id: RDF.IRI.t(),
           activity: RDF.Description.t(),
-          object_id: RDF.IRI.t(),
+          object: RDF.Description.t(),
           data: RDF.Graph.t(),
           user: User.t()
         }
@@ -28,15 +28,12 @@ defmodule CPub.ActivityPub.Request do
           | {:error, any}
           | {:error, Ecto.Multi.name(), any, %{required(Ecto.Multi.name()) => any}}
 
-  defstruct [:multi, :id, :object_id, :activity, :data, :user]
+  defstruct [:multi, :id, :object, :activity, :data, :user]
 
-  @spec new(RDF.IRI.t(), RDF.Graph.t(), User.t()) :: t
-  def new(%RDF.IRI{} = id, %RDF.Graph{} = data, %User{} = user) do
+  @spec new(RDF.Graph.t(), User.t()) :: t
+  def new(%RDF.Graph{} = data, %User{} = user) do
     %__MODULE__{
       multi: Multi.new(),
-      id: id,
-      activity: data[id],
-      object_id: CPub.ID.generate(type: :object),
       data: data,
       user: user
     }
