@@ -3,6 +3,15 @@ defmodule CPub.ActivityPub do
   ActivityPub context
   """
 
+  # NOTE/TODO: This requires some major cleanup.
+  # After a couple of weeks of not hacking on this following becomes clear:
+  # - manually generating ids and shuffling them about is a hassle
+  # - a nice query language would be immensly helpful
+  #
+  # possible solutions:
+  # - content-addressable storage for no worries about ids
+  # - datalog as a query language
+
   alias CPub.{Activity, Object, User}
   alias CPub.ActivityPub.Request
   alias CPub.NS.ActivityStreams, as: AS
@@ -30,30 +39,42 @@ defmodule CPub.ActivityPub do
   @spec activity_types :: [RDF.IRI.t()]
   def activity_types, do: @activity_types
 
-  # @doc """
-  # Gets an actor.
-  # """
-  # def get_actor!(id), do: Repo.get!(Actor, id)
+  @doc """
+  Finds IDs of Activitystreams Activities in some `RDF.Data`
+  """
+  def find_activities(data) do
+    SPARQL.execute_query(RDF.Data.merge(data, @activity_streams), """
+    select ?activity_id
+    where {
+      ?activity_type rdfs:subClassOf as:Activity .
+      ?activity_id rdf:type ?activity_type .
+    }
+    """)
+    |> Enum.map(& &1["activity_id"])
+  end
 
   @doc """
   Creates an ActivityPub activity, computes side-effects and runs everything in a transaction.
   """
-  @spec handle_activity(RDF.IRI.t(), RDF.Graph.t(), User.t()) :: Request.commit_result()
-  def handle_activity(%RDF.IRI{} = activity_id, %RDF.Graph{} = data, %User{} = user) do
+  @spec handle_activity(RDF.Graph.t(), User.t()) :: Request.commit_result()
+  def handle_activity(%RDF.Graph{} = data, %User{} = user) do
     # create a new pipeline
-    Request.new(activity_id, data, user)
+    Request.new(data, user)
+
+    # Set activity from the data
+    |> set_activity
 
     # Ensure the actor is set correctly
     |> ensure_correct_actor
 
-    # Set the object id to a newly created id
-    |> set_object_id
+    # Get object and set id in activity
+    |> get_object
 
     # insert activity object
     |> insert_activity
 
     # insert the object (if a Create activity)
-    |> create_object
+    |> insert_object
 
     # |> handle_add
 
@@ -63,6 +84,28 @@ defmodule CPub.ActivityPub do
 
     # commit the request
     |> Request.commit()
+  end
+
+  @spec set_activity(Request.t()) :: Request.t()
+  defp set_activity(%Request{} = request) do
+    case find_activities(request.data) do
+      [activity_id | _] ->
+        activity_description = request.data[activity_id]
+        new_activity_id = CPub.ID.generate(type: :activity)
+
+        %{
+          request
+          | id: new_activity_id,
+            activity: %{activity_description | subject: new_activity_id}
+        }
+
+      nil ->
+        Request.error(
+          request,
+          :set_activity,
+          "can not find ActivityStreams activity in data"
+        )
+    end
   end
 
   @spec ensure_correct_actor(Request.t()) :: Request.t()
@@ -96,15 +139,25 @@ defmodule CPub.ActivityPub do
     Request.insert(request, :activity, activity)
   end
 
-  @spec set_object_id(Request.t()) :: Request.t()
-  defp set_object_id(%Request{} = request) do
+  @spec get_object(Request.t()) :: Request.t()
+  defp get_object(%Request{} = request) do
     if RDF.iri(AS.Create) in request.activity[RDF.type()] do
+      # the id of the object in the data received
+      original_object_id = request.activity[AS.object()] |> List.first()
+
+      # generate a new id
+      object_id = CPub.ID.generate(type: :object)
+
+      # extract object description
+      object_description = %{request.data[original_object_id] | subject: object_id}
+
+      # replace the reference to object in activity
       activity =
         request.activity
         |> RDF.Description.delete_predicates(AS.object())
-        |> RDF.Description.add(AS.object(), request.object_id)
+        |> RDF.Description.add(AS.object(), object_id)
 
-      %{request | activity: activity}
+      %{request | activity: activity, object: object_description}
     else
       # don't do anything if not a Create activity
       request
@@ -112,24 +165,18 @@ defmodule CPub.ActivityPub do
   end
 
   # Creates an object if it is a Create activity
-  @spec create_object(Request.t()) :: Request.t()
-  defp create_object(request) do
+  @spec insert_object(Request.t()) :: Request.t()
+  defp insert_object(request) do
     if RDF.iri(AS.Create) in request.activity[RDF.type()] do
-      case request.data[request.id][AS.object()] do
-        [original_object_id] ->
-          object =
-            Object.new(
-              id: request.object_id,
-              data: %{request.data[original_object_id] | subject: request.object_id},
-              activity_id: request.id
-            )
+      object =
+        Object.new(
+          id: request.object.subject,
+          data: request.object,
+          activity_id: request.id
+        )
 
-          # replace subject
-          Request.insert(request, request.object_id, Object.changeset(object))
-
-        _ ->
-          Request.error(request, :create_object, "could not find object")
-      end
+      request
+      |> Request.insert(request.object.subject, Object.changeset(object))
     else
       request
     end

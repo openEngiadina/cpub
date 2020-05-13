@@ -687,3 +687,120 @@ A client that understands what ~geo:lat~ and ~geo:long~ means could show this no
 
 See [[https://gitlab.com/miaEngiadina/geopub][GeoPub]] for a client that understands ~geo:lat~ and ~geo:long~.
 
+* Serialization Formats
+
+In the examples above we have used the RDF/Turtle serialization.
+
+CPub supports following RDF serialization formats:
+
+- [[https://www.w3.org/TR/turtle/][RDF 1.1 Turtle]]
+- [[https://www.w3.org/TR/rdf-json/][RDF 1.1 JSON Alternate Serialization (RDF/JSON)]]
+
+** RDF/JSON
+
+To get content as RDF/JSON set the ~Accept~ header to ~application/rdf+json~
+
+#+BEGIN_SRC restclient :exports both
+GET http://localhost:4000/users/alice
+Accept: application/rdf+json
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+{
+  "http://localhost:4000/users/alice": {
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "https://www.w3.org/ns/activitystreams#Person"
+      }
+    ],
+    "http://www.w3.org/ns/ldp#inbox": [
+      {
+        "type": "uri",
+        "value": "http://localhost:4000/users/alice/inbox"
+      }
+    ],
+    "https://www.w3.org/ns/activitystreams#outbox": [
+      {
+        "type": "uri",
+        "value": "http://localhost:4000/users/alice/outbox"
+      }
+    ],
+    "https://www.w3.org/ns/activitystreams#preferredUsername": [
+      {
+        "type": "literal",
+        "value": "alice"
+      }
+    ]
+  }
+}
+// GET http://localhost:4000/users/alice
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 471
+// content-type: application/rdf+json; charset=utf-8
+// date: Tue, 12 May 2020 14:06:41 GMT
+// server: Cowboy
+// x-request-id: Fg5NBPD2PLIUstgAADPj
+// Request duration: 0.194322s
+#+END_SRC
+
+Data can also be posted as RDF/JSON by setting ~Content-type~ header:
+
+#+BEGIN_SRC restclient :exports both
+POST http://localhost:4000/users/alice/outbox
+Authorization: Basic YWxpY2U6MTIz
+Content-type: application/rdf+json
+
+{
+  "_:object": {
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "https://www.w3.org/ns/activitystreams#Note"
+      }
+    ],
+    "https://www.w3.org/ns/activitystreams#content": [
+      {
+        "lang": "en",
+        "type": "literal",
+        "value": "Hi! This is RDF/JSON. It's ugly, but it's simple."
+      }
+    ]
+  },
+  "http://example.org": {
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "https://www.w3.org/ns/activitystreams#Create"
+      }
+    ],
+    "https://www.w3.org/ns/activitystreams#object": [
+      {
+        "type": "bnode",
+        "value": "_:object"
+      }
+    ],
+    "https://www.w3.org/ns/activitystreams#to": [
+      {
+        "type": "uri",
+        "value": "http://localhost:4000/users/bob"
+      }
+    ]
+  }
+}
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+// POST http://localhost:4000/users/alice/outbox
+// HTTP/1.1 201 Created
+// Location: http://localhost:4000/activities/4505866b-9ab7-4797-b6d7-5169b3117ffa
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 0
+// date: Tue, 12 May 2020 14:34:38 GMT
+// server: Cowboy
+// x-request-id: Fg5Oi07r6BalK50AAAEC
+// Request duration: 0.474051s
+#+END_SRC

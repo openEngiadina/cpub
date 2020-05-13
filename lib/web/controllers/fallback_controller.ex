@@ -41,4 +41,11 @@ defmodule CPub.Web.FallbackController do
     |> put_status(500)
     |> text(msg)
   end
+
+  # This catches Ecto.Multi errors
+  def call(conn, {:error, _, msg, _}) do
+    conn
+    |> put_status(500)
+    |> text(msg)
+  end
 end
