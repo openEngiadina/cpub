@@ -33,6 +33,7 @@ defmodule CPub.User do
     field :profile, RDF.Graph.EctoType
 
     # has_many :authorizations, Authorization
+    # has_many :registrations, Registration
 
     timestamps()
   end

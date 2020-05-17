@@ -96,7 +96,7 @@ defmodule CPub.Web.OAuth.OAuthController do
               "registration_id" => registration.id
             })
 
-          registration_details(conn, %{"authorization" => registration_params})
+          registration_from_provider(conn, %{"authorization" => registration_params})
       end
     end
   end
@@ -130,9 +130,9 @@ defmodule CPub.Web.OAuth.OAuthController do
   ### OAuth Server ###
   ####################
 
-  @spec registration_details(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def registration_details(%Plug.Conn{} = conn, %{"authorization" => auth_params}) do
-    render(conn, "register.html", %{
+  @spec registration_from_provider(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def registration_from_provider(%Plug.Conn{} = conn, %{"authorization" => auth_params}) do
+    render(conn, "register_from_provider.html", %{
       client_id: auth_params["client_id"],
       redirect_uri: auth_params["redirect_uri"],
       state: auth_params["state"],
@@ -141,6 +141,11 @@ defmodule CPub.Web.OAuth.OAuthController do
       provider: auth_params["provider"],
       registration_id: auth_params["registration_id"]
     })
+  end
+
+  @spec registration_local(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def registration_local(%Plug.Conn{} = conn, _params) do
+    render(conn, "register_local.html")
   end
 
   @spec register(Plug.Conn.t(), map) :: Plug.Conn.t()
@@ -165,12 +170,39 @@ defmodule CPub.Web.OAuth.OAuthController do
 
   def register(
         %Plug.Conn{} = conn,
-        %{"authorization" => auth_params, "op" => "register"} = params
+        %{"authorization" => auth_params, "op" => "register_from_provider"} = params
       ) do
     with registration_id when not is_nil(registration_id) <- auth_params["registration_id"],
          %Registration{} = registration <- Registration.get_by(%{id: registration_id}),
-         {:ok, user} <- Authenticator.create_user_from_registration(conn, registration) do
+         {:ok, user} <- Authenticator.create_user_from_registration(registration, params) do
       create_authorization(conn, params, user: user)
+    end
+  end
+
+  def register(
+        %Plug.Conn{} = conn,
+        %{"authorization" => auth_params, "op" => "register_local"} = params
+      ) do
+    with true <- auth_params["password"] == auth_params["password_confirmation"],
+         app <- App.get_by(%{client_name: "local", provider: "local"}),
+         auth_params <-
+           Map.merge(auth_params, %{
+             "client_id" => app.client_id,
+             "redirect_uri" => app.redirect_uris,
+             "scope" => app.scopes,
+             "provider" => "local"
+           }),
+         {:ok, registration} <-
+           Registration.create(%{username: auth_params["username"], provider: "local"}),
+         params <- %{params | "authorization" => auth_params},
+         {:ok, user} <- Authenticator.create_user_from_registration(registration, params) do
+      create_authorization(conn, params, user: user)
+    else
+      false ->
+        {:register, :password_confirmation}
+
+      {:error, %Ecto.Changeset{} = error} ->
+        {:register, error}
     end
   end
 
@@ -205,7 +237,7 @@ defmodule CPub.Web.OAuth.OAuthController do
     available_scopes = (app && app.scopes) || []
     scopes = Scopes.fetch_scopes(params, available_scopes)
 
-    render(conn, "show.html", %{
+    render(conn, "authorize.html", %{
       app: app,
       response_type: params["response_type"] || "password",
       client_id: client_id,
@@ -235,15 +267,15 @@ defmodule CPub.Web.OAuth.OAuthController do
   @spec do_create_authorization(Plug.Conn.t(), map, User.t() | nil) ::
           {:ok, Authorization.t()} | {:error, Ecto.Changeset.t()}
   defp do_create_authorization(
-         %Plug.Conn{} = conn,
+         %Plug.Conn{},
          %{
            "authorization" =>
              %{"client_id" => client_id, "redirect_uri" => redirect_uri} = auth_params
-         },
+         } = params,
          user \\ nil
        ) do
     with {:ok, %User{} = user} <-
-           (user && {:ok, user}) || Authenticator.get_user(conn),
+           (user && {:ok, user}) || Authenticator.get_user(params),
          %App{} = app <- App.get_by(%{client_id: client_id}),
          true <- redirect_uri in String.split(app.redirect_uris),
          {:ok, scopes} <- Utils.validate_scopes(app, auth_params) do
@@ -361,7 +393,7 @@ defmodule CPub.Web.OAuth.OAuthController do
       ) do
     # The Resource Owner Password Credentials Authorization Strategy:
     # http://tools.ietf.org/html/rfc6749#section-1.3.3
-    with {:ok, user} <- Authenticator.get_user(conn),
+    with {:ok, user} <- Authenticator.get_user(params),
          {:ok, app} <- Utils.fetch_app(conn),
          {:ok, scopes} <- Utils.validate_scopes(app, params),
          {:ok, auth} <- Authorization.create(app, user, scopes),

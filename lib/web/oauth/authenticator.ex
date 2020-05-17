@@ -4,11 +4,10 @@ defmodule CPub.Web.OAuth.Authenticator do
   """
 
   alias CPub.{Registration, User}
-  alias CPub.Web.OAuth.App
 
-  @spec get_user(Plug.Conn.t()) :: {:ok, User.t()} | {:error, any}
-  def get_user(%Plug.Conn{} = conn) do
-    with {:ok, {username, password}} <- fetch_credentials(conn),
+  @spec get_user(map) :: {:ok, User.t()} | {:error, any}
+  def get_user(params) do
+    with {:ok, {username, password}} <- fetch_credentials(params),
          %User{} = user <- User.get_by(%{username: username, provider: "local"}),
          {:ok, user} <- checkpw(user, password) do
       {:ok, user}
@@ -18,31 +17,34 @@ defmodule CPub.Web.OAuth.Authenticator do
     end
   end
 
-  @spec create_user_from_registration(Plug.Conn.t(), Registration.t()) ::
+  @spec create_user_from_registration(Registration.t(), map) ::
           {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def create_user_from_registration(
-        %Plug.Conn{params: %{"authorization" => registration_params}},
-        %Registration{} = registration
+        %Registration{} = registration,
+        %{"authorization" => %{"provider" => "local", "password" => password}}
       ) do
-    provider =
-      case registration_params["provider"] do
-        "" -> App.get_provider(registration_params["state"])
-        provider -> provider
-      end
+    user_attrs = %{username: registration.username, password: password}
 
-    user_attrs = %{username: registration.username, provider: provider}
+    {:ok, user} = User.create(user_attrs)
+    {:ok, _} = Registration.bind_to_user(registration, user)
 
-    with {:ok, user} <- User.create_from_provider(user_attrs),
-         {:ok, _} <- Registration.bind_to_user(registration, user) do
-      {:ok, user}
-    end
+    {:ok, user}
   end
 
-  @spec fetch_credentials(Plug.Conn.t() | map) ::
-          {:ok, {String.t(), String.t()}} | {:error, :invalid_credentials}
-  def fetch_credentials(%Plug.Conn{params: params}), do: fetch_credentials(params)
+  def create_user_from_registration(
+        %Registration{} = registration,
+        %{"authorization" => %{"provider" => provider}}
+      ) do
+    user_attrs = %{username: registration.username, provider: provider}
 
-  def fetch_credentials(params) do
+    {:ok, user} = User.create_from_provider(user_attrs)
+    {:ok, _} = Registration.bind_to_user(registration, user)
+
+    {:ok, user}
+  end
+
+  @spec fetch_credentials(map) :: {:ok, {String.t(), String.t()}} | {:error, atom}
+  defp fetch_credentials(params) do
     case params do
       %{"authorization" => %{"username" => username, "password" => password}} ->
         {:ok, {username, password}}
@@ -56,7 +58,7 @@ defmodule CPub.Web.OAuth.Authenticator do
   end
 
   @spec checkpw(User.t(), String.t()) :: {:ok, User.t()} | {:error, String.t()}
-  def checkpw(%User{} = user, password) do
+  defp checkpw(%User{} = user, password) do
     Pbkdf2.check_pass(user, password, hash_key: :password)
   end
 end

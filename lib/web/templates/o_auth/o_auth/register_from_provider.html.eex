@@ -12,10 +12,10 @@
 
 <div class="input">
   <%= label f, :username, "Username" %>
-  <%= text_input f, :username, value: @username %>
+  <%= text_input f, :username, value: @username, readonly: true %>
 </div>
 
-<%= submit "Proceed as new user", name: "op", value: "register" %>
+<%= submit "Proceed as new user", name: "op", value: "register_from_provider" %>
 
 <p>Alternatively, sign in to connect to existing account.</p>
 

@@ -58,7 +58,7 @@
          padding: 10px;
          margin-top: 5px;
          margin-bottom: 10px;
-         background-color: #ffffff;
+         background-color: #f9f9f9;
          color: #000000;
          border: 0;
          transition-property: border-bottom;

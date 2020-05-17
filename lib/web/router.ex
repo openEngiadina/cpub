@@ -44,7 +44,7 @@ defmodule CPub.Web.Router do
     post("/apps", AppController, :create)
     get("/apps/verify", AppController, :verify)
 
-    get("/registration_details", OAuthController, :registration_details)
+    get("/register", OAuthController, :registration_local)
     post("/register", OAuthController, :register)
 
     get("/authorize", OAuthController, :authorize)
