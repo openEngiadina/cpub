@@ -6,10 +6,10 @@ defmodule CPub.Web.ActivityController do
   action_fallback CPub.Web.FallbackController
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, _params) do
+  def show(%Plug.Conn{assigns: %{id: activity_id}} = conn, _params) do
     activity =
       Activity
-      |> Repo.get!(conn.assigns[:id])
+      |> Repo.get!(activity_id)
       |> Repo.preload(:object)
 
     conn

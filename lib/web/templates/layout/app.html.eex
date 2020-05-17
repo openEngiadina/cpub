@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimal-ui" />
+    <title>
+        <%= CPub.Config.instance[:name] %>
+    </title>
+    <style>
+     body {
+         background-color: #ffffff;
+         font-family: monospace;
+         color: #000000;
+         text-align: center;
+     }
+
+     .container {
+         max-width: 420px;
+         padding: 20px;
+         background-color: #ffffff;
+         border-radius: 4px;
+         margin: auto;
+         margin-top: 3vh;
+         margin-bottom: 3vh;
+         box-shadow: 0px 0px 4px 2px rgba(71, 130, 167, 0.5);
+     }
+
+     h1 {
+         margin: 0;
+         font-size: 24px;
+     }
+
+     h2 {
+         color: #000000;
+         font-weight: normal;
+         font-size: 18px;
+         margin-bottom: 20px;
+     }
+
+     a {
+         color: color: #d8a070;
+         text-decoration: none;
+     }
+
+     form {
+         width: 100%;
+     }
+
+     .input {
+         text-align: left;
+         color: #89898a;
+         display: flex;
+         flex-direction: column;
+     }
+
+     input {
+         box-sizing: content-box;
+         padding: 10px;
+         margin-top: 5px;
+         margin-bottom: 10px;
+         background-color: #ffffff;
+         color: #000000;
+         border: 0;
+         transition-property: border-bottom;
+         transition-duration: 0.35s;
+         border-top: 1px solid #ddd;
+         border-left: 1px solid #ddd;
+         border-right: 1px solid #ddd;
+         border-bottom: 2px solid #ddd;
+         font-size: 14px;
+     }
+
+     .scopes-input {
+         display: flex;
+         flex-direction: column;
+         margin-top: 1em;
+         text-align: left;
+         color: #89898a;
+     }
+
+     .scopes-input label:first-child {
+         height: 2em;
+     }
+
+     .scopes {
+         display: flex;
+         flex-wrap: wrap;
+         text-align: left;
+         color: #000000 ;
+     }
+
+     .scope {
+         display: flex;
+         flex-basis: 100%;
+         height: 2em;
+         align-items: center;
+     }
+
+     .scope:before {
+         color: #000000;
+         content: "✔\fe0e";
+         margin-left: 1em;
+         margin-right: 1em;
+     }
+
+     [type="checkbox"] + label {
+         display: none;
+         cursor: pointer;
+         margin: 0.5em;
+     }
+
+     [type="checkbox"] {
+         display: none;
+     }
+
+     [type="checkbox"] + label:before {
+         cursor: pointer;
+         display: inline-block;
+         color: white;
+         background-color: #ffffff;
+         border: 4px solid #ffffff;
+         box-shadow: 0px 0px 1px 0 #4782a7;
+         box-sizing: border-box;
+         width: 1.2em;
+         height: 1.2em;
+         margin-right: 1.0em;
+         content: "";
+         transition-property: background-color;
+         transition-duration: 0.35s;
+         color: #ffffff;
+         margin-bottom: -0.2em;
+         border-radius: 2px;
+     }
+
+     [type="checkbox"]:checked + label:before {
+         background-color: #d8a070;
+     }
+
+     input:focus {
+         outline: none;
+         border-bottom: 2px solid #d8a070;
+     }
+
+     button {
+         box-sizing: border-box;
+         width: 100%;
+         background-color: #ffffff;
+         color: #000000;
+         border-radius: 4px;
+         border: none;
+         padding: 10px;
+         margin-top: 20px;
+         margin-bottom: 20px;
+         text-transform: uppercase;
+         font-size: 16px;
+         box-shadow: 0px 0px 2px 0px #4782a7,
+         0px 1px 0px 0px rgba(255, 255, 255, 0.2) inset,
+         0px -1px 0px 0px rgba(71, 130, 167, 0.2) inset;
+
+     }
+
+     button:hover {
+         cursor: pointer;
+         box-shadow: 0px 0px 0px 1px #d8a070,
+         0px 1px 0px 0px rgba(255, 255, 255, 0.2) inset,
+         0px -1px 0px 0px rgba(0, 0, 0, 0.2) inset;
+     }
+
+     .alert-danger {
+         box-sizing: border-box;
+         width: 100%;
+         background-color: #fbeded;
+         border: 1px solid #a74747;
+         border-radius: 4px;
+         padding: 10px;
+         margin-top: 20px;
+         font-weight: 500;
+         font-size: 16px;
+     }
+
+     .alert-info {
+         box-sizing: border-box;
+         width: 100%;
+         border-radius: 4px;
+         border: 1px solid #7d796a;
+         padding: 10px;
+         margin-top: 20px;
+         font-weight: 500;
+         font-size: 16px;
+     }
+
+     @media all and (max-width: 440px) {
+         .container {
+             margin-top: 0
+         }
+
+         .scope {
+             flex-basis: 0%;
+         }
+
+         .scope:before {
+             content: "";
+             margin-left: 0em;
+             margin-right: 1em;
+         }
+
+         .scope:first-child:before {
+             margin-left: 1em;
+             content: "✔\fe0e";
+         }
+
+         .scope:after {
+             content: ",";
+         }
+
+         .scope:last-child:after {
+             content: "";
+         }
+     }
+     .form-row {
+         display: flex;
+     }
+     .form-row > label {
+         text-align: left;
+         line-height: 47px;
+         flex: 1;
+     }
+     .form-row > input {
+         flex: 2;
+     }
+    </style>
+  </head>
+  <body>
+      <div class="container">
+          <h1><%= CPub.Config.instance[:name] %></h1>
+          <%= render @view_module, @view_template, assigns %>
+    </div>
+  </body>
+</html>

@@ -14,7 +14,7 @@ defmodule CPub.Web.FallbackController do
           | {:error, any, Ecto.Changeset.t(), any}
 
   @spec call(Plug.Conn.t(), error_tuple) :: Plug.Conn.t()
-  def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
+  def call(%Plug.Conn{} = conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(ChangesetView)
@@ -22,21 +22,21 @@ defmodule CPub.Web.FallbackController do
   end
 
   # Handles error response from an Repo.transaction
-  def call(conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
+  def call(%Plug.Conn{} = conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(ChangesetView)
     |> render("error.json", changeset: changeset)
   end
 
-  def call(conn, {:error, :not_found}) do
+  def call(%Plug.Conn{} = conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
     |> put_view(ErrorView)
     |> render(:"404")
   end
 
-  def call(conn, {:error, msg}) do
+  def call(%Plug.Conn{} = conn, {:error, msg}) do
     conn
     |> put_status(500)
     |> text(msg)

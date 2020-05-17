@@ -91,7 +91,7 @@ defmodule CPub.ActivityPub do
     activity =
       request.activity
       |> Activity.new()
-      |> Activity.changeset()
+      |> Activity.create_changeset()
 
     Request.insert(request, :activity, activity)
   end
@@ -125,7 +125,7 @@ defmodule CPub.ActivityPub do
             })
 
           # replace subject
-          Request.insert(request, request.object_id, Object.changeset(object))
+          Request.insert(request, request.object_id, Object.create_changeset(object))
 
         _ ->
           Request.error(request, :create_object, "could not find object")

@@ -1,11 +1,11 @@
 defmodule CPub.Web.OAuth.Strategy.Pleroma do
   @moduledoc """
-  Provides an Ueberauth strategy for Pleroma compatible providers.
+  Provides an Ueberauth strategy for Pleroma/Mastodon compatible providers.
 
   ## Configuration
 
   OAuth application (with its `client_id` and `client_secret`) is being registered
-  on Pleroma instance dynamically and stored in the database.
+  on Pleroma/Mastodon instance dynamically and stored in the database.
 
   Include the Pleroma provider in your Ueberauth configuration:
 
@@ -21,7 +21,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
     default_scope: "read",
     oauth2_module: __MODULE__.OAuth
 
-  alias CPub.{Config, Repo}
+  alias CPub.Config
   alias CPub.Web.OAuth.App
 
   alias Ueberauth.Auth.{Credentials, Extra, Info}
@@ -32,41 +32,46 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   @provider_verify_account_credentials_endpoint "/api/v1/accounts/verify_credentials"
   @app_scopes ["read"]
 
-  @callback_endpoint "/oauth/pleroma/callback"
+  @callback_endpoint "/auth/pleroma/callback"
 
   @doc """
-  Handles the initial redirect to the Pleroma compatible authentication page.
+  Handles the initial redirect to the Pleroma/Mastodon compatible authentication
+  page.
 
-  Requires the `provider_url` param with Pleroma instance URL.
+  Requires the `provider_url` param with Pleroma/Mastodon instance URL.
 
   The `state` param containing `provider_url` is included, it will be returned
-  back by Pleroma instance.
+  back by Pleroma/Mastodon instance.
   """
   @spec handle_request!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_request!(%Plug.Conn{params: %{"provider_url" => provider_url}} = conn) do
     case is_valid_provider_url(provider_url) do
       true ->
-        opts = [state: provider_url]
-
-        provider_url =
+        apps_url =
           provider_url
           |> URI.merge(@provider_register_app_endpoint)
           |> URI.to_string()
 
-        case ensure_registered_oauth_app(provider_url) do
+        case ensure_registered_app(apps_url) do
           {:ok, app} ->
             scopes = option(conn, :default_scope)
             module = option(conn, :oauth2_module)
 
-            opts =
-              Keyword.merge(opts,
-                redirect_uri: callback_url(conn),
-                scope: scopes,
-                client_id: app.client_id,
-                client_secret: app.client_secret
-              )
+            params = [
+              redirect_uri: callback_url(conn),
+              scope: scopes,
+              client_id: app.client_id,
+              client_secret: app.client_secret,
+              state: provider_url
+            ]
 
-            redirect!(conn, apply(module, :authorize_url!, [opts, [state: provider_url]]))
+            client_opts = [
+              state: provider_url,
+              client_id: app.client_id,
+              client_secret: app.client_secret
+            ]
+
+            redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
 
           {:error, reason} ->
             set_errors!(conn, [error("OAuth2", reason)])
@@ -82,11 +87,11 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   end
 
   @doc """
-  Handles the callback from Pleroma instance.
+  Handles the callback from Pleroma/Mastodon instance.
 
-  When there is a failure from Pleroma instance the failure is included in the
-  `ueberauth_failure` struct. Otherwise the information returned from Pleroma
-  instance is returned in the `Ueberauth.Auth` struct.
+  When there is a failure from Pleroma/Mastodon instance the failure is included
+  in the `ueberauth_failure` struct. Otherwise the information returned from
+  Pleroma/Mastodon instance is returned in the `Ueberauth.Auth` struct.
   """
   @spec handle_callback!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_callback!(%Plug.Conn{params: %{"code" => code, "state" => state}} = conn) do
@@ -105,39 +110,36 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   end
 
   @doc """
-  Called when no code is received from Pleroma instance.
+  Called when no code is received from Pleroma/Mastodon instance.
   """
-  def handle_callback!(conn) do
+  def handle_callback!(%Plug.Conn{} = conn) do
     set_errors!(conn, [error("missing_code", "No code received")])
   end
 
   @doc """
-  Cleans up the private area of the connection used for passing the raw Pleroma
-  instance response around during the callback.
+  Cleans up the private area of the connection used for passing the raw
+  Pleroma/Mastodon instance response around during the callback.
   """
   @spec handle_cleanup!(Plug.Conn.t()) :: Plug.Conn.t()
-  def handle_cleanup!(conn) do
+  def handle_cleanup!(%Plug.Conn{} = conn) do
     conn
     |> put_private(:pleroma_user, nil)
     |> put_private(:pleroma_token, nil)
   end
 
   @doc """
-  Fetches the uid field from the Pleroma instance response.
+  Fetches the uid field from the Pleroma/Mastodon instance response.
 
   This defaults to the option `username`.
   """
   @spec uid(Plug.Conn.t()) :: String.t()
-  def uid(conn) do
-    conn.private.pleroma_user["username"]
-  end
+  def uid(%Plug.Conn{private: %{pleroma_user: %{"username" => username}}}), do: username
 
   @doc """
-  Includes the credentials from the Pleroma instance response.
+  Includes the credentials from the Pleroma/Mastodon instance response.
   """
   @spec credentials(Plug.Conn.t()) :: Credentials.t()
-  def credentials(conn) do
-    token = conn.private.pleroma_token
+  def credentials(%Plug.Conn{private: %{pleroma_token: token}}) do
     scopes = String.split(token.other_params["scope"] || "", ",")
 
     %Credentials{
@@ -154,9 +156,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   Fetches the fields to populate the info section of the `Ueberauth.Auth` struct.
   """
   @spec info(Plug.Conn.t()) :: Info.t()
-  def info(conn) do
-    user = conn.private.pleroma_user
-
+  def info(%Plug.Conn{private: %{pleroma_user: user}}) do
     %Info{
       name: user["display_name"],
       nickname: user["username"],
@@ -169,17 +169,12 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   end
 
   @doc """
-  Stores the raw information (including the token) obtained from the Pleroma
-  instance callback.
+  Stores the raw information (including the token) obtained from the
+  Pleroma/Mastodon instance callback.
   """
   @spec extra(Plug.Conn.t()) :: Extra.t()
-  def extra(conn) do
-    %Extra{
-      raw_info: %{
-        token: conn.private.pleroma_token,
-        user: conn.private.pleroma_user
-      }
-    }
+  def extra(%Plug.Conn{private: %{pleroma_user: user, pleroma_token: token}}) do
+    %Extra{raw_info: %{token: token, user: user}}
   end
 
   @spec is_valid_provider_url(String.t()) :: boolean
@@ -189,26 +184,26 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
     !!(uri.scheme && uri.host)
   end
 
-  @spec ensure_registered_oauth_app(String.t()) :: App.t()
-  defp ensure_registered_oauth_app(provider_url) do
-    app = Repo.get_by(App, %{provider: @provider, client_name: App.get_provider(provider_url)})
+  @spec ensure_registered_app(String.t()) :: {:ok, App.t()} | {:error, any}
+  defp ensure_registered_app(apps_url) do
+    app = App.get_by(%{provider: @provider, client_name: App.get_provider(apps_url)})
 
     case app do
       %App{} = app ->
         # T O D O : verify oauth app credentials
         {:ok, app}
 
-      _ ->
-        register_oauth_app_on_provider(provider_url)
+      nil ->
+        register_app_on_provider(apps_url)
     end
   end
 
-  @spec register_oauth_app_on_provider(String.t()) :: {:ok, App.t()} | {:error, any}
-  defp register_oauth_app_on_provider(provider_url) do
+  @spec register_app_on_provider(String.t()) :: {:ok, App.t()} | {:error, any}
+  defp register_app_on_provider(apps_url) do
     headers = [{"Content-Type", "application/json"}]
     body = Jason.encode!(oauth_app_body())
 
-    response = :hackney.request(:post, provider_url, headers, body, [])
+    response = :hackney.request(:post, apps_url, headers, body, [])
 
     with {:ok, _resp_code, _headers, client} <- response,
          {:ok, body} <- :hackney.body(client),
@@ -219,21 +214,21 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
 
         body ->
           body
-          |> prepare_app_to_create(provider_url)
+          |> prepare_app_to_create(apps_url)
           |> App.create_from_provider()
       end
     else
+      {:error, :nxdomain} ->
+        {:error, "Invalid Provider URL"}
+
       {:error, %Jason.DecodeError{}} ->
-        {:error, "Pleroma incompatible provider"}
+        {:error, "Pleroma/Mastodon incompatible provider"}
     end
   end
 
   @spec oauth_app_body :: map
   defp oauth_app_body do
-    client_name =
-      Config.base_url()
-      |> URI.parse()
-      |> Map.get(:host)
+    client_name = App.get_provider(Config.base_url())
 
     redirect_uris =
       Config.base_url()
@@ -276,8 +271,8 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
     end
   end
 
-  @spec option(Plug.Conn.t(), map | String.t()) :: any
-  defp option(conn, key) do
+  @spec option(Plug.Conn.t(), atom | String.t()) :: any
+  defp option(%Plug.Conn{} = conn, key) do
     Keyword.get(options(conn), key, Keyword.get(default_options(), key))
   end
 end

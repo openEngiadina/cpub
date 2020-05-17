@@ -1,4 +1,4 @@
-defmodule CPub.Repo.Migrations.CreateOauthApps do
+defmodule CPub.Repo.Migrations.CreateOAuthApps do
   use Ecto.Migration
 
   def change do
@@ -10,11 +10,11 @@ defmodule CPub.Repo.Migrations.CreateOauthApps do
       add(:website, :string)
       add(:client_id, :string)
       add(:client_secret, :string)
-      add(:trusted, :boolean)
+      add(:trusted, :boolean, default: true)
 
       timestamps()
     end
 
-    create unique_index(:oauth_apps, [:provider, :client_name])
+    create unique_index(:oauth_apps, [:client_name, :provider])
   end
 end

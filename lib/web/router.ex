@@ -1,23 +1,12 @@
 defmodule CPub.Web.Router do
   use CPub.Web, :router
 
-  alias CPub.Web.{BasicAuthenticationPlug, EnsureAuthenticationPlug}
-
-  @doc """
-  Cast the request URL to a valid ID (IRI) and assign to connection.
-
-  This is useful as the id for an object being accessed is usually the request url.
-  """
-  @spec assign_id(Plug.Conn.t(), Plug.opts()) :: Plug.opts()
-  def assign_id(conn, _opts) do
-    case request_url(conn) |> CPub.ID.cast() do
-      {:ok, id} ->
-        assign(conn, :id, id)
-
-      _ ->
-        conn
-    end
-  end
+  alias CPub.Web.{
+    BasicAuthenticationPlug,
+    EnsureAuthenticationPlug,
+    OAuthAuthenticationPlug,
+    ObjectIDPlug
+  }
 
   pipeline :oauth do
     plug :accepts, ["json"]
@@ -25,7 +14,7 @@ defmodule CPub.Web.Router do
 
   pipeline :api do
     plug :accepts, ["json", "ttl"]
-    plug :assign_id
+    plug ObjectIDPlug
   end
 
   pipeline :optionally_authenticated do
@@ -33,13 +22,42 @@ defmodule CPub.Web.Router do
     # This is useful for endpoints that can be accessed by non-authenticated
     # users and authenticated users. But authenticated users get a different
     # response.
+    plug :fetch_session
+    plug OAuthAuthenticationPlug
     plug BasicAuthenticationPlug
   end
 
   pipeline :authenticated do
     # This pipeline requires connection to be authenticated.
     # If not a 401 is returned and connection is halted.
+    plug :fetch_session
+    plug OAuthAuthenticationPlug
+    plug BasicAuthenticationPlug
     plug EnsureAuthenticationPlug
+  end
+
+  scope "/auth", CPub.Web.OAuth do
+    pipe_through :oauth
+
+    ## OAuth server
+
+    post("/apps", AppController, :create)
+    get("/apps/verify", AppController, :verify)
+
+    get("/registration_details", OAuthController, :registration_details)
+    post("/register", OAuthController, :register)
+
+    get("/authorize", OAuthController, :authorize)
+    post("/authorize", OAuthController, :create_authorization)
+    get("/login", OAuthController, :login)
+    post("/token", OAuthController, :exchange_token)
+    post("/revoke", OAuthController, :revoke_token)
+
+    ## OAuth client
+
+    get("/prepare_request", OAuthController, :prepare_request)
+    get "/:provider", OAuthController, :handle_request
+    get "/:provider/callback", OAuthController, :handle_callback
   end
 
   scope "/", CPub.Web do
@@ -54,20 +72,21 @@ defmodule CPub.Web.Router do
     pipe_through :api
     pipe_through :optionally_authenticated
 
+    scope [] do
+      pipe_through :authenticated
+
+      get "/id", UserController, :id
+      get "/verify", UserController, :verify
+    end
+
     resources "/", UserController, only: [:show] do
       get "/me", UserController, :show_me
 
       pipe_through :authenticated
+
       post "/outbox", UserController, :post_to_outbox
       get "/outbox", UserController, :get_outbox
       get "/inbox", UserController, :get_inbox
     end
-  end
-
-  scope "/oauth", CPub.Web.OAuth do
-    pipe_through :oauth
-
-    get "/:provider", OAuthController, :handle_request
-    get "/:provider/callback", OAuthController, :handle_callback
   end
 end

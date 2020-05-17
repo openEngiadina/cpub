@@ -2,6 +2,7 @@ defmodule CPub.Web.RDFView do
   @moduledoc """
   A generic view for anything that implements the `RDF.Data` protocol.
   """
+
   use CPub.Web, :view
 
   @spec render(String.t(), map) :: String.t() | map

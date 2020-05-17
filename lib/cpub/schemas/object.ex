@@ -25,8 +25,8 @@ defmodule CPub.Object do
     timestamps()
   end
 
-  @spec changeset(t) :: Ecto.Changeset.t()
-  def changeset(%__MODULE__{} = object) do
+  @spec create_changeset(t) :: Ecto.Changeset.t()
+  def create_changeset(%__MODULE__{} = object) do
     object
     |> change
     |> ID.validate()
@@ -36,9 +36,9 @@ defmodule CPub.Object do
   end
 
   @spec new(map) :: t
-  def new(%{activity_id: activity_id} = params) do
-    id = Map.get(params, :id, ID.generate())
-    data = Map.get(params, :data, RDF.Description.new(id))
+  def new(%{activity_id: activity_id} = attrs) do
+    id = Map.get(attrs, :id, ID.generate())
+    data = Map.get(attrs, :data, RDF.Description.new(id))
 
     %__MODULE__{id: id, data: data, activity_id: activity_id}
   end

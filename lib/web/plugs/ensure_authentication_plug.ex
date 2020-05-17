@@ -5,22 +5,17 @@ defmodule CPub.Web.EnsureAuthenticationPlug do
 
   import Plug.Conn
 
+  alias CPub.User
+
   @spec init(Plug.opts()) :: Plug.opts()
   def init(opts), do: opts
 
   @spec call(Plug.Conn.t(), Plug.opts()) :: Plug.Conn.t()
-  def call(conn, _opts) do
-    case conn.assigns[:user] do
-      %CPub.User{} ->
-        conn
-
-      _ ->
-        unauthorized(conn)
-    end
-  end
+  def call(%Plug.Conn{assigns: %{user: %User{}}} = conn, _opts), do: conn
+  def call(%Plug.Conn{} = conn, _opts), do: unauthorized(conn)
 
   @spec unauthorized(Plug.Conn.t()) :: Plug.Conn.t()
-  def unauthorized(conn) do
+  def unauthorized(%Plug.Conn{} = conn) do
     conn
     |> put_resp_content_type("text/plain")
     |> send_resp(:unauthorized, "401 Unauthorized")

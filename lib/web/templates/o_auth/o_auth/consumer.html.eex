@@ -1,0 +1,32 @@
+<h2>Sign in with external provider</h2>
+
+<%= form_for @conn, Routes.o_auth_path(@conn, :prepare_request), [as: "authorization", method: "get"], fn f -> %>
+    <div style="display: none">
+        <%= render @view_module, "_scopes.html", Map.merge(assigns, %{form: f}) %>
+    </div>
+
+    <%= hidden_input f, :client_id, value: @client_id %>
+    <%= hidden_input f, :redirect_uri, value: @redirect_uri %>
+    <%= hidden_input f, :state, value: @state %>
+
+    <% {multi_instances_strategies, single_instance_strategies} = Enum.split_with(CPub.Config.auth_consumer_strategies(), &(&1 in CPub.Config.auth_multi_instances_consumer_strategies)) %>
+
+    <%= for strategy <- single_instance_strategies do %>
+        <%= submit "Sign in with #{CPub.Config.auth_consumer_strategies_names[String.to_atom(strategy)] || strategy}", name: "provider", value: strategy %>
+    <% end %>
+
+    <%= if single_instance_strategies != [] && multi_instances_strategies != [] do %>
+        <div class="scopes"><hr></div>
+    <% end %>
+
+    <%= if multi_instances_strategies != [] do %>
+        <div class="input">
+            <%= label f, :password, "Provider URL" %>
+            <%= text_input f, :provider_url %>
+        </div>
+
+        <%= for strategy <- multi_instances_strategies do %>
+            <%= submit "Sign in with #{CPub.Config.auth_consumer_strategies_names[String.to_atom(strategy)] || strategy}", name: "provider", value: strategy %>
+        <% end %>
+    <% end %>
+<% end %>

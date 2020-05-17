@@ -38,27 +38,28 @@ defmodule CPub.User do
   end
 
   @spec create_changeset(t, map) :: Ecto.Changeset.t()
-  def create_changeset(%__MODULE__{} = user, params) do
+  defp create_changeset(%__MODULE__{} = user, attrs) do
     user
-    |> cast(params, [:username, :password, :profile])
+    |> cast(attrs, [:username, :password, :profile])
     |> validate_required([:username, :password, :profile])
-    |> unique_constraint(:username, name: "users_provider_username_index")
+    |> put_change(:provider, "local")
+    |> unique_constraint(:username, name: "users_username_provider_index")
     |> unique_constraint(:id, name: "users_pkey")
   end
 
   @spec create_from_provider_changeset(t, map) :: Ecto.Changeset.t()
-  def create_from_provider_changeset(%__MODULE__{} = user, params) do
+  defp create_from_provider_changeset(%__MODULE__{} = user, attrs) do
     user
-    |> cast(params, [:username, :provider, :profile])
+    |> cast(attrs, [:username, :provider, :profile])
     |> validate_required([:username, :provider, :profile])
-    |> unique_constraint(:username, name: "users_provider_username_index")
+    |> unique_constraint(:username, name: "users_username_provider_index")
     |> unique_constraint(:id, name: "users_pkey")
   end
 
   @spec create(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
-  def create(%{username: username, password: password} = params) do
-    {id, default_profile} = default_profile(params)
-    profile = Map.get(params, :profile, default_profile)
+  def create(%{username: username, password: password} = attrs) do
+    {id, default_profile} = default_profile(attrs)
+    profile = Map.get(attrs, :profile, default_profile)
 
     %__MODULE__{id: id}
     |> create_changeset(%{username: username, password: password, profile: profile})
@@ -66,9 +67,9 @@ defmodule CPub.User do
   end
 
   @spec create_from_provider(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
-  def create_from_provider(%{username: username, provider: provider} = params) do
-    {id, default_profile} = default_profile(params, true)
-    profile = Map.get(params, :profile, default_profile)
+  def create_from_provider(%{username: username, provider: provider} = attrs) do
+    {id, default_profile} = default_profile(attrs, true)
+    profile = Map.get(attrs, :profile, default_profile)
 
     %__MODULE__{id: id}
     |> create_from_provider_changeset(%{username: username, provider: provider, profile: profile})
@@ -76,11 +77,9 @@ defmodule CPub.User do
   end
 
   @spec default_profile(map, boolean) :: {RDF.IRI.t(), RDF.Description.t()}
-  defp default_profile(%{username: username} = params, is_remote \\ false) do
-    id_string =
-      if is_remote,
-        do: "users/#{username}-#{Crypto.random_string(8)}",
-        else: "users/#{username}"
+  defp default_profile(%{username: username}, from_provider? \\ false) do
+    username = if from_provider?, do: "#{username}-#{Crypto.random_string(8)}", else: username
+    id_string = "users/#{username}"
 
     id = ID.merge_with_base_url(id_string)
     inbox_id = ID.merge_with_base_url("users/#{username}/inbox")
@@ -91,35 +90,44 @@ defmodule CPub.User do
       |> RDF.Description.add(RDF.type(), RDF.iri(AS.Person))
       |> RDF.Description.add(LDP.inbox(), inbox_id)
       |> RDF.Description.add(AS.outbox(), outbox_id)
-      |> WebID.Profile.create(params)
+      |> WebID.Profile.create(%{username: username})
 
     {id, default_profile}
   end
 
-  @spec verify_password(String.t(), String.t()) :: {:ok, t} | {:error, String.t()}
-  def verify_password(username, password) do
+  @spec get_by(map) :: t | nil
+  def get_by(attrs) do
+    Repo.get_by(__MODULE__, attrs)
+  end
+
+  @spec get_by_password(String.t(), String.t()) :: {:ok, t} | {:error, String.t()}
+  def get_by_password(username, password) do
     __MODULE__
     |> Repo.get_by(username: username)
     |> Pbkdf2.check_pass(password, hash_key: :password)
   end
 
-  @spec get_user(String.t()) :: t | nil
-  def get_user(username) do
-    Repo.get_by(__MODULE__, username: username)
-  end
+  @spec get_cached_by_id(String.t() | RDF.IRI.t()) :: t | nil
+  def get_cached_by_id(id) do
+    key = "id:#{id}"
 
-  @spec get_user(String.t(), String.t()) :: t | nil
-  def get_user(username, provider) do
-    Repo.get_by(__MODULE__, username: username, provider: provider)
+    with {:ok, nil} <- Cachex.get(:user_cache, key),
+         user when not is_nil(user) <- get_by(%{id: id}),
+         {:ok, true} <- Cachex.put(:user_cache, key, user) do
+      user
+    else
+      {:ok, user} -> user
+      nil -> nil
+    end
   end
 
   @spec get_inbox_id(t) :: RDF.IRI.t()
-  def get_inbox_id(user) do
+  def get_inbox_id(%__MODULE__{} = user) do
     ID.merge_with_base_url("users/#{user.username}/inbox")
   end
 
   @spec get_outbox_id(t) :: RDF.IRI.t()
-  def get_outbox_id(user) do
+  def get_outbox_id(%__MODULE__{} = user) do
     ID.merge_with_base_url("users/#{user.username}/outbox")
   end
 
@@ -127,7 +135,7 @@ defmodule CPub.User do
   Returns a list of activities that are in the users inbox.
   """
   @spec get_inbox(t) :: RDF.Graph.t()
-  def get_inbox(user) do
+  def get_inbox(%__MODULE__{} = user) do
     inbox_query = from a in Activity, where: ^user.id in a.recipients
 
     inbox_query
@@ -140,7 +148,7 @@ defmodule CPub.User do
   Returns activities that have been performed by user.
   """
   @spec get_outbox(t) :: RDF.Graph.t()
-  def get_outbox(user) do
+  def get_outbox(%__MODULE__{} = user) do
     outbox_query = from a in Activity, where: ^user.id == a.actor
 
     outbox_query

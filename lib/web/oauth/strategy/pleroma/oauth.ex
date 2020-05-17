@@ -1,11 +1,10 @@
 defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
   @moduledoc """
-  An implementation of OAuth2 for Pleroma compatible providers.
+  An implementation of OAuth2 for Pleroma/Mastodon compatible providers.
   """
 
   use OAuth2.Strategy
 
-  alias CPub.Repo
   alias CPub.Web.OAuth.App
 
   alias OAuth2.{AccessToken, Client, Response, Strategy}
@@ -14,7 +13,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
   @token_endpoint "/oauth/token"
 
   @doc """
-  Constructs a client for requests to Pleroma compatible providers.
+  Constructs a client for requests to Pleroma/Mastodon compatible providers.
   """
   @spec client(keyword) :: Client.t()
   def client(opts) do
@@ -46,7 +45,6 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
   @spec authorize_url!(keyword, keyword) :: String.t()
   def authorize_url!(params \\ [], opts \\ []) do
     opts
-    |> Keyword.merge(params)
     |> client()
     |> Client.authorize_url!(params)
   end
@@ -78,7 +76,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
 
   @spec complete_params_from_app(keyword, String.t()) :: keyword
   defp complete_params_from_app(params, provider_url) do
-    app = Repo.get_by(App, %{client_name: App.get_provider(provider_url)})
+    app = App.get_by(%{client_name: App.get_provider(provider_url)})
 
     Keyword.merge(params,
       client_id: app.client_id,

@@ -7,6 +7,6 @@ defmodule CPub.Repo.Migrations.AddProviderToUser do
     end
 
     drop unique_index(:users, [:username])
-    create unique_index(:users, [:provider, :username])
+    create unique_index(:users, [:username, :provider])
   end
 end
