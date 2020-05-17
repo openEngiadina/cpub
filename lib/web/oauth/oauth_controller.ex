@@ -181,9 +181,20 @@ defmodule CPub.Web.OAuth.OAuthController do
     authorize(conn, Map.merge(params, auth_attrs))
   end
 
+  # Authentication from external provider
   @spec authorize(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def authorize(%Plug.Conn{} = conn, params) do
+  def authorize(%Plug.Conn{} = conn, %{"client_id" => _, "redirect_uri" => _} = params) do
     do_authorize(conn, params)
+  end
+
+  # Local authentication
+  def authorize(%Plug.Conn{} = conn, params) do
+    app = App.get_by(%{client_name: "local", provider: "local"})
+
+    do_authorize(
+      conn,
+      Map.merge(params, %{"client_id" => app.client_id, "redirect_uri" => app.redirect_uris})
+    )
   end
 
   defp do_authorize(
@@ -212,9 +223,13 @@ defmodule CPub.Web.OAuth.OAuthController do
         %{"authorization" => _} = params,
         opts \\ []
       ) do
-    {:ok, auth} = do_create_authorization(conn, params, opts[:user])
+    case do_create_authorization(conn, params, opts[:user]) do
+      {:ok, auth} ->
+        post_create_authorization(conn, auth, params)
 
-    post_create_authorization(conn, auth, params)
+      error ->
+        handle_create_authorization_error(conn, error, params)
+    end
   end
 
   @spec do_create_authorization(Plug.Conn.t(), map, User.t() | nil) ::
