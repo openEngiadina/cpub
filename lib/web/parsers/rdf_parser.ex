@@ -4,7 +4,7 @@ defmodule CPub.Web.RDFParser do
   """
   @behaviour Plug.Parsers
 
-  alias RDF.{Turtle}
+  alias RDF.Turtle
   import RDF.Sigils
 
   @doc false
