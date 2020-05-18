@@ -59,8 +59,6 @@ defmodule CPub.MixProject do
       {:cors_plug, "~> 2.0"},
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
-      {:comeonin_ecto_password, "~> 3.0.0"},
-      {:pbkdf2_elixir, "~> 1.0.2"},
       {:oauth2, "~> 0.8.2"},
       {:ueberauth, "~> 0.5.0"},
       {:gettext, "~> 0.11"},
