@@ -11,9 +11,13 @@ defmodule CPub.Web.ObjectIDPlug do
 
   @spec call(Plug.Conn.t(), Plug.opts()) :: Plug.Conn.t()
   def call(%Plug.Conn{} = conn, _opts) do
+    # Major hack: This was because proxy was making it impossible to figure out the request_url properly. TODO fix.
+    request_url =
+      String.replace_suffix(Application.get_env(:cpub, :base_url), "/", "") <>
+        conn.request_path
+
     {:ok, id} =
-      conn
-      |> request_url()
+      request_url
       |> URI.parse()
       |> Map.put(:query, nil)
       |> URI.to_string()

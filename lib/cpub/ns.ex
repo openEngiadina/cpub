@@ -6,7 +6,7 @@ defmodule CPub.NS do
   use RDF.Vocabulary.Namespace
 
   defvocab(ActivityStreams,
-    base_iri: "http://www.w3.org/ns/activitystreams#",
+    base_iri: "https://www.w3.org/ns/activitystreams#",
     file: "activitystreams2.ttl"
   )
 

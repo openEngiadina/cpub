@@ -2,7 +2,7 @@ defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
   alias CPub.{ActivityPub, ID, Repo, User}
-  alias RDF.{Graph, IRI, Turtle}
+  alias RDF.{Graph, IRI}
 
   action_fallback CPub.Web.FallbackController
 
@@ -46,20 +46,10 @@ defmodule CPub.Web.UserController do
     json(conn, %{username: username})
   end
 
-  @spec read_rdf_body(Plug.Conn.t(), keyword) ::
-          {:ok, RDF.Graph.t() | RDF.Dataset.t(), Plug.Conn.t()} | {:error, any}
-  defp read_rdf_body(%Plug.Conn{} = conn, opts) do
-    with {:ok, body, conn} <- read_body(conn),
-         {:ok, data} <- Turtle.Decoder.decode(body, opts) do
-      {:ok, data, conn}
-    end
-  end
-
   @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def post_to_outbox(%Plug.Conn{assigns: %{user: %User{} = user}} = conn, _params) do
-    with activity_id <- ID.generate(type: :activity),
-         {:ok, data, conn} <- read_rdf_body(conn, base_iri: activity_id),
-         {:ok, %{activity: activity}} <- ActivityPub.handle_activity(activity_id, data, user) do
+  def post_to_outbox(conn, %{graph: graph}) do
+    with user <- conn.assigns.user,
+         {:ok, %{activity: activity}} <- ActivityPub.handle_activity(graph, user) do
       conn
       |> put_resp_header("Location", IRI.to_string(activity.id))
       |> send_resp(:created, "")

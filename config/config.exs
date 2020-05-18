@@ -16,7 +16,7 @@ config :cpub,
 config :cpub, CPub.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "tohOUv9KpQMbJJ4XMCUhibCzI/kt6yhXXwkeWYCHy+FfDx55PHnkoqAe11nOk6fq",
-  render_errors: [view: CPubWeb.ErrorView, accepts: ~w(json)],
+  render_errors: [view: CPub.Web.ErrorView, accepts: ~w(json)],
   pubsub: [name: CPub.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Configures Elixir's Logger
@@ -28,15 +28,12 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 # Set up mime-type for RDF/Turtle
-config :mime, :types, %{"text/turtle" => ["ttl"]}
-
-# Configure CORS
-config :cors_plug, origin: ["*"]
+config :mime, :types, %{"text/turtle" => ["ttl"], "application/rdf+json" => ["rj"]}
 
 # Default prefixes for RDF
 config :rdf,
   default_prefixes: %{
-    as: "http://www.w3.org/ns/activitystreams#",
+    as: "https://www.w3.org/ns/activitystreams#",
     ldp: "http://www.w3.org/ns/ldp#",
     foaf: "http://xmlns.com/foaf/0.1/"
   }

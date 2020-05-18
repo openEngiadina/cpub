@@ -27,7 +27,7 @@ defmodule CPub.ActivityPubTest do
         )
         |> Graph.add(object)
 
-      {:ok, request} = CPub.ActivityPub.handle_activity(activity_id, data, user)
+      {:ok, request} = CPub.ActivityPub.handle_activity(data, user)
 
       # Ensure activity was inserted
       assert request.activity

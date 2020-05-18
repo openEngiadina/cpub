@@ -91,6 +91,7 @@ defmodule CPub.User do
       |> RDF.Description.add(RDF.type(), RDF.iri(AS.Person))
       |> RDF.Description.add(LDP.inbox(), inbox_id)
       |> RDF.Description.add(AS.outbox(), outbox_id)
+      |> RDF.Description.add(AS.preferredUsername(), username)
       |> WebID.Profile.create(%{username: username})
 
     {id, default_profile}

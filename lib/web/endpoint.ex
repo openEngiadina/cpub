@@ -26,11 +26,6 @@ defmodule CPub.Web.Endpoint do
   plug Plug.RequestId
   plug Plug.Logger
 
-  plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
-    pass: ["*/*"],
-    json_decoder: Phoenix.json_library()
-
   plug Plug.MethodOverride
   plug Plug.Head
 
@@ -44,7 +39,10 @@ defmodule CPub.Web.Endpoint do
     secure: Config.cookie_secure?(),
     extra: Config.cookie_extra_attrs()
 
-  plug CORSPlug
+  plug Corsica,
+    origins: "*",
+    allow_headers: :all,
+    expose_headers: ~w(Location)
 
   plug CPub.Web.Router
 end
