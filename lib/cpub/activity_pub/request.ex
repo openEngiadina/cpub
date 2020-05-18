@@ -10,12 +10,12 @@ defmodule CPub.ActivityPub.Request do
   alias Ecto.Multi
 
   @type t :: %__MODULE__{
-          multi: Multi.t(),
-          id: RDF.IRI.t(),
-          activity: RDF.Description.t(),
-          object: RDF.Description.t(),
-          data: RDF.Graph.t(),
-          user: User.t()
+          multi: Multi.t() | nil,
+          id: RDF.IRI.t() | nil,
+          activity: RDF.Description.t() | nil,
+          object: RDF.Description.t() | nil,
+          data: RDF.Graph.t() | nil,
+          user: User.t() | nil
         }
 
   @type operation ::

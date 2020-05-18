@@ -43,7 +43,7 @@ defmodule CPub.Web.FallbackController do
   end
 
   # This catches Ecto.Multi errors
-  def call(conn, {:error, _, msg, _}) do
+  def call(%Plug.Conn{} = conn, {:error, _, msg, _}) do
     conn
     |> put_status(500)
     |> text(msg)

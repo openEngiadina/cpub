@@ -99,7 +99,7 @@ defmodule CPub.ActivityPub do
             activity: %{activity_description | subject: new_activity_id}
         }
 
-      nil ->
+      [] ->
         Request.error(
           request,
           :set_activity,
@@ -176,7 +176,7 @@ defmodule CPub.ActivityPub do
         })
 
       request
-      |> Request.insert(request.object.subject, Object.changeset(object))
+      |> Request.insert(request.object.subject, Object.create_changeset(object))
     else
       request
     end

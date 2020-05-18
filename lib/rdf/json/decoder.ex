@@ -8,7 +8,7 @@ defmodule RDF.JSON.Decoder do
   @type object :: %{String.t() => String.t()}
 
   @impl Serialization.Decoder
-  @spec decode(iodata, [Jason.decode_opt()]) ::
+  @spec decode(iodata, keyword) ::
           {:ok, Graph.t()} | {:error, Jason.DecodeError.t()}
   def decode(content, opts \\ []) do
     with {:ok, json_object} <- Jason.decode(content),

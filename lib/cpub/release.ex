@@ -16,7 +16,8 @@ defmodule CPub.Release do
   end
 
   defp repos do
-    Application.load(@app)
+    :ok = Application.load(@app)
+
     Application.fetch_env!(@app, :ecto_repos)
   end
 end
