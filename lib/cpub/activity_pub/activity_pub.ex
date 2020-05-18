@@ -99,7 +99,7 @@ defmodule CPub.ActivityPub do
             activity: %{activity_description | subject: new_activity_id}
         }
 
-      nil ->
+      [] ->
         Request.error(
           request,
           :set_activity,
