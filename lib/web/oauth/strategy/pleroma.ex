@@ -190,7 +190,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
 
     case app do
       %App{} = app ->
-        # T O D O : verify oauth app credentials
+        # TODO : verify oauth app credentials
         {:ok, app}
 
       nil ->

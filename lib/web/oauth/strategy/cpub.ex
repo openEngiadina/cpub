@@ -135,7 +135,7 @@ defmodule CPub.Web.OAuth.Strategy.CPub do
   def uid(%Plug.Conn{private: %{cpub_user: %{"username" => username}}}) do
     username
 
-    # T O D O : call /users/id and get username from user's RDF representation
+    # TODO : call /users/id and get username from user's RDF representation
   end
 
   @doc """
@@ -185,7 +185,7 @@ defmodule CPub.Web.OAuth.Strategy.CPub do
 
     case app do
       %App{} = app ->
-        # T O D O : verify oauth app credentials
+        # TODO : verify oauth app credentials
         {:ok, app}
 
       nil ->

@@ -37,8 +37,8 @@ defmodule CPub.ActivityPubTest do
                from o in CPub.Object, where: o.id in ^request.activity[AS.object()]
              )
 
-      # T O D O: check that activity was placed in user outbox
-      # T O D O: add recipients and check for proper delivery
+      # TODO: check that activity was placed in user outbox
+      # TODO: add recipients and check for proper delivery
     end
   end
 end
