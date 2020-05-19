@@ -1,7 +1,7 @@
 defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
-  alias CPub.{ActivityPub, ID, Repo, User}
+  alias CPub.{ActivityPub, Repo, User}
   alias RDF.{Graph, IRI}
 
   action_fallback CPub.Web.FallbackController
