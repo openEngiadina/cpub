@@ -11,6 +11,11 @@ defmodule CPub.Web.Router do
 
   pipeline :oauth do
     plug :accepts, ["json"]
+
+    plug Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      pass: ["*/*"],
+      json_decoder: Phoenix.json_library()
   end
 
   pipeline :api do
