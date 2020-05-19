@@ -24,6 +24,7 @@ defmodule CPub.Web.OAuth.App do
   schema "oauth_apps" do
     field(:client_name, :string)
     field(:provider, :string)
+    # TODO use {:array, :string} for :redirect_uris
     field(:redirect_uris, :string)
     field(:scopes, {:array, :string}, default: [])
     field(:website, :string)
@@ -123,7 +124,12 @@ defmodule CPub.Web.OAuth.App do
   @spec get_or_create_local_app :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def get_or_create_local_app do
     get_or_create(
-      %{client_name: "local", provider: "local", redirect_uris: ".", trusted: true},
+      %{
+        client_name: "local",
+        provider: "local",
+        redirect_uris: ". urn:ietf:wg:oauth:2.0:oob",
+        trusted: true
+      },
       ["read"]
     )
   end

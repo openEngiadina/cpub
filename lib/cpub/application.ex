@@ -21,6 +21,7 @@ defmodule CPub.Application do
     opts = [strategy: :one_for_one, name: CPub.Supervisor]
     {:ok, pid} = Supervisor.start_link(children, opts)
 
+    # Create a OAuth App for local authentication
     {:ok, _} = App.get_or_create_local_app()
 
     {:ok, pid}
