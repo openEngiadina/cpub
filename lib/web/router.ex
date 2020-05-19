@@ -5,7 +5,8 @@ defmodule CPub.Web.Router do
     BasicAuthenticationPlug,
     EnsureAuthenticationPlug,
     OAuthAuthenticationPlug,
-    ObjectIDPlug
+    ObjectIDPlug,
+    RDFParser
   }
 
   pipeline :oauth do
@@ -15,6 +16,10 @@ defmodule CPub.Web.Router do
   pipeline :api do
     plug :accepts, ["rj", "ttl"]
     plug ObjectIDPlug
+
+    plug Plug.Parsers,
+      parsers: [RDFParser],
+      pass: ["*/*"]
   end
 
   pipeline :optionally_authenticated do
