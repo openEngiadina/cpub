@@ -26,6 +26,11 @@ defmodule CPub.Web.Endpoint do
   plug Plug.RequestId
   plug Plug.Logger
 
+  plug Plug.Parsers,
+    parsers: [:urlencoded, :multipart, :json, CPub.Web.RDFParser],
+    pass: ["*/*"],
+    json_decoder: Phoenix.json_library()
+
   plug Plug.MethodOverride
   plug Plug.Head
 

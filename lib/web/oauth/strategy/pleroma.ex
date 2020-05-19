@@ -17,7 +17,6 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   """
 
   use Ueberauth.Strategy,
-    uid_field: :login,
     default_scope: "read",
     oauth2_module: __MODULE__.OAuth
 
@@ -221,7 +220,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
       {:error, :nxdomain} ->
         {:error, "Invalid Provider URL"}
 
-      {:error, %Jason.DecodeError{}} ->
+      {:error, _} ->
         {:error, "Pleroma/Mastodon incompatible provider"}
     end
   end

@@ -17,7 +17,6 @@ defmodule CPub.Web.OAuth.Strategy.CPub do
   """
 
   use Ueberauth.Strategy,
-    uid_field: :login,
     default_scope: "read",
     oauth2_module: __MODULE__.OAuth
 
@@ -216,7 +215,7 @@ defmodule CPub.Web.OAuth.Strategy.CPub do
       {:error, :nxdomain} ->
         {:error, "Invalid Provider URL"}
 
-      {:error, %Jason.DecodeError{}} ->
+      {:error, _} ->
         {:error, "CPub incompatible provider"}
     end
   end
