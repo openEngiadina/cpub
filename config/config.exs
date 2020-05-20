@@ -10,7 +10,7 @@ use Mix.Config
 config :cpub,
   namespace: CPub,
   ecto_repos: [CPub.Repo],
-  base_url: "http://localhost:4000/"
+  base_url: System.get_env("BASE_URL") || "http://localhost:4000/"
 
 # Configures the endpoint
 config :cpub, CPub.Web.Endpoint,
@@ -34,14 +34,50 @@ config :mime, :types, %{"text/turtle" => ["ttl"], "application/rdf+json" => ["rj
 config :rdf,
   default_prefixes: %{
     as: "https://www.w3.org/ns/activitystreams#",
-    ldp: "http://www.w3.org/ns/ldp#"
+    ldp: "http://www.w3.org/ns/ldp#",
+    foaf: "http://xmlns.com/foaf/0.1/"
   }
 
-#
+# Configure external authentication providers (OAuth2, OIDC and Solid)
+auth_consumer_strategies =
+  System.get_env("AUTH_CONSUMER_STRATEGIES")
+  |> to_string()
+  |> String.split()
+  |> Enum.map(&hd(String.split(&1, ":")))
+
+not_public_consumer_strategies = ["oidc", "cpub", "pleroma"]
+
+ueberauth_providers =
+  for strategy <- auth_consumer_strategies -- not_public_consumer_strategies do
+    strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
+    strategy_module = String.to_atom(strategy_module_name)
+    {String.to_atom(strategy), {strategy_module, []}}
+  end
+
+config :ueberauth, Ueberauth,
+  base_path: "/auth",
+  providers: ueberauth_providers
+
+config :cpub, :auth,
+  consumer_strategies: auth_consumer_strategies,
+  consumer_strategies_names: [
+    cpub: "CPub",
+    pleroma: "Pleroma / Mastodon"
+  ],
+  oauth2_token_expires_in: 60 * 60,
+  oauth2_issue_new_refresh_token: true
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code
 config :comeonin, Ecto.Password, Pbkdf2
+
+config :cpub, CPub.Web.Endpoint,
+  cookie_signing_salt: "uME3vEPr",
+  secure_cookie: true
+
+config :cpub, :instance,
+  name: "CPub",
+  description: "A semantic ActivityPub server"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

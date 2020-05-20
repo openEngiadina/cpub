@@ -6,8 +6,9 @@ use Mix.Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
+
 config :cpub, CPub.Web.Endpoint,
-  http: [port: 4000],
+  http: [port: System.get_env("PORT") || 4000],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -54,3 +55,27 @@ config :cpub, CPub.Repo,
   database: "cpub_dev",
   hostname: "localhost",
   pool_size: 10
+
+# Configure external OAuth providers
+# config :ueberauth, Ueberauth,
+#   base_path: "/auth",
+#   providers: [
+#     # OAuth2
+#     cpub: {CPub.Web.OAuth.Strategy.CPub, []},
+#     pleroma: {CPub.Web.OAuth.Strategy.Pleroma, []},
+#     github: {Ueberauth.Strategy.Github, [allow_private_emails: true]},
+#     gitlab: {Ueberauth.Strategy.Gitlab, [default_scope: "read_user"]},
+#     discord: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}
+#   ]
+
+# config :ueberauth, Ueberauth.Strategy.Github.OAuth,
+#   client_id: System.get_env("GITHUB_CLIENT_ID"),
+#   client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+
+# config :ueberauth, Ueberauth.Strategy.Gitlab.OAuth,
+#   client_id: System.get_env("GITLAB_CLIENT_ID"),
+#   client_secret: System.get_env("GITLAB_CLIENT_SECRET")
+
+# config :ueberauth, Ueberauth.Strategy.Discord.OAuth,
+#   client_id: System.get_env("DISCORD_CLIENT_ID"),
+#   client_secret: System.get_env("DISCORD_CLIENT_SECRET")

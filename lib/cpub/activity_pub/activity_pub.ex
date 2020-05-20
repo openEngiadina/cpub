@@ -99,7 +99,7 @@ defmodule CPub.ActivityPub do
             activity: %{activity_description | subject: new_activity_id}
         }
 
-      nil ->
+      [] ->
         Request.error(
           request,
           :set_activity,
@@ -134,7 +134,7 @@ defmodule CPub.ActivityPub do
     activity =
       request.activity
       |> Activity.new()
-      |> Activity.changeset()
+      |> Activity.create_changeset()
 
     Request.insert(request, :activity, activity)
   end
@@ -169,14 +169,14 @@ defmodule CPub.ActivityPub do
   defp insert_object(request) do
     if RDF.iri(AS.Create) in request.activity[RDF.type()] do
       object =
-        Object.new(
+        Object.new(%{
           id: request.object.subject,
           data: request.object,
           activity_id: request.id
-        )
+        })
 
       request
-      |> Request.insert(request.object.subject, Object.changeset(object))
+      |> Request.insert(request.object.subject, Object.create_changeset(object))
     else
       request
     end

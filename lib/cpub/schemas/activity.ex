@@ -39,8 +39,8 @@ defmodule CPub.Activity do
     timestamps()
   end
 
-  @spec changeset(t) :: Ecto.Changeset.t()
-  def changeset(activity) do
+  @spec create_changeset(t) :: Ecto.Changeset.t()
+  def create_changeset(%__MODULE__{} = activity) do
     activity
     |> change()
     |> validate_required([:id, :actor, :data])
@@ -69,12 +69,12 @@ defmodule CPub.Activity do
   end
 
   @spec extract_id(t) :: t
-  defp extract_id(activity) do
+  defp extract_id(%__MODULE__{} = activity) do
     %{activity | id: activity.data.subject}
   end
 
   @spec extract_type(t) :: t
-  defp extract_type(activity) do
+  defp extract_type(%__MODULE__{} = activity) do
     type =
       activity.data
       |> Access.get(RDF.type(), [])
@@ -84,7 +84,7 @@ defmodule CPub.Activity do
   end
 
   @spec extract_actor(t) :: t
-  defp extract_actor(activity) do
+  defp extract_actor(%__MODULE__{} = activity) do
     case activity.data[AS.actor()] do
       [actor] ->
         %{activity | actor: actor}
@@ -95,7 +95,7 @@ defmodule CPub.Activity do
   end
 
   @spec extract_recipients(t) :: t
-  defp extract_recipients(activity) do
+  defp extract_recipients(%__MODULE__{} = activity) do
     recipients =
       activity.data
       |> get_all([AS.to(), AS.bto(), AS.cc(), AS.bcc(), AS.audience()], [])
@@ -105,7 +105,7 @@ defmodule CPub.Activity do
   end
 
   @spec remove_bcc(t) :: t
-  defp remove_bcc(activity) do
+  defp remove_bcc(%__MODULE__{} = activity) do
     data =
       activity.data
       |> RDF.Description.delete_predicates(AS.bto())
@@ -191,7 +191,7 @@ defmodule CPub.Activity do
   If object is loaded it will be included in returned data.
   """
   @spec to_rdf(t) :: RDF.Description.t()
-  def to_rdf(activity) do
+  def to_rdf(%__MODULE__{} = activity) do
     activity_description =
       RDF.Description.add(activity.data, AS.published(), activity.inserted_at)
 

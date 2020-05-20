@@ -1,0 +1,6 @@
+#!/bin/sh
+
+AUTH_CONSUMER_STRATEGIES="cpub pleroma" mix deps.get && mix deps.compile
+
+# AUTH_CONSUMER_STRATEGIES="oidc cpub pleroma github gitlab discord" mix deps.get && mix deps.compile
+

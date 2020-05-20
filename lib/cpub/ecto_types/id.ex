@@ -5,6 +5,7 @@ defmodule CPub.ID do
 
   use Ecto.Type
 
+  alias CPub.Config
   alias RDF.IRI
 
   @spec type :: :string
@@ -44,7 +45,7 @@ defmodule CPub.ID do
 
   @spec merge_with_base_url(URI.t() | String.t()) :: IRI.t()
   def merge_with_base_url(rel) do
-    Application.get_env(:cpub, :base_url)
+    Config.base_url()
     |> URI.merge(rel)
     |> IRI.new!()
   end
@@ -71,7 +72,7 @@ defmodule CPub.ID do
   def is_local?(%IRI{} = iri) do
     iri
     |> IRI.to_string()
-    |> String.starts_with?(Application.get_env(:cpub, :base_url))
+    |> String.starts_with?(Config.base_url())
   end
 
   @doc """

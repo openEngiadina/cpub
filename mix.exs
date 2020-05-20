@@ -11,7 +11,7 @@ defmodule CPub.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       dialyzer: dialyzer(),
-      deps: deps(),
+      deps: deps() ++ oauth_deps(),
       test_coverage: [tool: ExCoveralls],
 
       # Docs
@@ -54,18 +54,23 @@ defmodule CPub.MixProject do
       {:phoenix, "~> 1.4.3"},
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_ecto, "~> 4.0"},
+      {:phoenix_html, "~> 2.14"},
+      {:plug_cowboy, "~> 2.0"},
+      {:corsica, "~> 1.1"},
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
+      {:oauth2, "~> 0.8.2"},
+      {:ueberauth, "~> 0.5.0"},
       {:gettext, "~> 0.11"},
+      {:cachex, "~> 3.2"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"},
+      {:poison, "~> 4.0"},
       {:rdf, "~> 0.7.1"},
       {:sparql, "~> 0.3.4"},
-      {:stream_data, "~> 0.4.3"},
       {:json_ld, "~> 0.3.0"},
+      {:stream_data, "~> 0.4.3"},
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.0.2"},
-      {:corsica, "~> 1.1"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:excoveralls, "~> 0.12.2", only: :test},
@@ -73,22 +78,33 @@ defmodule CPub.MixProject do
     ]
   end
 
+  # Specifies OAuth dependencies.
+  def oauth_deps do
+    not_public_consumer_strategies = ["oidc", "cpub", "pleroma"]
+
+    System.get_env("AUTH_CONSUMER_STRATEGIES")
+    |> to_string()
+    |> String.split()
+    |> Kernel.--(not_public_consumer_strategies)
+    |> Enum.map(fn strategy_entry ->
+      with [_strategy, dependency] <- String.split(strategy_entry, ":") do
+        dependency
+      else
+        [strategy] -> "ueberauth_#{strategy}"
+      end
+    end)
+    |> Enum.map(&{String.to_atom(&1), ">= 0.0.0"})
+  end
+
   defp dialyzer do
-    # Dialyzer will emit a warning when the name of the plt file is set
-    # as people misused it in the past. Without setting a name caching of
-    # this file is much more trickier, so we still use this functionality.
     [
       plt_add_apps: [:mix],
-      ignore_warnings: ".dialyzer_ignore"
+      ignore_warnings: ".dialyzer_ignore",
+      flags: [:unmatched_returns, :error_handling, :race_conditions]
     ]
   end
 
   # Aliases are shortcuts or tasks specific to the current project.
-  # For example, to create, migrate and run the seeds file at once:
-  #
-  #     $ mix ecto.setup
-  #
-  # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],

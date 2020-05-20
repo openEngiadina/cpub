@@ -27,13 +27,17 @@ defmodule CPub.Web do
       alias CPub.Web.Router.Helpers, as: Routes
 
       alias CPub.Web.RDFView
+
+      plug :set_put_layout
+
+      defp set_put_layout(conn, _), do: put_layout(conn, "app.html")
     end
   end
 
   def view do
     quote do
       use Phoenix.View,
-        root: "lib/cpub_web/templates",
+        root: "lib/web/templates",
         namespace: CPub.Web
 
       # Import convenience functions from controllers
