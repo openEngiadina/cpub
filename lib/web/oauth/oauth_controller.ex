@@ -10,6 +10,9 @@ defmodule CPub.Web.OAuth.OAuthController do
 
   @oob_token_redirect_uri "urn:ietf:wg:oauth:2.0:oob"
 
+  @oauth_default_scopes ["read"]
+  @oidc_default_scopes ["openid"]
+
   action_fallback CPub.Web.OAuth.FallbackController
 
   plug :fetch_session
@@ -77,10 +80,10 @@ defmodule CPub.Web.OAuth.OAuthController do
       ) do
     info = Map.delete(info, :__struct__)
     username = info.nickname || info.name
-    {provider, client_name} = app_attrs(provider, params["state"])
+    {provider, client_name, scopes} = app_attrs(provider, params["state"])
 
     with {:ok, %App{client_id: client_id, redirect_uris: redirect_uri, scopes: scope} = app} <-
-           get_or_create_app(provider, client_name),
+           get_or_create_app(provider, client_name, scopes),
          {:ok, registration} <-
            Registration.get_or_create(%{username: username, provider: app.client_name}, info) do
       auth_params = %{"client_id" => client_id, "redirect_uri" => redirect_uri, "scope" => scope}
@@ -102,8 +105,8 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
-  @spec get_or_create_app(String.t(), String.t() | nil) :: {:ok, App.t()}
-  defp get_or_create_app(provider, nil) do
+  @spec get_or_create_app(String.t(), String.t() | nil, [String.t()]) :: {:ok, App.t()}
+  defp get_or_create_app(provider, nil, scopes) do
     case App.get_by(%{provider: provider, client_name: provider}) do
       %App{} = app ->
         {:ok, app}
@@ -119,7 +122,7 @@ defmodule CPub.Web.OAuth.OAuthController do
           client_name: provider,
           provider: provider,
           redirect_uris: "#{Config.base_url()}auth/#{provider}/callback",
-          scopes: ["read"],
+          scopes: scopes,
           client_id: app_credentials[:client_id],
           client_secret: app_credentials[:client_secret],
           trusted: true
@@ -127,7 +130,7 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
-  defp get_or_create_app(provider, client_name) do
+  defp get_or_create_app(provider, client_name, _scopes) do
     {:ok, App.get_by(%{provider: provider, client_name: client_name})}
   end
 
@@ -458,13 +461,14 @@ defmodule CPub.Web.OAuth.OAuthController do
     |> halt()
   end
 
-  @spec app_attrs(String.t(), String.t() | nil) :: {String.t(), String.t() | nil}
+  @spec app_attrs(String.t(), String.t() | nil) :: {String.t(), String.t() | nil, [String.t()]}
   # OpenID Connect provider
-  defp app_attrs("oidc", oidc_provider), do: {"oidc_#{oidc_provider}", nil}
+  defp app_attrs("oidc", oidc_provider), do: {"oidc_#{oidc_provider}", nil, @oidc_default_scopes}
   # Sinlge instance OAuth2 provider (eg. Gitlab)
-  defp app_attrs(provider, nil), do: {provider, nil}
+  defp app_attrs(provider, nil), do: {provider, nil, @oauth_default_scopes}
   # Multiple instances OAuth2 provider (eg. Pleroma)
-  defp app_attrs(provider, provider_url), do: {provider, App.get_provider(provider_url)}
+  defp app_attrs(provider, provider_url),
+    do: {provider, App.get_provider(provider_url), @oauth_default_scopes}
 
   # process redirect_uri for local auth app
   @spec redirect_uri(Plug.Conn.t(), String.t()) :: String.t()
