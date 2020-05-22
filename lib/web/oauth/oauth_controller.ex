@@ -42,9 +42,9 @@ defmodule CPub.Web.OAuth.OAuthController do
         %{"provider" => provider, "authorization" => auth_params}
       ) do
     params =
-      Enum.reduce(["state", "provider_url"], %{}, fn key, params ->
-        if auth_params[key] != "", do: Map.put(params, key, auth_params[key]), else: params
-      end)
+      ["state", "provider_url"]
+      |> Enum.reduce(%{}, fn key, params -> put_if_present(params, key, auth_params[key]) end)
+      |> process_provider_url()
 
     redirect(conn, to: Routes.o_auth_path(conn, :handle_request, provider, params))
   end
@@ -531,7 +531,22 @@ defmodule CPub.Web.OAuth.OAuthController do
     |> URI.to_string()
   end
 
-  @spec put_if_present(map, atom | String.t(), String.t()) :: map
+  @spec put_if_present(map, atom | String.t(), String.t() | nil) :: map
   defp put_if_present(map, _param_name, nil), do: map
+  defp put_if_present(map, _param_name, ""), do: map
   defp put_if_present(map, name, value), do: Map.put(map, name, value)
+
+  @spec process_provider_url(map) :: map
+  defp process_provider_url(%{"provider_url" => provider_url} = params) do
+    provider_url =
+      case provider_url = String.downcase(provider_url) do
+        "http://" <> _ -> provider_url
+        "https://" <> _ -> provider_url
+        _ -> "https://#{provider_url}"
+      end
+
+    Map.put(params, "provider_url", provider_url)
+  end
+
+  defp process_provider_url(params), do: params
 end
