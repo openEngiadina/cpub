@@ -156,6 +156,9 @@ defmodule CPub.Web.OAuth.OAuthController do
     render(conn, "register_local.html")
   end
 
+  @doc """
+  Connects an authorized via external provider user to an existed local user.
+  """
   @spec register(Plug.Conn.t(), map) :: Plug.Conn.t()
   def register(
         %Plug.Conn{} = conn,
@@ -176,6 +179,9 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Registers an authorized via external provider user as a new local user.
+  """
   def register(
         %Plug.Conn{} = conn,
         %{"authorization" => auth_params, "op" => "register_from_provider"} = params
@@ -187,6 +193,9 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Registers a new local user.
+  """
   def register(
         %Plug.Conn{} = conn,
         %{"authorization" => auth_params, "op" => "register_local"} = params
@@ -212,6 +221,22 @@ defmodule CPub.Web.OAuth.OAuthController do
       {:error, %Ecto.Changeset{} = error} ->
         {:register, error}
     end
+  end
+
+  @doc """
+  Registers a new local user (for REST API clients).
+  """
+  def register(%Plug.Conn{} = conn, %{"username" => username, "password" => password}) do
+    params = %{
+      "op" => "register_local",
+      "authorization" => %{
+        "username" => username,
+        "password" => password,
+        "password_confirmation" => password
+      }
+    }
+
+    register(conn, params)
   end
 
   # Note: is only called from error-handling methods with `conn.params` as 2nd arg
@@ -397,12 +422,12 @@ defmodule CPub.Web.OAuth.OAuthController do
 
   def exchange_token(
         %Plug.Conn{} = conn,
-        %{"grant_type" => "password", "name" => _, "password" => _} = params
+        %{"grant_type" => "password", "username" => _, "password" => _} = params
       ) do
     # The Resource Owner Password Credentials Authorization Strategy:
     # http://tools.ietf.org/html/rfc6749#section-1.3.3
     with {:ok, user} <- Authenticator.get_user(params),
-         {:ok, app} <- Utils.fetch_app(conn),
+         app <- App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, scopes} <- Utils.validate_scopes(app, params),
          {:ok, auth} <- Authorization.create(app, user, scopes),
          {:ok, token} <- Token.exchange_token(app, auth) do
@@ -411,13 +436,6 @@ defmodule CPub.Web.OAuth.OAuthController do
       _error ->
         render_invalid_credentials_error(conn)
     end
-  end
-
-  def exchange_token(
-        %Plug.Conn{} = conn,
-        %{"grant_type" => "password", "username" => _, "password" => _} = params
-      ) do
-    exchange_token(conn, params)
   end
 
   def exchange_token(
