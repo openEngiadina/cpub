@@ -25,7 +25,7 @@ defmodule CPub.Web.OAuth.OAuthController do
   if Config.auth_consumer_enabled?(), do: plug(Ueberauth)
 
   @doc """
-  Prepares OAuth request to provider for Ueberauth.
+  Prepares OAuth request to an OpenID Connect provider for Ueberauth.
   """
   @spec prepare_request(Plug.Conn.t(), map) :: Plug.Conn.t()
   def prepare_request(%Plug.Conn{} = conn, %{"provider" => "oidc_" <> oidc_provider}) do
@@ -34,6 +34,9 @@ defmodule CPub.Web.OAuth.OAuthController do
     redirect(conn, to: Routes.o_auth_path(conn, :handle_request, "oidc", params))
   end
 
+  @doc """
+  Prepares OAuth request to a provider for Ueberauth.
+  """
   def prepare_request(
         %Plug.Conn{} = conn,
         %{"provider" => provider, "authorization" => auth_params}
@@ -138,6 +141,9 @@ defmodule CPub.Web.OAuth.OAuthController do
   ### OAuth Server ###
   ####################
 
+  @doc """
+  Renders registration form after authentication via external provider.
+  """
   @spec registration_from_provider(Plug.Conn.t(), map) :: Plug.Conn.t()
   def registration_from_provider(%Plug.Conn{} = conn, %{"authorization" => auth_params}) do
     render(conn, "register_from_provider.html", %{
@@ -151,6 +157,9 @@ defmodule CPub.Web.OAuth.OAuthController do
     })
   end
 
+  @doc """
+  Renders registration form for local users.
+  """
   @spec registration_local(Plug.Conn.t(), map) :: Plug.Conn.t()
   def registration_local(%Plug.Conn{} = conn, _params) do
     render(conn, "register_local.html")
@@ -239,20 +248,27 @@ defmodule CPub.Web.OAuth.OAuthController do
     register(conn, params)
   end
 
-  # Note: is only called from error-handling methods with `conn.params` as 2nd arg
+  @doc """
+  Authentication from external provider.
+  Note: is only called from error-handling methods with `conn.params` as 2nd arg
+  """
   def authorize(%Plug.Conn{} = conn, %{"authorization" => _} = params) do
     {auth_attrs, params} = Map.pop(params, "authorization")
 
     authorize(conn, Map.merge(params, auth_attrs))
   end
 
-  # Authentication from external provider
+  @doc """
+  Authentication from external provider.
+  """
   @spec authorize(Plug.Conn.t(), map) :: Plug.Conn.t()
   def authorize(%Plug.Conn{} = conn, %{"client_id" => _, "redirect_uri" => _} = params) do
     do_authorize(conn, params)
   end
 
-  # Local authentication
+  @doc """
+  Local authentication.
+  """
   def authorize(%Plug.Conn{} = conn, params) do
     app = App.get_by(%{client_name: "local", provider: "local"})
 
@@ -384,12 +400,15 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Exchanges token for the Authorization Code strategy:
+  http://tools.ietf.org/html/rfc6749#section-1.3.1
+  """
   @spec exchange_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def exchange_token(
         %Plug.Conn{} = conn,
         %{"grant_type" => "authorization_code", "code" => auth_code}
       ) do
-    # The Authorization Code Strategy: http://tools.ietf.org/html/rfc6749#section-1.3.1
     with {:ok, app} <- Utils.fetch_app(conn),
          auth_code <- Utils.ensure_padding(auth_code),
          {:ok, auth} <- Authorization.get_by_code(app, auth_code),
@@ -403,11 +422,14 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Exchanges token for the Refresh Token strategy:
+  https://tools.ietf.org/html/rfc6749#section-1.5
+  """
   def exchange_token(
         %Plug.Conn{} = conn,
         %{"grant_type" => "refresh_token", "refresh_token" => refresh_token}
       ) do
-    # The Refresh Token Strategy: https://tools.ietf.org/html/rfc6749#section-1.5
     with {:ok, app} <- Utils.fetch_app(conn),
          {:ok, token} <- Token.get_by_refresh_token(app, refresh_token),
          {:ok, token} <- RefreshToken.grant(token) do
@@ -420,12 +442,14 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Exchanges token for the Resource Owner Password Credentials Authorization strategy:
+  http://tools.ietf.org/html/rfc6749#section-1.3.3
+  """
   def exchange_token(
         %Plug.Conn{} = conn,
         %{"grant_type" => "password", "username" => _, "password" => _} = params
       ) do
-    # The Resource Owner Password Credentials Authorization Strategy:
-    # http://tools.ietf.org/html/rfc6749#section-1.3.3
     with {:ok, user} <- Authenticator.get_user(params),
          app <- App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, scopes} <- Utils.validate_scopes(app, params),
@@ -438,12 +462,15 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Exchanges token for the Client Credentials strategy:
+  http://tools.ietf.org/html/rfc6749#section-1.3.4
+  """
   def exchange_token(
         %Plug.Conn{} = conn,
         %{"grant_type" => "client_credentials"}
       ) do
-    # The Client Credentials Strategy: http://tools.ietf.org/html/rfc6749#section-1.3.4
-    with {:ok, app} <- Utils.fetch_app(conn),
+    with app <- App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, auth} <- Authorization.create(app, %User{}),
          {:ok, token} <- Token.exchange_token(app, auth) do
       json(conn, Token.serialize_for_client_credentials(token))
@@ -457,6 +484,9 @@ defmodule CPub.Web.OAuth.OAuthController do
     error_resp(conn, :bad_request, "Bad request.")
   end
 
+  @doc """
+  Revokes token.
+  """
   @spec revoke_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def revoke_token(%Plug.Conn{} = conn, %{"access_token" => _} = params) do
     with {:ok, app} <- Utils.fetch_app(conn),
