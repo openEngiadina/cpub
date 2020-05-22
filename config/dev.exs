@@ -75,7 +75,7 @@ config :cpub, CPub.Repo,
 #     site: "https://gitlab.com",
 #     authorize_url: "https://gitlab.com/oauth/authorize",
 #     token_url: "https://gitlab.com/oauth/token",
-#     userinfo_endpoint: "/oauth/userinfo",
+#     userinfo_url: "https://gitlab.com/oauth/userinfo",
 #     client_id: System.get_env("OIDC_GITLAB_CLIENT_ID"),
 #     client_secret: System.get_env("OIDC_GITLAB_CLIENT_SECRET")
 #   ]

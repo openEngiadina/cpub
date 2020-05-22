@@ -42,7 +42,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC.OAuth do
         headers \\ [],
         opts \\ []
       ) do
-    url = Config.oidc_provider_opts(oidc_provider)[:userinfo_endpoint]
+    url = Config.oidc_provider_opts(oidc_provider)[:userinfo_url]
 
     [token: token, state: oidc_provider]
     |> complete_params_from_config(oidc_provider)
