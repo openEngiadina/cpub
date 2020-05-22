@@ -45,14 +45,14 @@ auth_consumer_strategies =
   |> String.split()
   |> Enum.map(&hd(String.split(&1, ":")))
 
-not_public_consumer_strategies = ["oidc", "cpub", "pleroma"]
-
 ueberauth_providers =
-  for strategy <- auth_consumer_strategies -- not_public_consumer_strategies do
+  auth_consumer_strategies
+  |> Enum.filter(&(not (&1 in ["cpub", "pleroma"] || String.starts_with?(&1, "oidc"))))
+  |> Enum.map(fn strategy ->
     strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
     strategy_module = String.to_atom(strategy_module_name)
     {String.to_atom(strategy), {strategy_module, []}}
-  end
+  end)
 
 config :ueberauth, Ueberauth,
   base_path: "/auth",
@@ -60,10 +60,14 @@ config :ueberauth, Ueberauth,
 
 config :cpub, :auth,
   consumer_strategies: auth_consumer_strategies,
-  consumer_strategies_names: [
-    cpub: "CPub",
-    pleroma: "Pleroma / Mastodon"
-  ],
+  # consumer_strategies_names: [
+  #   oidc_gitlab: "GitLab (OIDC)",
+  #   cpub: "CPub",
+  #   pleroma: "Pleroma / Mastodon",
+  #   github: "GitHub",
+  #   gitlab: "GitLab",
+  #   discord: "Discord"
+  # ],
   oauth2_token_expires_in: 60 * 60,
   oauth2_issue_new_refresh_token: true
 

@@ -46,10 +46,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   def handle_request!(%Plug.Conn{params: %{"provider_url" => provider_url}} = conn) do
     case is_valid_provider_url(provider_url) do
       true ->
-        apps_url =
-          provider_url
-          |> URI.merge(@provider_register_app_endpoint)
-          |> URI.to_string()
+        apps_url = __MODULE__.OAuth.merge_uri(provider_url, @provider_register_app_endpoint)
 
         case ensure_registered_app(apps_url) do
           {:ok, app} ->
@@ -98,13 +95,11 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
     module = option(conn, :oauth2_module)
     token = apply(module, :get_token!, [[code: code, state: state], opts])
 
-    if token.access_token == nil do
-      set_errors!(
-        conn,
-        [error(token.other_params["error"], token.other_params["error_description"])]
-      )
-    else
+    if token.access_token != nil do
       fetch_user(conn, token)
+    else
+      %{other_params: %{"error" => error, "error_description" => error_description}} = token
+      set_errors!(conn, [error(error, error_description)])
     end
   end
 
@@ -228,11 +223,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   @spec oauth_app_body :: map
   defp oauth_app_body do
     client_name = App.get_provider(Config.base_url())
-
-    redirect_uris =
-      Config.base_url()
-      |> URI.merge(@callback_endpoint)
-      |> URI.to_string()
+    redirect_uris = __MODULE__.OAuth.merge_uri(Config.base_url(), @callback_endpoint)
 
     %{
       client_name: client_name,

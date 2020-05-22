@@ -60,12 +60,24 @@ config :cpub, CPub.Repo,
 # config :ueberauth, Ueberauth,
 #   base_path: "/auth",
 #   providers: [
+#     # OpenID Connect
+#     oidc: {CPub.Web.OAuth.Strategy.OIDC, []},
 #     # OAuth2
 #     cpub: {CPub.Web.OAuth.Strategy.CPub, []},
 #     pleroma: {CPub.Web.OAuth.Strategy.Pleroma, []},
 #     github: {Ueberauth.Strategy.Github, [allow_private_emails: true]},
 #     gitlab: {Ueberauth.Strategy.Gitlab, [default_scope: "read_user"]},
 #     discord: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}
+#   ]
+
+# config :ueberauth, CPub.Web.OAuth.Strategy.OIDC.OAuth,
+#   oidc_gitlab: [
+#     site: "https://gitlab.com",
+#     authorize_url: "https://gitlab.com/oauth/authorize",
+#     token_url: "https://gitlab.com/oauth/token",
+#     userinfo_endpoint: "/oauth/userinfo",
+#     client_id: System.get_env("OIDC_GITLAB_CLIENT_ID"),
+#     client_secret: System.get_env("OIDC_GITLAB_CLIENT_SECRET")
 #   ]
 
 # config :ueberauth, Ueberauth.Strategy.Github.OAuth,

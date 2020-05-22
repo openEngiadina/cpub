@@ -3,6 +3,7 @@
 AUTH_CONSUMER_STRATEGIES="cpub pleroma" iex -S mix phx.server
 
 # AUTH_CONSUMER_STRATEGIES="cpub pleroma github gitlab discord" \
+# 	OIDC_GITLAB_CLIENT_ID=<id> OIDC_GITLAB_CLIENT_SECRET=<secret> \
 # 	GITHUB_CLIENT_ID=<id> GITHUB_CLIENT_SECRET=<secret> \
 # 	GITLAB_CLIENT_ID=<id> GITLAB_CLIENT_SECRET=<secret> \
 # 	DISCORD_CLIENT_ID=<id> DISCORD_CLIENT_SECRET=<secret> \

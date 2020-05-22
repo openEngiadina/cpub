@@ -18,16 +18,8 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
   @spec client(keyword) :: Client.t()
   def client(opts) do
     site = Keyword.get(opts, :state)
-
-    authorize_url =
-      site
-      |> URI.merge(@authorize_url_endpoint)
-      |> URI.to_string()
-
-    token_url =
-      site
-      |> URI.merge(@token_endpoint)
-      |> URI.to_string()
+    authorize_url = merge_uri(site, @authorize_url_endpoint)
+    token_url = merge_uri(site, @token_endpoint)
 
     opts
     |> Keyword.merge(
@@ -37,6 +29,13 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
       token_url: token_url
     )
     |> Client.new()
+  end
+
+  @spec merge_uri(String.t(), String.t()) :: String.t()
+  def merge_uri(site, endpoint) do
+    site
+    |> URI.merge(endpoint)
+    |> URI.to_string()
   end
 
   @doc """
@@ -57,9 +56,10 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
         headers \\ [],
         opts \\ []
       ) do
-    params = complete_params_from_app([token: token, state: provider_url], provider_url)
-
-    Client.get(client(params), url, headers, opts)
+    [token: token, state: provider_url]
+    |> complete_params_from_app(provider_url)
+    |> client()
+    |> Client.get(url, headers, opts)
   end
 
   @spec get_token!(keyword, keyword) :: AccessToken.t()

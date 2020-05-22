@@ -4,6 +4,7 @@ defmodule CPub.Config do
   """
 
   alias CPub.Web.Endpoint
+  alias CPub.Web.OAuth.Strategy.OIDC
 
   # Common
 
@@ -45,10 +46,15 @@ defmodule CPub.Config do
   @spec oauth2_issue_new_refresh_token :: boolean
   def oauth2_issue_new_refresh_token, do: get([:auth, :oauth2_issue_new_refresh_token], false)
 
-  @spec oauth2_provider_credentials(String.t()) :: keyword
-  def oauth2_provider_credentials(provider) do
+  @spec oauth2_provider_opts(String.t()) :: keyword
+  def oauth2_provider_opts(provider) do
     {module, _} = Application.get_env(:ueberauth, Ueberauth)[:providers][:"#{provider}"]
     Application.get_env(:ueberauth, :"#{module}.OAuth")
+  end
+
+  @spec oidc_provider_opts(String.t()) :: keyword
+  def oidc_provider_opts(oidc_provider) do
+    Application.get_env(:ueberauth, OIDC.OAuth)[:"oidc_#{oidc_provider}"]
   end
 
   # Util

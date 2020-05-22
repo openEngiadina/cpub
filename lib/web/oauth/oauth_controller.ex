@@ -25,6 +25,12 @@ defmodule CPub.Web.OAuth.OAuthController do
   Prepares OAuth request to provider for Ueberauth.
   """
   @spec prepare_request(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def prepare_request(%Plug.Conn{} = conn, %{"provider" => "oidc_" <> oidc_provider}) do
+    params = %{"state" => oidc_provider}
+
+    redirect(conn, to: Routes.o_auth_path(conn, :handle_request, "oidc", params))
+  end
+
   def prepare_request(
         %Plug.Conn{} = conn,
         %{"provider" => provider, "authorization" => auth_params}
@@ -41,7 +47,6 @@ defmodule CPub.Web.OAuth.OAuthController do
   Handles those authorization requests which can not be handled by registered
   Ueberauth strategies.
   """
-  @spec handle_request(Plug.Conn.t(), map) :: Plug.Conn.t()
   def handle_request(%Plug.Conn{} = conn, %{"provider" => provider}) do
     message =
       if provider, do: "Unsupported OAuth provider: #{provider}.", else: "Bad OAuth request."
@@ -52,7 +57,6 @@ defmodule CPub.Web.OAuth.OAuthController do
   @doc """
   Handles a failure from external OAuth provider.
   """
-  # @spec handle_callback(Plug.Conn.t(), map) :: Plug.Conn.t()
   def handle_callback(
         %Plug.Conn{
           assigns: %{ueberauth_failure: %Failure{errors: [%Failure.Error{} = error | _]}}
@@ -73,16 +77,13 @@ defmodule CPub.Web.OAuth.OAuthController do
       ) do
     info = Map.delete(info, :__struct__)
     username = info.nickname || info.name
-    client_name = if params["state"], do: App.get_provider(params["state"]), else: nil
+    {provider, client_name} = app_attrs(provider, params["state"])
 
-    with {:ok, app} <- get_or_create_app(provider, client_name),
+    with {:ok, %App{client_id: client_id, redirect_uris: redirect_uri, scopes: scope} = app} <-
+           get_or_create_app(provider, client_name),
          {:ok, registration} <-
            Registration.get_or_create(%{username: username, provider: app.client_name}, info) do
-      auth_params = %{
-        "client_id" => app.client_id,
-        "redirect_uri" => app.redirect_uris,
-        "scope" => app.scopes
-      }
+      auth_params = %{"client_id" => client_id, "redirect_uri" => redirect_uri, "scope" => scope}
 
       case Repo.preload(registration, :user).user do
         %User{} = user ->
@@ -108,7 +109,11 @@ defmodule CPub.Web.OAuth.OAuthController do
         {:ok, app}
 
       nil ->
-        app_credentials = Config.oauth2_provider_credentials(provider)
+        app_credentials =
+          case provider do
+            "oidc_" <> oidc_provider -> Config.oidc_provider_opts(oidc_provider)
+            provider -> Config.oauth2_provider_opts(provider)
+          end
 
         App.create_from_provider(%{
           client_name: provider,
@@ -452,6 +457,14 @@ defmodule CPub.Web.OAuth.OAuthController do
     |> send_resp(status, body)
     |> halt()
   end
+
+  @spec app_attrs(String.t(), String.t() | nil) :: {String.t(), String.t() | nil}
+  # OpenID Connect provider
+  defp app_attrs("oidc", oidc_provider), do: {"oidc_#{oidc_provider}", nil}
+  # Sinlge instance OAuth2 provider (eg. Gitlab)
+  defp app_attrs(provider, nil), do: {provider, nil}
+  # Multiple instances OAuth2 provider (eg. Pleroma)
+  defp app_attrs(provider, provider_url), do: {provider, App.get_provider(provider_url)}
 
   # process redirect_uri for local auth app
   @spec redirect_uri(Plug.Conn.t(), String.t()) :: String.t()
