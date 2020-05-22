@@ -184,7 +184,7 @@ defmodule CPub.Web.OAuth.OAuthController do
         handle_create_authorization_error(conn, error, params)
 
       _ ->
-        {:register, :generic_error}
+        {:web_register, :generic_error}
     end
   end
 
@@ -225,27 +225,35 @@ defmodule CPub.Web.OAuth.OAuthController do
       create_authorization(conn, params, user: user)
     else
       false ->
-        {:register, :password_confirmation}
+        {:web_register, :password_confirmation}
 
       {:error, %Ecto.Changeset{} = error} ->
-        {:register, error}
+        client = params["client"] || "web"
+        {:"#{client}_register", error}
     end
   end
 
   @doc """
   Registers a new local user (for REST API clients).
   """
-  def register(%Plug.Conn{} = conn, %{"username" => username, "password" => password}) do
-    params = %{
-      "op" => "register_local",
-      "authorization" => %{
-        "username" => username,
-        "password" => password,
-        "password_confirmation" => password
-      }
-    }
+  def register(%Plug.Conn{} = conn, _params) do
+    case Utils.fetch_user_credentials(conn) do
+      {username, password} when is_binary(username) and is_binary(password) ->
+        params = %{
+          "op" => "register_local",
+          "client" => "api",
+          "authorization" => %{
+            "username" => username,
+            "password" => password,
+            "password_confirmation" => password
+          }
+        }
 
-    register(conn, params)
+        register(conn, params)
+
+      _ ->
+        {:api_register, :invalid_credentials}
+    end
   end
 
   @doc """
@@ -316,7 +324,7 @@ defmodule CPub.Web.OAuth.OAuthController do
   @spec do_create_authorization(Plug.Conn.t(), map, User.t() | nil) ::
           {:ok, Authorization.t()} | {:error, Ecto.Changeset.t()}
   defp do_create_authorization(
-         %Plug.Conn{},
+         %Plug.Conn{} = conn,
          %{
            "authorization" =>
              %{"client_id" => client_id, "redirect_uri" => redirect_uri} = auth_params
@@ -324,7 +332,7 @@ defmodule CPub.Web.OAuth.OAuthController do
          user \\ nil
        ) do
     with {:ok, %User{} = user} <-
-           (user && {:ok, user}) || Authenticator.get_user(params),
+           (user && {:ok, user}) || Authenticator.get_user(conn, params),
          %App{} = app <- App.get_by(%{client_id: client_id}),
          true <- redirect_uri in String.split(app.redirect_uris),
          {:ok, scopes} <- Utils.validate_scopes(app, auth_params) do
@@ -409,7 +417,7 @@ defmodule CPub.Web.OAuth.OAuthController do
         %Plug.Conn{} = conn,
         %{"grant_type" => "authorization_code", "code" => auth_code}
       ) do
-    with {:ok, app} <- Utils.fetch_app(conn),
+    with %App{} = app <- Utils.fetch_app(conn),
          auth_code <- Utils.ensure_padding(auth_code),
          {:ok, auth} <- Authorization.get_by_code(app, auth_code),
          {:ok, token} <- Token.exchange_token(app, auth) do
@@ -418,7 +426,7 @@ defmodule CPub.Web.OAuth.OAuthController do
       json(conn, Token.serialize(token, response_attrs))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
@@ -430,7 +438,8 @@ defmodule CPub.Web.OAuth.OAuthController do
         %Plug.Conn{} = conn,
         %{"grant_type" => "refresh_token", "refresh_token" => refresh_token}
       ) do
-    with {:ok, app} <- Utils.fetch_app(conn),
+    with %App{} = app <-
+           Utils.fetch_app(conn) || App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, token} <- Token.get_by_refresh_token(app, refresh_token),
          {:ok, token} <- RefreshToken.grant(token) do
       response_attrs = %{created_at: Token.format_creation_date(token.inserted_at)}
@@ -438,7 +447,7 @@ defmodule CPub.Web.OAuth.OAuthController do
       json(conn, Token.serialize(token, response_attrs))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
@@ -446,19 +455,16 @@ defmodule CPub.Web.OAuth.OAuthController do
   Exchanges token for the Resource Owner Password Credentials Authorization strategy:
   http://tools.ietf.org/html/rfc6749#section-1.3.3
   """
-  def exchange_token(
-        %Plug.Conn{} = conn,
-        %{"grant_type" => "password", "username" => _, "password" => _} = params
-      ) do
-    with {:ok, user} <- Authenticator.get_user(params),
-         app <- App.get_by(%{client_name: "local", provider: "local"}),
+  def exchange_token(%Plug.Conn{} = conn, %{"grant_type" => "password"} = params) do
+    with {:ok, user} <- Authenticator.get_user(conn, params),
+         %App{} = app <- App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, scopes} <- Utils.validate_scopes(app, params),
          {:ok, auth} <- Authorization.create(app, user, scopes),
          {:ok, token} <- Token.exchange_token(app, auth) do
       json(conn, Token.serialize(token))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
@@ -466,22 +472,19 @@ defmodule CPub.Web.OAuth.OAuthController do
   Exchanges token for the Client Credentials strategy:
   http://tools.ietf.org/html/rfc6749#section-1.3.4
   """
-  def exchange_token(
-        %Plug.Conn{} = conn,
-        %{"grant_type" => "client_credentials"}
-      ) do
-    with app <- App.get_by(%{client_name: "local", provider: "local"}),
+  def exchange_token(%Plug.Conn{} = conn, %{"grant_type" => "client_credentials"}) do
+    with %App{} = app <- App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, auth} <- Authorization.create(app, %User{}),
          {:ok, token} <- Token.exchange_token(app, auth) do
       json(conn, Token.serialize_for_client_credentials(token))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
   def exchange_token(%Plug.Conn{} = conn, _params) do
-    error_resp(conn, :bad_request, "Bad request.")
+    error_resp(conn, :unauthorized, "Invalid credentials.")
   end
 
   @doc """
@@ -489,7 +492,7 @@ defmodule CPub.Web.OAuth.OAuthController do
   """
   @spec revoke_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def revoke_token(%Plug.Conn{} = conn, %{"access_token" => _} = params) do
-    with {:ok, app} <- Utils.fetch_app(conn),
+    with %App{} = app <- Utils.fetch_app(conn),
          {:ok, _token} <- RevokeToken.revoke(app, params) do
       json(conn, %{})
     else

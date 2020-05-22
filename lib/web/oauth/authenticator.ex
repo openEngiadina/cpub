@@ -4,10 +4,11 @@ defmodule CPub.Web.OAuth.Authenticator do
   """
 
   alias CPub.{Registration, User}
+  alias CPub.Web.BasicAuthenticationPlug
 
-  @spec get_user(map) :: {:ok, User.t()} | {:error, any}
-  def get_user(params) do
-    with {:ok, {username, password}} <- fetch_credentials(params),
+  @spec get_user(Plug.Conn.t(), map) :: {:ok, User.t()} | {:error, any}
+  def get_user(%Plug.Conn{} = conn, params) do
+    with {:ok, {username, password}} <- fetch_credentials(conn, params),
          %User{} = user <- User.get_by(%{username: username, provider: "local"}),
          {:ok, user} <- checkpw(user, password) do
       {:ok, user}
@@ -43,17 +44,24 @@ defmodule CPub.Web.OAuth.Authenticator do
     {:ok, user}
   end
 
-  @spec fetch_credentials(map) :: {:ok, {String.t(), String.t()}} | {:error, atom}
-  defp fetch_credentials(params) do
-    case params do
-      %{"authorization" => %{"username" => username, "password" => password}} ->
+  @spec fetch_credentials(Plug.Conn.t(), map) :: {:ok, {String.t(), String.t()}} | {:error, atom}
+  defp fetch_credentials(%Plug.Conn{} = conn, params) do
+    # Per RFC 6749, HTTP Basic is preferred to body params
+    case BasicAuthenticationPlug.fetch_credentials(conn) do
+      {username, password} ->
         {:ok, {username, password}}
 
-      %{"grant_type" => "password", "username" => username, "password" => password} ->
-        {:ok, {username, password}}
+      nil ->
+        case params do
+          %{"authorization" => %{"username" => username, "password" => password}} ->
+            {:ok, {username, password}}
 
-      _ ->
-        {:error, :invalid_credentials}
+          %{"grant_type" => "password", "username" => username, "password" => password} ->
+            {:ok, {username, password}}
+
+          _ ->
+            {:error, :invalid_credentials}
+        end
     end
   end
 
