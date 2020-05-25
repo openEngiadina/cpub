@@ -112,11 +112,8 @@ defmodule CPub.Web.OAuth.App do
   @spec get_or_create(map, [String.t()]) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def get_or_create(attrs, scopes) do
     case get_by(attrs) do
-      %__MODULE__{} = app ->
-        update_scopes(app, scopes)
-
-      nil ->
-        create(Map.put(attrs, :scopes, scopes))
+      %__MODULE__{} = app -> update_scopes(app, scopes)
+      nil -> create(Map.put(attrs, :scopes, scopes))
     end
   end
 

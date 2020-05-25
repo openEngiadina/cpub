@@ -56,11 +56,8 @@ defmodule CPub.Registration do
   @spec get_or_create(map, map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def get_or_create(attrs, info) do
     case get_by(attrs) do
-      %__MODULE__{} = registration ->
-        {:ok, registration}
-
-      nil ->
-        create(Map.put(attrs, :info, info))
+      %__MODULE__{} = registration -> {:ok, registration}
+      nil -> create(Map.put(attrs, :info, info))
     end
   end
 end

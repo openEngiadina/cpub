@@ -51,10 +51,9 @@ defmodule CPub.Activity do
 
   @spec validate_activity_type(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_activity_type(changeset) do
-    if is_activity?(get_field(changeset, :data)) do
-      changeset
-    else
-      add_error(changeset, :data, "not an ActivityPub activity")
+    case is_activity?(get_field(changeset, :data)) do
+      true -> changeset
+      false -> add_error(changeset, :data, "not an ActivityPub activity")
     end
   end
 
@@ -86,11 +85,8 @@ defmodule CPub.Activity do
   @spec extract_actor(t) :: t
   defp extract_actor(%__MODULE__{} = activity) do
     case activity.data[AS.actor()] do
-      [actor] ->
-        %{activity | actor: actor}
-
-      _ ->
-        activity
+      [actor] -> %{activity | actor: actor}
+      _ -> activity
     end
   end
 
@@ -177,11 +173,8 @@ defmodule CPub.Activity do
   @spec pop(t, atom) :: {any | nil, t}
   def pop(%__MODULE__{} = activity, key) do
     case Access.pop(activity.data, key) do
-      {nil, _} ->
-        {nil, activity}
-
-      {value, new_graph} ->
-        {value, %{activity | data: new_graph}}
+      {nil, _} -> {nil, activity}
+      {value, new_graph} -> {value, %{activity | data: new_graph}}
     end
   end
 
@@ -196,11 +189,8 @@ defmodule CPub.Activity do
       RDF.Description.add(activity.data, AS.published(), activity.inserted_at)
 
     case activity.object do
-      %Object{} = object ->
-        RDF.Data.merge(activity_description, object.data)
-
-      _ ->
-        activity_description
+      %Object{} = object -> RDF.Data.merge(activity_description, object.data)
+      _ -> activity_description
     end
   end
 

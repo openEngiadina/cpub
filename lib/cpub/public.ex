@@ -14,9 +14,7 @@ defmodule CPub.Public do
   def get_public do
     public_collection = RDF.iri(AS.Public)
 
-    public_query = from a in Activity, where: ^public_collection in a.recipients
-
-    public_query
+    from(a in Activity, where: ^public_collection in a.recipients)
     |> Repo.all()
     |> Repo.preload(:object)
   end
