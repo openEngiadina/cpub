@@ -56,6 +56,43 @@ config :cpub, CPub.Repo,
   hostname: "localhost",
   pool_size: 10
 
+# Configure Joken
+config :joken, default_signer: "secret"
+
+config :joken,
+  rs256: [
+    signer_alg: "RS256",
+    key_pem: """
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEA3aC20H/E2XQj7E+sHXNOYpaBvZ30kdUU84fetOh9oWnWVebD
+    +LGIgD1GIvu2xDkeZnCjih49xG2UYkLBtSrhQoFCwVpfaHUOIbNiVhzYRdZ9rsK9
+    mDcNzvwyn542BhbFpwq39lEkglkexduGJGCZrUpMWzR5kY5Z+HYZpcs52VL6ue8t
+    tav0gKG7Q+qhaqPm931LUoL6ArPb4tIplOKzHxv2/81aa9gd/rJrj6H4h5ebs6ZB
+    /p8e1+NDnU/03k71KwsF9KjVvCbFA7DBSh8ewqDde5FjtOGzT0NKDhRgQdUOFBEe
+    xXFGZlIGenxRl/7fy0mWrKoVRf8ezc3QOP1bPwIDAQABAoIBABv4X3oa1e4XsTzu
+    pSsmVTsuAXu7xpTtDnLZr+qm+Mv5Pnqi4BKv3SlKEmLx35QOHV8SUiFpRaRXrAVm
+    pWnG2pz5EUKztBzLwRfRutRhWY4ezsfSffkK4axAuebZIbpM/27gdG0aun/U3YRc
+    +yX2Jw7utIpCKiGLlKE9zmjVKBzcFty3pwyAT3UcTpSJ2GuhGgW9BIgKb8t24MDz
+    iswDnOXZropV8N2aU8aaikcLUjkjUr5uBhnx7ahIgL8WdSFVUGnpwTubIWqjuFC9
+    cmWl21VzYVDQTLYmyS68H+7LEOWtfj0tuGxIiYxwiTTUb6Z4O0ZzU9bxlyVWFidi
+    x7Qy8okCgYEA/Irf9GCIg+GbzrA7pZB9JCaYkiw8qNcnkd5X4gAFkOsgWJFZB9X2
+    qNQDPrKmfRjHUL4SV9Y2QyfcusoZk4nTIgbnH3RVFLR4+N9QWvDDYxoxBTf7cp4X
+    PTAUOlP41SEVdXS3o082FVJWE/UobKYm8cf4CGzd6//utcy2QfZZhu0CgYEA4Kl8
+    3IkAhyQPX7ioTK7NmbeiwdhW+V0cjCKdgp6pqfkYXFl0UP14LgrTTKHgm6Ohh1p0
+    uuVWNOoN/izHoQD2dmdE1AsCeYIWgf+8wUAv2CegIum+z/zmZnmlRotuyBw/lVIg
+    c3H9+Y0/5ZpK/xIZPs5nXhSLgDAU0jGgRAoKWVsCgYBjCX88UeMXfRFiJACwNBKv
+    a6dno4uCVyYAcWabjZChPWQo948noIQjv0kqfFsIMgBwLKn64lnTSj2ozvrqviEb
+    dgOLdU6sWP4b80+K6mJlae8RcdvdHhxU9ZbpLOcnhdrpfgVKORUnlWuGVh0tRpd9
+    OAOQIkmBdJPDne1XvulrHQKBgAuC47DxHCPQhzEiZw02z7YWoLJKAXrZeIL9qxBs
+    TMk2yDbDJqCXvDavu0/r43RWGAq1adHBun8PlxP0+22WfQpoFDDBN6k+LyUOE3/b
+    aBgtP5lKXMqPbMbHaN6Kemyqdd+Sy7LenmLRB/sdwsX7CWwca1N4vgUdcZOrk0ip
+    MwqNAoGBAMroAmMAlWECreynBY2lfyZjLoTHpj14zoG3hlDHuujCLi0mD8UXNur0
+    g7mZUdeOKREILutZksenB2wSmpqTxja3RW4qY8fAW4L+Nyyu9qtMro5n9IKV7CEu
+    eFUVUwO4RFVJInyNgdoCseb7jl//mGxcx8xonWyCwMm0dsgfE3IT
+    -----END RSA PRIVATE KEY-----
+    """
+  ]
+
 # Configure external OAuth providers
 # config :ueberauth, Ueberauth,
 #   base_path: "/auth",
@@ -71,6 +108,12 @@ config :cpub, CPub.Repo,
 #   ]
 
 # config :ueberauth, CPub.Web.OAuth.Strategy.OIDC.OAuth,
+#   oidc_cpub: [
+#     register_client_url: "/auth/apps",
+#     authorize_url: "/auth/authorize",
+#     token_url: "/auth/token",
+#     userinfo_url: "/auth/userinfo"
+#   ],
 #   oidc_gitlab: [
 #     site: "https://gitlab.com",
 #     authorize_url: "https://gitlab.com/oauth/authorize",

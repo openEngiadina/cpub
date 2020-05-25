@@ -61,6 +61,7 @@ config :ueberauth, Ueberauth,
 config :cpub, :auth,
   consumer_strategies: auth_consumer_strategies,
   # consumer_strategies_names: [
+  #   oidc_cpub: "CPub (OIDC)",
   #   oidc_gitlab: "GitLab (OIDC)",
   #   cpub: "CPub",
   #   pleroma: "Pleroma / Mastodon",

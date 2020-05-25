@@ -6,9 +6,11 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
   use OAuth2.Strategy
 
   alias CPub.Web.OAuth.App
+  alias CPub.Web.OAuth.Strategy.Utils
 
   alias OAuth2.{AccessToken, Client, Response, Strategy}
 
+  @provider "pleroma"
   @authorize_url_endpoint "/oauth/authorize"
   @token_endpoint "/oauth/token"
 
@@ -17,25 +19,13 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
   """
   @spec client(keyword) :: Client.t()
   def client(opts) do
-    site = Keyword.get(opts, :state)
-    authorize_url = merge_uri(site, @authorize_url_endpoint)
-    token_url = merge_uri(site, @token_endpoint)
+    site = opts[:state]
+    authorize_url = Utils.merge_uri(site, @authorize_url_endpoint)
+    token_url = Utils.merge_uri(site, @token_endpoint)
 
-    opts
-    |> Keyword.merge(
-      strategy: __MODULE__,
-      site: site,
-      authorize_url: authorize_url,
-      token_url: token_url
-    )
+    [strategy: __MODULE__, site: site, authorize_url: authorize_url, token_url: token_url]
+    |> Keyword.merge(opts)
     |> Client.new()
-  end
-
-  @spec merge_uri(String.t(), String.t()) :: String.t()
-  def merge_uri(site, endpoint) do
-    site
-    |> URI.merge(endpoint)
-    |> URI.to_string()
   end
 
   @doc """
@@ -76,7 +66,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma.OAuth do
 
   @spec complete_params_from_app(keyword, String.t()) :: keyword
   defp complete_params_from_app(params, provider_url) do
-    app = App.get_by(%{client_name: App.get_provider(provider_url)})
+    app = App.get_by(%{client_name: App.get_provider(provider_url), provider: @provider})
 
     Keyword.merge(params,
       client_id: app.client_id,

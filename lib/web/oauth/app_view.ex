@@ -14,6 +14,7 @@ defmodule CPub.Web.OAuth.AppView do
       client_id: app.client_id,
       client_secret: app.client_secret,
       redirect_uri: app.redirect_uris,
+      scopes: app.scopes,
       website: app.website
     }
   end

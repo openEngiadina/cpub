@@ -1,8 +1,8 @@
 #!/bin/sh
 
-AUTH_CONSUMER_STRATEGIES="cpub pleroma" iex -S mix phx.server
+AUTH_CONSUMER_STRATEGIES="oidc_cpub cpub pleroma" iex -S mix phx.server
 
-# AUTH_CONSUMER_STRATEGIES="cpub pleroma github gitlab discord" \
+# AUTH_CONSUMER_STRATEGIES="oidc_cpub oidc_gitlab cpub pleroma github gitlab discord" \
 # 	OIDC_GITLAB_CLIENT_ID=<id> OIDC_GITLAB_CLIENT_SECRET=<secret> \
 # 	GITHUB_CLIENT_ID=<id> GITHUB_CLIENT_SECRET=<secret> \
 # 	GITLAB_CLIENT_ID=<id> GITLAB_CLIENT_SECRET=<secret> \

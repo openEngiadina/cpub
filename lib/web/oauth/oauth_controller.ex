@@ -28,8 +28,14 @@ defmodule CPub.Web.OAuth.OAuthController do
   Prepares OAuth request to an OpenID Connect provider for Ueberauth.
   """
   @spec prepare_request(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def prepare_request(%Plug.Conn{} = conn, %{"provider" => "oidc_" <> oidc_provider}) do
-    params = %{"state" => oidc_provider}
+  def prepare_request(
+        %Plug.Conn{} = conn,
+        %{"provider" => "oidc_" <> oidc_provider, "authorization" => auth_params}
+      ) do
+    params =
+      %{"oidc_provider" => oidc_provider}
+      |> put_if_present("provider_url", auth_params["provider_url"])
+      |> process_provider_url()
 
     redirect(conn, to: Routes.o_auth_path(conn, :handle_request, "oidc", params))
   end
@@ -42,8 +48,8 @@ defmodule CPub.Web.OAuth.OAuthController do
         %{"provider" => provider, "authorization" => auth_params}
       ) do
     params =
-      ["state", "provider_url"]
-      |> Enum.reduce(%{}, fn key, params -> put_if_present(params, key, auth_params[key]) end)
+      %{}
+      |> put_if_present("provider_url", auth_params["provider_url"])
       |> process_provider_url()
 
     redirect(conn, to: Routes.o_auth_path(conn, :handle_request, provider, params))
@@ -514,7 +520,18 @@ defmodule CPub.Web.OAuth.OAuthController do
 
   @spec app_attrs(String.t(), String.t() | nil) :: {String.t(), String.t() | nil, [String.t()]}
   # OpenID Connect provider
-  defp app_attrs("oidc", oidc_provider), do: {"oidc_#{oidc_provider}", nil, @oidc_default_scopes}
+  defp app_attrs("oidc", state) do
+    %{"oidc_provider" => oidc_provider} = state = Jason.decode!(state)
+
+    case "oidc_#{oidc_provider}" in Config.auth_multi_instances_consumer_strategies() do
+      true ->
+        {"oidc_#{oidc_provider}", App.get_provider(state["provider_url"]), @oidc_default_scopes}
+
+      false ->
+        {"oidc_#{oidc_provider}", nil, @oidc_default_scopes}
+    end
+  end
+
   # Sinlge instance OAuth2 provider (eg. Gitlab)
   defp app_attrs(provider, nil), do: {provider, nil, @oauth_default_scopes}
   # Multiple instances OAuth2 provider (eg. Pleroma)

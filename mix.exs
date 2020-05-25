@@ -61,6 +61,7 @@ defmodule CPub.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:oauth2, "~> 0.8.2"},
       {:ueberauth, "~> 0.5.0"},
+      {:joken, "~> 2.2"},
       {:gettext, "~> 0.11"},
       {:cachex, "~> 3.2"},
       {:jason, "~> 1.0"},

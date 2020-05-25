@@ -35,7 +35,7 @@ defmodule CPub.Config do
   def auth_consumer_strategies_names, do: get([:auth, :consumer_strategies_names], [])
 
   @spec auth_multi_instances_consumer_strategies :: [String.t()]
-  def auth_multi_instances_consumer_strategies, do: ["pleroma", "cpub"]
+  def auth_multi_instances_consumer_strategies, do: ["oidc_cpub", "pleroma", "cpub"]
 
   @spec auth_consumer_enabled? :: boolean
   def auth_consumer_enabled?, do: auth_consumer_strategies() != []

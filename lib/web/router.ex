@@ -60,6 +60,20 @@ defmodule CPub.Web.Router do
     get "/:provider/callback", OAuthController, :handle_callback
   end
 
+  scope "/", CPub.Web.OIDC do
+    pipe_through :oauth
+
+    ## OpenID Connect server
+    get("/.well-known/openid-configuration", OIDCController, :provider_metadata)
+    get("/jwks", OIDCController, :json_web_key_set)
+
+    scope [] do
+      pipe_through :authenticated
+
+      get("/userinfo", OIDCController, :user_info)
+    end
+  end
+
   scope "/", CPub.Web do
     pipe_through :api
 
