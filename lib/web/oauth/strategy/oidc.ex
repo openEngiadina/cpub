@@ -135,6 +135,9 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
             ]
 
             redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
+
+          {:error, reason} ->
+            set_errors!(conn, [error("OAuth2", reason)])
         end
 
       false ->

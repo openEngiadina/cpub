@@ -296,20 +296,29 @@ defmodule CPub.Web.OAuth.OAuthController do
          %Plug.Conn{} = conn,
          %{"client_id" => client_id, "redirect_uri" => redirect_uri} = params
        ) do
-    app = App.get_by(%{client_id: client_id})
-    available_scopes = (app && app.scopes) || []
-    scopes = Scopes.fetch_scopes(params, available_scopes)
+    case App.get_provider(redirect_uri) != App.get_provider(Config.base_url()) do
+      true ->
+        app = App.get_by(%{client_id: client_id})
+        available_scopes = (app && app.scopes) || []
+        scopes = Scopes.fetch_scopes(params, available_scopes)
 
-    render(conn, "authorize.html", %{
-      app: app,
-      response_type: params["response_type"] || "password",
-      client_id: client_id,
-      available_scopes: available_scopes,
-      scopes: scopes,
-      redirect_uri: redirect_uri,
-      state: params["state"],
-      params: params
-    })
+        render(conn, "authorize.html", %{
+          app: app,
+          response_type: params["response_type"] || "password",
+          client_id: client_id,
+          available_scopes: available_scopes,
+          scopes: scopes,
+          redirect_uri: redirect_uri,
+          state: params["state"],
+          params: params
+        })
+
+      false ->
+        conn
+        |> put_status(:bad_request)
+        |> put_flash(:error, "The application itself cannot be an authentication server.")
+        |> authorize(Map.drop(params, ["client_id", "redirect_uri"]))
+    end
   end
 
   @spec create_authorization(Plug.Conn.t(), map, keyword) :: Plug.Conn.t()
