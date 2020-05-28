@@ -60,15 +60,16 @@ config :ueberauth, Ueberauth,
 
 config :cpub, :auth,
   consumer_strategies: auth_consumer_strategies,
-  # consumer_strategies_names: [
-  #   oidc_cpub: "CPub (OIDC)",
-  #   oidc_gitlab: "GitLab (OIDC)",
-  #   cpub: "CPub",
-  #   pleroma: "Pleroma / Mastodon",
-  #   github: "GitHub",
-  #   gitlab: "GitLab",
-  #   discord: "Discord"
-  # ],
+  consumer_strategies_names: [
+    oidc_cpub: "CPub (OIDC)",
+    # oidc_gitlab: "GitLab (OIDC)",
+    # oidc_microsoft: "Microsoft (OIDC)",
+    cpub: "CPub",
+    pleroma: "Pleroma / Mastodon"
+    # github: "GitHub",
+    # gitlab: "GitLab",
+    # discord: "Discord"
+  ],
   oauth2_token_expires_in: 60 * 60,
   oauth2_issue_new_refresh_token: true
 
