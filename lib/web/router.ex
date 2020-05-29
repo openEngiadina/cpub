@@ -5,16 +5,26 @@ defmodule CPub.Web.Router do
     BasicAuthenticationPlug,
     EnsureAuthenticationPlug,
     OAuthAuthenticationPlug,
-    ObjectIDPlug
+    ObjectIDPlug,
+    RDFParser
   }
 
   pipeline :oauth do
     plug :accepts, ["json"]
+
+    plug Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      pass: ["*/*"],
+      json_decoder: Phoenix.json_library()
   end
 
   pipeline :api do
     plug :accepts, ["rj", "ttl", "json"]
     plug ObjectIDPlug
+
+    plug Plug.Parsers,
+      parsers: [RDFParser],
+      pass: ["*/*"]
   end
 
   pipeline :optionally_authenticated do
