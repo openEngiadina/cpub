@@ -120,15 +120,8 @@ defmodule CPub.Web.OAuth.App do
 
   @spec get_or_create_local_app :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def get_or_create_local_app do
-    get_or_create(
-      %{
-        client_name: "local",
-        provider: "local",
-        redirect_uris: ". urn:ietf:wg:oauth:2.0:oob",
-        trusted: true
-      },
-      ["read"]
-    )
+    %{client_name: "local", provider: "local", redirect_uris: ".", trusted: true}
+    |> get_or_create(["read"])
   end
 
   @spec update_scopes(t, [String.t()]) :: {:ok, t} | {:error, Ecto.Changeset.t()}
