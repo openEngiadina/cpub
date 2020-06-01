@@ -40,37 +40,34 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   """
   @spec handle_request!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_request!(%Plug.Conn{params: %{"provider_url" => provider_url}} = conn) do
-    case Utils.is_valid_provider_url(provider_url) do
-      true ->
-        provider = Config.auth_provider_name(__MODULE__)
-        scopes = option(conn, :default_scope)
-        module = option(conn, :oauth2_module)
-        apps_url = Utils.merge_uri(provider_url, @provider_register_client_endpoint)
+    with true <- Utils.is_valid_provider_url(provider_url),
+         provider <- Config.auth_provider_name(__MODULE__),
+         scopes <- option(conn, :default_scope),
+         apps_url <- Utils.merge_uri(provider_url, @provider_register_client_endpoint),
+         {:ok, app} <- Utils.ensure_registered_app(provider, apps_url, scopes) do
+      module = option(conn, :oauth2_module)
 
-        case Utils.ensure_registered_app(provider, apps_url, scopes) do
-          {:ok, app} ->
-            params = [
-              redirect_uri: callback_url(conn),
-              scope: scopes,
-              client_id: app.client_id,
-              client_secret: app.client_secret,
-              state: provider_url
-            ]
+      client_opts = [
+        state: provider_url,
+        client_id: app.client_id,
+        client_secret: app.client_secret
+      ]
 
-            client_opts = [
-              state: provider_url,
-              client_id: app.client_id,
-              client_secret: app.client_secret
-            ]
+      params = [
+        redirect_uri: callback_url(conn),
+        scope: scopes,
+        client_id: app.client_id,
+        client_secret: app.client_secret,
+        state: provider_url
+      ]
 
-            redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
-
-          {:error, reason} ->
-            set_errors!(conn, [error("OAuth2", reason)])
-        end
-
+      redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
+    else
       false ->
         set_errors!(conn, [error("provider_url", "is invalid")])
+
+      {:error, reason} ->
+        set_errors!(conn, [error("OAuth2", reason)])
     end
   end
 
