@@ -70,8 +70,8 @@ config :cpub, :auth,
     # gitlab: "GitLab",
     # discord: "Discord"
   ],
-  oauth2_token_expires_in: 60 * 60,
-  oauth2_issue_new_refresh_token: true
+  token_expires_in: 60 * 60,
+  issue_new_refresh_token: true
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code

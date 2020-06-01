@@ -4,7 +4,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
 
   ## Configuration
 
-  Register an OAuth2 application with the `openid` scope and
+  Register an OAuth application with the `openid` scope and
   the "<BASE_URL>/auth/oidc/callback" callback URL on a provider and get
   the `client_id` and `client_secret` values.
 
@@ -53,8 +53,6 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
 
   alias Ueberauth.Auth.{Credentials, Extra, Info}
 
-  @provider "oidc"
-
   @doc """
   Handles the initial redirect to the OpenID Connect compatible authentication
   page.
@@ -63,9 +61,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
   by a provider.
   """
   @spec handle_request!(Plug.Conn.t()) :: Plug.Conn.t()
-  def handle_request!(
-        %Plug.Conn{params: %{"provider" => "oidc", "oidc_provider" => oidc_provider}} = conn
-      ) do
+  def handle_request!(%Plug.Conn{params: %{"oidc_provider" => oidc_provider}} = conn) do
     case multi_instances?(oidc_provider) do
       false -> handle_request_for_single_instance(conn)
       true -> handle_request_for_multi_instances(conn)
@@ -78,9 +74,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
 
   @spec handle_request_for_single_instance(Plug.Conn.t()) :: Plug.Conn.t()
   defp handle_request_for_single_instance(
-         %Plug.Conn{
-           params: %{"provider" => "oidc", "oidc_provider" => oidc_provider}
-         } = conn
+         %Plug.Conn{params: %{"oidc_provider" => oidc_provider}} = conn
        ) do
     scopes = option(conn, :default_scope)
     module = option(conn, :oauth2_module)
@@ -99,11 +93,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
   @spec handle_request_for_multi_instances(Plug.Conn.t()) :: Plug.Conn.t()
   defp handle_request_for_multi_instances(
          %Plug.Conn{
-           params: %{
-             "provider" => "oidc",
-             "oidc_provider" => oidc_provider,
-             "provider_url" => provider_url
-           }
+           params: %{"oidc_provider" => oidc_provider, "provider_url" => provider_url}
          } = conn
        ) do
     scopes = option(conn, :default_scope)
@@ -114,7 +104,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
       true ->
         apps_url = Utils.merge_uri(provider_url, config_opts[:register_client_url])
 
-        case Utils.ensure_registered_app("#{@provider}_#{oidc_provider}", apps_url, scopes) do
+        case Utils.ensure_registered_app("#{provider()}_#{oidc_provider}", apps_url, scopes) do
           {:ok, app} ->
             state =
               %{"provider_url" => provider_url, "oidc_provider" => oidc_provider}
@@ -251,14 +241,17 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
 
   @spec multi_instances?(String.t()) :: boolean
   def multi_instances?(oidc_provider) do
-    "oidc_#{oidc_provider}" in Config.auth_multi_instances_consumer_strategies()
+    "#{provider()}_#{oidc_provider}" in Config.auth_multi_instances_consumer_strategies()
   end
+
+  @spec provider :: String.t() | nil
+  defp provider, do: Config.auth_provider_name(__MODULE__)
 
   @spec redirect_uri(Plug.Conn.t(), String.t()) :: String.t()
   defp redirect_uri(%Plug.Conn{} = conn, oidc_provider) do
     conn
     |> callback_url()
-    |> String.replace("oidc_#{oidc_provider}", "oidc")
+    |> String.replace("#{provider()}_#{oidc_provider}", provider())
   end
 
   @spec option(Plug.Conn.t(), atom | String.t()) :: any

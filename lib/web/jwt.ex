@@ -14,7 +14,7 @@ defmodule CPub.Web.JWT do
   """
   @spec token_config :: Joken.token_config()
   def token_config do
-    gen_exp_func = fn -> current_time() + Config.oauth2_token_expires_in() end
+    gen_exp_func = fn -> current_time() + Config.auth_token_expires_in() end
 
     %{}
     |> add_claim("iss", fn -> Config.base_url() end, &(&1 == Config.base_url()))

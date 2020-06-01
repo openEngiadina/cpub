@@ -161,7 +161,7 @@ defmodule CPub.Web.OAuth.Token do
   end
 
   @spec expires_in :: integer
-  defp expires_in, do: Config.oauth2_token_expires_in()
+  defp expires_in, do: Config.auth_token_expires_in()
 
   @spec by_app(Ecto.Queryable.t(), String.t()) :: Ecto.Queryable.t()
   defp by_app(query, app_id), do: from(t in query, where: t.app_id == ^app_id)

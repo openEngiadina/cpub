@@ -40,15 +40,28 @@ defmodule CPub.Config do
   @spec auth_consumer_enabled? :: boolean
   def auth_consumer_enabled?, do: auth_consumer_strategies() != []
 
-  @spec oauth2_token_expires_in :: integer
-  def oauth2_token_expires_in, do: get([:auth, :oauth2_token_expires_in], 60 * 60)
+  @spec auth_token_expires_in :: integer
+  def auth_token_expires_in, do: get([:auth, :token_expires_in], 60 * 60)
 
-  @spec oauth2_issue_new_refresh_token :: boolean
-  def oauth2_issue_new_refresh_token, do: get([:auth, :oauth2_issue_new_refresh_token], false)
+  @spec auth_issue_new_refresh_token :: boolean
+  def auth_issue_new_refresh_token, do: get([:auth, :issue_new_refresh_token], false)
+
+  @spec ueberauth_opts :: keyword
+  def ueberauth_opts, do: Application.get_env(:ueberauth, Ueberauth)
+
+  @spec auth_provider_name(module) :: String.t() | nil
+  def auth_provider_name(provider_module) do
+    ueberauth_opts()[:providers]
+    |> Enum.find(fn {_, {module, _}} -> module == provider_module end)
+    |> case do
+      {provider_name, {^provider_module, _}} -> "#{provider_name}"
+      nil -> nil
+    end
+  end
 
   @spec oauth2_provider_opts(String.t()) :: keyword
   def oauth2_provider_opts(provider) do
-    {module, _} = Application.get_env(:ueberauth, Ueberauth)[:providers][:"#{provider}"]
+    {module, _} = ueberauth_opts()[:providers][:"#{provider}"]
     Application.get_env(:ueberauth, :"#{module}.OAuth")
   end
 

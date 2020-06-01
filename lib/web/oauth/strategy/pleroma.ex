@@ -20,11 +20,11 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
     default_scope: "read",
     oauth2_module: __MODULE__.OAuth
 
+  alias CPub.Config
   alias CPub.Web.OAuth.Strategy.Utils
 
   alias Ueberauth.Auth.{Credentials, Extra, Info}
 
-  @provider "pleroma"
   # @provider_verify_client_credentials_endpoint "/api/v1/apps/verify_credentials"
   @provider_register_client_endpoint "/api/v1/apps"
   @provider_verify_account_credentials_endpoint "/api/v1/accounts/verify_credentials"
@@ -42,11 +42,12 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   def handle_request!(%Plug.Conn{params: %{"provider_url" => provider_url}} = conn) do
     case Utils.is_valid_provider_url(provider_url) do
       true ->
+        provider = Config.auth_provider_name(__MODULE__)
         scopes = option(conn, :default_scope)
         module = option(conn, :oauth2_module)
         apps_url = Utils.merge_uri(provider_url, @provider_register_client_endpoint)
 
-        case Utils.ensure_registered_app(@provider, apps_url, scopes) do
+        case Utils.ensure_registered_app(provider, apps_url, scopes) do
           {:ok, app} ->
             params = [
               redirect_uri: callback_url(conn),
