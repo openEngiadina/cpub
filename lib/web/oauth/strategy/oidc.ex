@@ -95,27 +95,23 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
     scopes = option(conn, :default_scope)
     module = option(conn, :oauth2_module)
     config_opts = Config.oidc_provider_opts(oidc_provider)
+    apps_url = Utils.merge_uri(provider_url, config_opts[:register_client_url])
 
-    with true <- Utils.is_valid_provider_url(provider_url),
-         apps_url <- Utils.merge_uri(provider_url, config_opts[:register_client_url]),
-         {:ok, app} <-
-           Utils.ensure_registered_app("#{provider()}_#{oidc_provider}", apps_url, scopes) do
-      state = Jason.encode!(%{"provider_url" => provider_url, "oidc_provider" => oidc_provider})
+    case Utils.ensure_registered_app("#{provider()}_#{oidc_provider}", apps_url, scopes) do
+      {:ok, app} ->
+        state = Jason.encode!(%{"provider_url" => provider_url, "oidc_provider" => oidc_provider})
 
-      client_opts = [state: state, client_id: app.client_id, client_secret: app.client_secret]
+        client_opts = [state: state, client_id: app.client_id, client_secret: app.client_secret]
 
-      params = [
-        redirect_uri: callback_url(conn),
-        scope: scopes,
-        client_id: app.client_id,
-        client_secret: app.client_secret,
-        state: state
-      ]
+        params = [
+          redirect_uri: callback_url(conn),
+          scope: scopes,
+          client_id: app.client_id,
+          client_secret: app.client_secret,
+          state: state
+        ]
 
-      redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
-    else
-      false ->
-        set_errors!(conn, [error("provider_url", "is invalid")])
+        redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
 
       {:error, reason} ->
         set_errors!(conn, [error("OAuth2", reason)])
@@ -134,7 +130,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
     decoded_state = Jason.decode!(state)
     oidc_provider = decoded_state["oidc_provider"]
     redirect_uri = redirect_uri(conn, oidc_provider)
-    opts = [redirect_uri: redirect_uri]
+    opts = [redirect_uri: redirect_uri |> List.wrap() |> List.first()]
     module = option(conn, :oauth2_module)
 
     params = [code: code, redirect_uri: redirect_uri, state: state]

@@ -47,7 +47,7 @@ auth_consumer_strategies =
 
 ueberauth_providers =
   auth_consumer_strategies
-  |> Enum.filter(&(not (&1 in ["cpub", "pleroma"] || String.starts_with?(&1, "oidc"))))
+  |> Enum.filter(&(not (&1 in ["solid", "cpub", "pleroma"] || String.starts_with?(&1, "oidc"))))
   |> Enum.map(fn strategy ->
     strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
     strategy_module = String.to_atom(strategy_module_name)
@@ -61,6 +61,7 @@ config :ueberauth, Ueberauth,
 config :cpub, :auth,
   consumer_strategies: auth_consumer_strategies,
   consumer_strategies_names: [
+    solid: "Solid (WebID-OIDC)",
     oidc_cpub: "CPub (OIDC)",
     # oidc_gitlab: "GitLab (OIDC)",
     # oidc_microsoft: "Microsoft (OIDC)",

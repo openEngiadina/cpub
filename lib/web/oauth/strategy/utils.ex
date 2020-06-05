@@ -8,6 +8,25 @@ defmodule CPub.Web.OAuth.Strategy.Utils do
   alias CPub.Config
   alias CPub.Web.OAuth.App
 
+  @spec http_request(atom, String.t(), map) :: {:ok, String.t()} | {:error, any}
+  def http_request(method, url, body \\ %{}) do
+    headers = [{"Content-Type", "application/json"}]
+    body = Jason.encode!(body)
+    response = :hackney.request(method, url, headers, body, [])
+
+    with true <- is_valid_url(url),
+         {:ok, _resp_code, _headers, client} <- response,
+         {:ok, body} <- :hackney.body(client) do
+      {:ok, body}
+    else
+      false ->
+        {:error, :invalid_url}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec merge_uri(String.t(), String.t()) :: String.t()
   def merge_uri(site, endpoint) do
     site
@@ -15,16 +34,14 @@ defmodule CPub.Web.OAuth.Strategy.Utils do
     |> URI.to_string()
   end
 
-  @spec is_valid_provider_url(String.t()) :: boolean
-  def is_valid_provider_url(provider_url) do
-    uri = URI.parse(provider_url)
-
-    !!(uri.scheme && uri.host)
+  @spec provider_metadata(String.t(), String.t()) :: {:ok, map} | {:error, any}
+  def provider_metadata(provider, provider_metadata_url) do
+    request(provider, :get, provider_metadata_url)
   end
 
-  @spec ensure_registered_app(String.t(), String.t(), [String.t()]) ::
+  @spec ensure_registered_app(String.t(), String.t(), [String.t()], map) ::
           {:ok, App.t()} | {:error, any}
-  def ensure_registered_app(provider, apps_url, scopes) do
+  def ensure_registered_app(provider, apps_url, scopes, metadata \\ %{}) do
     app = App.get_by(%{provider: provider, client_name: App.get_provider(apps_url)})
 
     case app do
@@ -33,33 +50,54 @@ defmodule CPub.Web.OAuth.Strategy.Utils do
         {:ok, app}
 
       nil ->
-        register_app_on_provider(provider, apps_url, scopes)
+        register_app_on_provider(provider, apps_url, scopes, metadata)
     end
   end
 
-  @spec register_app_on_provider(String.t(), String.t(), [String.t()]) ::
+  @spec register_app_on_provider(String.t(), String.t(), [String.t()], map) ::
           {:ok, App.t()} | {:error, any}
-  defp register_app_on_provider(provider, apps_url, scopes) do
-    headers = [{"Content-Type", "application/json"}]
-    body = Jason.encode!(oauth_app_body(provider, scopes))
+  defp register_app_on_provider(provider, apps_url, scopes, metadata) do
+    body = oauth_app_body(provider, scopes)
 
-    response = :hackney.request(:post, apps_url, headers, body, [])
+    # Because of different providers could expect different types for
+    # redirect_uris (either string or array) we try both cases
+    result =
+      case request(provider, :post, apps_url, body) do
+        {:ok, %{error: _}} ->
+          body = %{body | redirect_uris: List.wrap(body.redirect_uris)}
+          request(provider, :post, apps_url, body)
 
-    with {:ok, _resp_code, _headers, client} <- response,
-         {:ok, body} <- :hackney.body(client),
-         {:ok, body} <- Jason.decode(body, keys: :atoms) do
-      case body do
-        %{error: reason} ->
+        {:ok, %{errors: _}} ->
+          body = %{body | redirect_uris: List.wrap(body.redirect_uris)}
+          request(provider, :post, apps_url, body)
+
+        {:ok, app} ->
+          {:ok, app}
+
+        {:error, reason} ->
           {:error, reason}
-
-        body ->
-          body
-          |> prepare_app_to_create(provider, apps_url, scopes)
-          |> App.create_from_provider()
       end
+
+    with {:ok, app} <- result do
+      app
+      |> prepare_app_to_create(provider, apps_url, scopes, metadata)
+      |> App.create_from_provider()
+    end
+  end
+
+  @spec is_valid_url(String.t()) :: boolean
+  defp is_valid_url(provider_url) do
+    with uri <- URI.parse(provider_url), do: !!(uri.scheme && uri.host)
+  end
+
+  @spec request(String.t(), atom, String.t(), map) :: {:ok, map} | {:error, String.t()}
+  defp request(provider, method, url, body \\ %{}) do
+    with {:ok, body} <- http_request(method, url, body),
+         {:ok, decoded_body} <- Jason.decode(body, keys: :atoms) do
+      {:ok, decoded_body}
     else
-      {:error, :nxdomain} ->
-        {:error, "Invalid Provider URL"}
+      {:error, reason} when reason in [:invalid_url, :nxdomain] ->
+        {:error, "Invalid provider URL"}
 
       {:error, _} ->
         {:error, "#{provider} incompatible provider"}
@@ -80,16 +118,21 @@ defmodule CPub.Web.OAuth.Strategy.Utils do
     }
   end
 
-  @spec prepare_app_to_create(map, String.t(), String.t(), [String.t()]) :: map
-  defp prepare_app_to_create(app, provider, provider_url, scopes) do
+  @spec prepare_app_to_create(map, String.t(), String.t(), [String.t()], map) :: map
+  defp prepare_app_to_create(app, provider, provider_url, scopes, metadata) do
     app
     |> Map.put(:provider, provider)
     |> Map.put(:client_name, App.get_provider(provider_url))
-    |> Map.put(:scopes, List.wrap(app[:scopes] || app[:scope] || scopes))
+    |> Map.put(:scopes, prepare_scopes(app[:scopes] || app[:scope] || scopes))
     |> Map.put(:trusted, true)
-    |> Map.put(:redirect_uris, app.redirect_uri)
+    |> Map.put(:metadata, metadata)
+    |> Map.put(:redirect_uris, List.wrap(app[:redirect_uri] || app[:redirect_uris]))
     |> Map.drop([:id, :name, :redirect_uri, :vapid_key])
   end
+
+  @spec prepare_scopes(String.t() | [String.t()]) :: [String.t()]
+  defp prepare_scopes(scopes) when is_binary(scopes), do: String.split(scopes)
+  defp prepare_scopes(scopes) when is_list(scopes), do: scopes
 
   @spec callback_endpoint(String.t()) :: String.t()
   defp callback_endpoint("oidc_" <> _), do: "/auth/oidc/callback"

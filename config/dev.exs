@@ -97,6 +97,8 @@ config :joken,
 config :ueberauth, Ueberauth,
   base_path: "/auth",
   providers: [
+    # WebID-OIDC (Solid)
+    solid: {CPub.Web.OAuth.Strategy.WebIDOIDC, []},
     # OpenID Connect
     oidc: {CPub.Web.OAuth.Strategy.OIDC, []},
     # OAuth2

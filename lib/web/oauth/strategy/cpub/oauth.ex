@@ -6,11 +6,10 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
   use OAuth2.Strategy
 
   alias CPub.Web.OAuth.App
-  alias CPub.Web.OAuth.Strategy.Utils
+  alias CPub.Web.OAuth.Strategy.{CPub, Utils}
 
   alias OAuth2.{AccessToken, Client, Response, Strategy}
 
-  @provider "cpub"
   @authorize_url_endpoint "/auth/authorize"
   @token_endpoint "/auth/token"
 
@@ -66,12 +65,12 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
 
   @spec complete_params_from_app(keyword, String.t()) :: keyword
   defp complete_params_from_app(params, provider_url) do
-    app = App.get_by(%{client_name: App.get_provider(provider_url), provider: @provider})
+    app = App.get_by(%{client_name: App.get_provider(provider_url), provider: CPub.provider()})
 
     Keyword.merge(params,
       client_id: app.client_id,
       client_secret: app.client_secret,
-      redirect_uri: app.redirect_uris
+      redirect_uri: app.redirect_uris |> List.wrap() |> List.first()
     )
   end
 

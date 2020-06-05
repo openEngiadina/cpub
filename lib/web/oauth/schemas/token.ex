@@ -23,14 +23,14 @@ defmodule CPub.Web.OAuth.Token do
         }
 
   schema "oauth_tokens" do
-    field(:access_token, :string)
-    field(:refresh_token, :string)
-    field(:scopes, {:array, :string}, default: [])
-    field(:id_token, :string, virtual: true)
-    field(:valid_until, :naive_datetime_usec)
+    field :access_token, :string
+    field :refresh_token, :string
+    field :scopes, {:array, :string}, default: []
+    field :id_token, :string, virtual: true
+    field :valid_until, :naive_datetime_usec
 
-    belongs_to(:user, User, type: CPub.ID)
-    belongs_to(:app, App)
+    belongs_to :user, User, type: CPub.ID
+    belongs_to :app, App
 
     timestamps()
   end

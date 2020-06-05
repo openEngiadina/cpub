@@ -95,7 +95,7 @@ defmodule CPub.MixProject do
   end
 
   defp public_oauth_provider?(provider) do
-    not (provider in ["cpub", "pleroma"] || String.starts_with?(provider, "oidc"))
+    not (provider in ["solid", "cpub", "pleroma"] || String.starts_with?(provider, "oidc"))
   end
 
   defp dialyzer do

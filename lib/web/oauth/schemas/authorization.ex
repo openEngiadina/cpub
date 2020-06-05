@@ -21,13 +21,13 @@ defmodule CPub.Web.OAuth.Authorization do
         }
 
   schema "oauth_authorizations" do
-    field(:code, :string)
-    field(:scopes, {:array, :string}, default: [])
-    field(:valid_until, :naive_datetime_usec)
-    field(:used, :boolean, default: false)
+    field :code, :string
+    field :scopes, {:array, :string}, default: []
+    field :valid_until, :naive_datetime_usec
+    field :used, :boolean, default: false
 
-    belongs_to(:user, User, type: CPub.ID)
-    belongs_to(:app, App)
+    belongs_to :user, User, type: CPub.ID
+    belongs_to :app, App
 
     timestamps()
   end

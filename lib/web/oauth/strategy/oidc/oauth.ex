@@ -65,7 +65,13 @@ defmodule CPub.Web.OAuth.Strategy.OIDC.OAuth do
     {url, params} =
       case OIDC.multi_instances?(oidc_provider) do
         true ->
-          url = provider_metadata(params["provider_url"])[:userinfo_endpoint]
+          {:ok, provider_metadata} =
+            Utils.provider_metadata(
+              "oidc_#{oidc_provider}",
+              Utils.merge_uri(params["provider_url"], @provider_metadata_endpoint)
+            )
+
+          url = provider_metadata[:userinfo_endpoint]
           state = %{"oidc_provider" => oidc_provider, "provider_url" => params["provider_url"]}
 
           params =
@@ -87,20 +93,6 @@ defmodule CPub.Web.OAuth.Strategy.OIDC.OAuth do
     params
     |> client()
     |> Client.get(url, headers, opts)
-  end
-
-  @spec provider_metadata(String.t()) :: map
-  defp provider_metadata(provider_url) do
-    headers = [{"Content-Type", "application/json"}]
-    url = Utils.merge_uri(provider_url, @provider_metadata_endpoint)
-
-    response = :hackney.request(:get, url, headers, "", [])
-
-    with {:ok, _resp_code, _headers, client} <- response,
-         {:ok, body} <- :hackney.body(client),
-         {:ok, body} <- Jason.decode(body, keys: :atoms) do
-      body
-    end
   end
 
   @spec get_token!(keyword, keyword) :: AccessToken.t()
@@ -125,15 +117,13 @@ defmodule CPub.Web.OAuth.Strategy.OIDC.OAuth do
   @spec complete_params_from_app(keyword, String.t(), String.t()) :: keyword
   defp complete_params_from_app(params, oidc_provider, provider_url) do
     app =
-      App.get_by(%{
-        client_name: App.get_provider(provider_url),
-        provider: "oidc_#{oidc_provider}"
-      })
+      %{client_name: App.get_provider(provider_url), provider: "oidc_#{oidc_provider}"}
+      |> App.get_by()
 
     Keyword.merge(params,
       client_id: app.client_id,
       client_secret: app.client_secret,
-      redirect_uri: app.redirect_uris
+      redirect_uri: app.redirect_uris |> List.wrap() |> List.first()
     )
   end
 

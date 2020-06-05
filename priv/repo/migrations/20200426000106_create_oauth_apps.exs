@@ -15,6 +15,6 @@ defmodule CPub.Repo.Migrations.CreateOAuthApps do
       timestamps()
     end
 
-    create unique_index(:oauth_apps, [:client_name, :provider])
+    create(unique_index(:oauth_apps, [:client_name, :provider]))
   end
 end

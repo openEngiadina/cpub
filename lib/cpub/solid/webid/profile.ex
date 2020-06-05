@@ -25,4 +25,15 @@ defmodule CPub.Solid.WebID.Profile do
     |> RDF.Description.add(FOAF.primaryTopic(), me)
     |> RDF.Data.merge(web_id_profile)
   end
+
+  @spec fetch_profile(RDF.Graph.t()) :: RDF.Description.t()
+  def fetch_profile(%RDF.Graph{} = graph) do
+    profile_subject =
+      graph
+      |> RDF.Graph.subjects()
+      |> MapSet.to_list()
+      |> Enum.find(&(RDF.iri(FOAF.Person) in (graph[&1][RDF.type()] || [])))
+
+    graph[profile_subject]
+  end
 end

@@ -40,31 +40,28 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   """
   @spec handle_request!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_request!(%Plug.Conn{params: %{"provider_url" => provider_url}} = conn) do
-    with true <- Utils.is_valid_provider_url(provider_url),
-         provider <- Config.auth_provider_name(__MODULE__),
-         scopes <- option(conn, :default_scope),
-         apps_url <- Utils.merge_uri(provider_url, @provider_register_client_endpoint),
-         {:ok, app} <- Utils.ensure_registered_app(provider, apps_url, scopes) do
-      module = option(conn, :oauth2_module)
+    provider = Config.auth_provider_name(__MODULE__)
+    scopes = option(conn, :default_scope)
+    module = option(conn, :oauth2_module)
+    apps_url = Utils.merge_uri(provider_url, @provider_register_client_endpoint)
 
-      client_opts = [
-        state: provider_url,
-        client_id: app.client_id,
-        client_secret: app.client_secret
-      ]
+    case Utils.ensure_registered_app(provider, apps_url, scopes) do
+      {:ok, app} ->
+        client_opts = [
+          state: provider_url,
+          client_id: app.client_id,
+          client_secret: app.client_secret
+        ]
 
-      params = [
-        redirect_uri: callback_url(conn),
-        scope: scopes,
-        client_id: app.client_id,
-        client_secret: app.client_secret,
-        state: provider_url
-      ]
+        params = [
+          redirect_uri: callback_url(conn),
+          scope: scopes,
+          client_id: app.client_id,
+          client_secret: app.client_secret,
+          state: provider_url
+        ]
 
-      redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
-    else
-      false ->
-        set_errors!(conn, [error("provider_url", "is invalid")])
+        redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))
 
       {:error, reason} ->
         set_errors!(conn, [error("OAuth2", reason)])
@@ -84,7 +81,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   """
   @spec handle_callback!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_callback!(%Plug.Conn{params: %{"code" => code, "state" => state}} = conn) do
-    opts = [redirect_uri: callback_url(conn)]
+    opts = [redirect_uri: callback_url(conn) |> List.wrap() |> List.first()]
     module = option(conn, :oauth2_module)
     token = apply(module, :get_token!, [[code: code, state: state], opts])
     token = %{token | other_params: Map.put(token.other_params, "provider_url", state)}
@@ -165,6 +162,9 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
   def extra(%Plug.Conn{private: %{provider_user: user, provider_token: token}}) do
     %Extra{raw_info: %{token: token, user: user}}
   end
+
+  @spec provider :: String.t() | nil
+  def provider, do: Config.auth_provider_name(__MODULE__)
 
   @spec option(Plug.Conn.t(), atom | String.t()) :: any
   defp option(%Plug.Conn{} = conn, key) do

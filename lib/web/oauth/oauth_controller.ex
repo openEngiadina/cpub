@@ -130,7 +130,7 @@ defmodule CPub.Web.OAuth.OAuthController do
         App.create_from_provider(%{
           client_name: provider,
           provider: provider,
-          redirect_uris: "#{Config.base_url()}auth/#{provider}/callback",
+          redirect_uris: ["#{Config.base_url()}auth/#{provider}/callback"],
           scopes: scopes,
           client_id: app_credentials[:client_id],
           client_secret: app_credentials[:client_secret],
@@ -220,7 +220,7 @@ defmodule CPub.Web.OAuth.OAuthController do
          auth_params <-
            Map.merge(auth_params, %{
              "client_id" => app.client_id,
-             "redirect_uri" => app.redirect_uris,
+             "redirect_uri" => List.first(app.redirect_uris),
              "scope" => app.scopes,
              "provider" => "local"
            }),
@@ -284,12 +284,12 @@ defmodule CPub.Web.OAuth.OAuthController do
   Local authentication.
   """
   def authorize(%Plug.Conn{} = conn, params) do
-    app = App.get_by(%{client_name: "local", provider: "local"})
+    %App{client_id: client_id, redirect_uris: [redirect_uri]} =
+      App.get_by(%{client_name: "local", provider: "local"})
 
-    do_authorize(
-      conn,
-      Map.merge(params, %{"client_id" => app.client_id, "redirect_uri" => app.redirect_uris})
-    )
+    params = Map.merge(params, %{"client_id" => client_id, "redirect_uri" => redirect_uri})
+
+    do_authorize(conn, params)
   end
 
   defp do_authorize(
@@ -346,10 +346,12 @@ defmodule CPub.Web.OAuth.OAuthController do
          } = params,
          user \\ nil
        ) do
+    redirect_uri = redirect_uri |> List.wrap() |> List.first()
+
     with {:ok, %User{} = user} <-
            (user && {:ok, user}) || Authenticator.get_user(conn, params),
          %App{} = app <- App.get_by(%{client_id: client_id}),
-         true <- redirect_uri in String.split(app.redirect_uris),
+         true <- redirect_uri in app.redirect_uris,
          {:ok, scopes} <- Utils.validate_scopes(app, auth_params) do
       Authorization.create(app, user, scopes)
     end
@@ -373,7 +375,7 @@ defmodule CPub.Web.OAuth.OAuthController do
     case app.provider do
       "local" ->
         # server mode
-        if redirect_uri in String.split(app.redirect_uris) do
+        if redirect_uri in app.redirect_uris do
           redirect_uri = redirect_uri(conn, redirect_uri)
           url_params = put_if_present(%{"code" => auth_code}, "state", auth_params["state"])
           redirect_uri = Utils.append_uri_params(redirect_uri, url_params)
@@ -397,7 +399,7 @@ defmodule CPub.Web.OAuth.OAuthController do
          %{"authorization" => _} = params
        ) do
     conn
-    |> put_flash(:error, "Invalid credentials")
+    |> put_flash(:error, "Invalid credentials.")
     |> put_status(:unauthorized)
     |> authorize(params)
   end

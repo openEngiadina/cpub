@@ -3,15 +3,15 @@ defmodule CPub.Repo.Migrations.CreateRegistrations do
 
   def change do
     create table(:registrations) do
-      add :user_id, references(:users, on_delete: :delete_all, type: :string)
+      add(:user_id, references(:users, on_delete: :delete_all, type: :string))
 
       add(:username, :string)
       add(:provider, :string)
-      add :info, :map
+      add(:info, :map)
 
       timestamps()
     end
 
-    create_if_not_exists unique_index(:registrations, [:username, :provider])
+    create_if_not_exists(unique_index(:registrations, [:username, :provider]))
   end
 end
