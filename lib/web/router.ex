@@ -68,10 +68,6 @@ defmodule CPub.Web.Router do
     get("/prepare_request", OAuthController, :prepare_request)
     get "/:provider", OAuthController, :handle_request
     get "/:provider/callback", OAuthController, :handle_callback
-  end
-
-  scope "/", CPub.Web.OIDC do
-    pipe_through :oauth
 
     ## OpenID Connect server
     get("/.well-known/openid-configuration", OIDCController, :provider_metadata)

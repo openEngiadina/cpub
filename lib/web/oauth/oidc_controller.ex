@@ -1,4 +1,4 @@
-defmodule CPub.Web.OIDC.OIDCController do
+defmodule CPub.Web.OAuth.OIDCController do
   use CPub.Web, :controller
 
   alias CPub.{Config, User}
