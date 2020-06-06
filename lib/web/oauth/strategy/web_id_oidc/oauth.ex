@@ -5,6 +5,8 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC.OAuth do
 
   use OAuth2.Strategy
 
+  alias CPub.NS.SOLID
+  alias CPub.Solid.WebID.Profile
   alias CPub.Web.OAuth.App
   alias CPub.Web.OAuth.Strategy.{Utils, WebIDOIDC}
 
@@ -45,8 +47,11 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC.OAuth do
     with {:ok, web_id} <- derive_web_id(id_token, provider_url),
          {:ok, body} <- Utils.http_request(:get, web_id) do
       case RDF.Turtle.Decoder.decode(body, base_iri: "#{app.metadata["issuer"]}/") do
-        {:ok, profile} ->
-          {:ok, profile}
+        {:ok, user} ->
+          case issuer_confirmed?(id_token, web_id, user) do
+            true -> {:ok, user}
+            false -> {:error, :unauthorized_issuer}
+          end
 
         {:error, _} ->
           RDF.JSON.Decoder.decode(body)
@@ -97,6 +102,24 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC.OAuth do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @spec issuer_confirmed?(String.t(), String.t(), RDF.Graph.t()) :: boolean
+  defp issuer_confirmed?(id_token, web_id, user) do
+    # https://github.com/solid/webid-oidc-spec/blob/master/README.md#webid-provider-confirmation
+    {:ok, claims} = Joken.peek_claims(id_token)
+    [web_id_domian, issuer_domain] = Enum.map([web_id, claims["iss"]], &App.get_provider/1)
+
+    String.ends_with?(web_id_domian, issuer_domain) ||
+      discover_authorized_issuer(user) == claims["iss"]
+  end
+
+  @spec discover_authorized_issuer(RDF.Graph.t()) :: String.t()
+  defp discover_authorized_issuer(%RDF.Graph{} = user) do
+    # https://github.com/solid/webid-oidc-spec/blob/master/README.md#authorized-oidc-issuer-discovery
+    profile = Profile.fetch_profile(user)
+    [issuer_iri] = profile[SOLID.oidcIssuer()]
+    issuer_iri.value
   end
 
   # Strategy Callbacks

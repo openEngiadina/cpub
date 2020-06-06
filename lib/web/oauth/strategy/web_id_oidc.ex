@@ -196,8 +196,11 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC do
   @spec fetch_user(Plug.Conn.t(), {:ok, RDF.Graph.t()} | {:error, any}) :: Plug.Conn.t()
   defp fetch_user(conn, user_response) do
     case user_response do
-      {:ok, profile} ->
-        put_private(conn, :provider_user, profile)
+      {:ok, user} ->
+        put_private(conn, :provider_user, user)
+
+      {:error, :unauthorized_issuer} ->
+        set_errors!(conn, [error("OAuth2", "Unauthorized issuer.")])
 
       {:error, reason} ->
         set_errors!(conn, [error("OAuth2", "#{reason}")])
