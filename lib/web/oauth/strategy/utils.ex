@@ -6,32 +6,75 @@ defmodule CPub.Web.OAuth.Strategy.Utils do
   use Ueberauth.Strategy
 
   alias CPub.Config
-  alias CPub.Web.OAuth.App
+  alias CPub.Solid.WebID.Profile
+  alias CPub.Web.HTTP
+  alias CPub.Web.OAuth.{App, OIDCController}
 
-  @spec http_request(atom, String.t(), map) :: {:ok, String.t()} | {:error, any}
-  def http_request(method, url, body \\ %{}) do
-    headers = [{"Content-Type", "application/json"}]
-    body = Jason.encode!(body)
-    response = :hackney.request(method, url, headers, body, [])
+  alias RDF.Turtle
 
-    with true <- is_valid_url(url),
-         {:ok, _resp_code, _headers, client} <- response,
-         {:ok, body} <- :hackney.body(client) do
-      {:ok, body}
-    else
-      false ->
-        {:error, :invalid_url}
+  @doc """
+  Discovers identity provider for the provided url:
+  https://github.com/solid/webid-oidc-spec/blob/master/README.md#authorized-oidc-issuer-discovery
+  """
+  @spec identity_provider(String.t()) :: {:ok, String.t()}
+  def identity_provider(url) do
+    case discover_issuer_from_headers(url) do
+      {:ok, identity_provider} ->
+        {:ok, identity_provider}
 
-      {:error, reason} ->
-        {:error, reason}
+      _ ->
+        case discover_issuer_from_web_id(url) do
+          {:ok, identity_provider} -> {:ok, identity_provider}
+          _ -> {:ok, url}
+        end
     end
   end
 
-  @spec merge_uri(String.t(), String.t()) :: String.t()
-  def merge_uri(site, endpoint) do
-    site
-    |> URI.merge(endpoint)
-    |> URI.to_string()
+  @spec discover_issuer_from_web_id(String.t()) :: {:ok, String.t()} | {:error, atom}
+  def discover_issuer_from_web_id(url) do
+    provider = App.get_provider(url)
+    [protocol, _] = String.split(url, provider)
+    base_iri = "#{protocol}#{provider}"
+
+    with {:ok, body, _} <- HTTP.request(:get, url, %{}, [{"Accept", "text/turtle"}]),
+         {:ok, user} <- Turtle.Decoder.decode(body, base_iri: base_iri),
+         issuer when is_binary(issuer) <- fetch_issuer_from_web_id_profile(user) do
+      {:ok, issuer}
+    else
+      _ ->
+        {:error, :unsupported}
+    end
+  end
+
+  @spec fetch_issuer_from_web_id_profile(RDF.Graph.t()) :: String.t()
+  def fetch_issuer_from_web_id_profile(%RDF.Graph{} = user) do
+    user
+    |> Profile.fetch_profile()
+    |> Profile.fetch_oidc_issuer()
+  end
+
+  @spec discover_issuer_from_headers(String.t()) :: {:ok, String.t()} | {:error, atom}
+  def discover_issuer_from_headers(url) do
+    with {:ok, _, headers} <- HTTP.request(:options, url),
+         {"Link", header} <- Enum.find(headers, fn {h, _} -> h == "Link" end),
+         issuer when is_binary(issuer) <- fetch_issuer_from_link_header(header) do
+      {:ok, issuer}
+    else
+      _ ->
+        {:error, :unsupported}
+    end
+  end
+
+  @spec fetch_issuer_from_link_header(String.t()) :: String.t()
+  defp fetch_issuer_from_link_header(header) do
+    rel =
+      header
+      |> String.split()
+      |> Enum.chunk_every(2)
+      |> Enum.find(fn [_, rel] -> String.contains?(rel, OIDCController.issuer_rel()) end)
+      |> hd()
+
+    Regex.named_captures(~r/<(?<url>.+)>/, rel)["url"]
   end
 
   @spec provider_metadata(String.t(), String.t()) :: {:ok, map} | {:error, any}
@@ -85,14 +128,9 @@ defmodule CPub.Web.OAuth.Strategy.Utils do
     end
   end
 
-  @spec is_valid_url(String.t()) :: boolean
-  defp is_valid_url(provider_url) do
-    with uri <- URI.parse(provider_url), do: !!(uri.scheme && uri.host)
-  end
-
   @spec request(String.t(), atom, String.t(), map) :: {:ok, map} | {:error, String.t()}
   defp request(provider, method, url, body \\ %{}) do
-    with {:ok, body} <- http_request(method, url, body),
+    with {:ok, body, _} <- HTTP.request(method, url, body),
          {:ok, decoded_body} <- Jason.decode(body, keys: :atoms) do
       {:ok, decoded_body}
     else
@@ -108,7 +146,7 @@ defmodule CPub.Web.OAuth.Strategy.Utils do
   defp oauth_app_body(provider, scopes) do
     client_name = "#{App.get_provider(Config.base_url())}_#{provider}"
     callback_endpoint = callback_endpoint(provider)
-    redirect_uris = merge_uri(Config.base_url(), callback_endpoint)
+    redirect_uris = HTTP.merge_uri(Config.base_url(), callback_endpoint)
 
     %{
       client_name: client_name,

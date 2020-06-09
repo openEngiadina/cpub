@@ -23,6 +23,7 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC do
   alias CPub.Config
   alias CPub.NS.FOAF
   alias CPub.Solid.WebID.Profile
+  alias CPub.Web.HTTP
   alias CPub.Web.OAuth.Strategy.Utils
 
   alias Ueberauth.Auth.{Credentials, Extra, Info}
@@ -42,16 +43,17 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC do
     provider = Config.auth_provider_name(__MODULE__)
     scopes = option(conn, :default_scope)
     module = option(conn, :oauth2_module)
-    provider_metadata_url = Utils.merge_uri(provider_url, @provider_metadata_endpoint)
+    {:ok, identity_provider} = Utils.identity_provider(provider_url)
+    provider_metadata_url = HTTP.merge_uri(identity_provider, @provider_metadata_endpoint)
 
     with {:ok, metadata} <- Utils.provider_metadata(provider, provider_metadata_url),
          registration_endpoint when not is_nil(registration_endpoint) <-
            metadata[:registration_endpoint],
-         apps_url <- Utils.merge_uri(provider_url, registration_endpoint),
+         apps_url <- HTTP.merge_uri(identity_provider, registration_endpoint),
          {:ok, app} <-
            Utils.ensure_registered_app(provider, apps_url, scopes, metadata) do
       client_opts = [
-        state: provider_url,
+        state: identity_provider,
         client_id: app.client_id,
         client_secret: app.client_secret
       ]
@@ -61,7 +63,7 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC do
         scope: scopes,
         client_id: app.client_id,
         client_secret: app.client_secret,
-        state: provider_url
+        state: identity_provider
       ]
 
       redirect!(conn, apply(module, :authorize_url!, [params, client_opts]))

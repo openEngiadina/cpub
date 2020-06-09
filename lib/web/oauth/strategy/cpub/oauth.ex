@@ -5,8 +5,9 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
 
   use OAuth2.Strategy
 
+  alias CPub.Web.HTTP
   alias CPub.Web.OAuth.App
-  alias CPub.Web.OAuth.Strategy.{CPub, Utils}
+  alias CPub.Web.OAuth.Strategy.CPub
 
   alias OAuth2.{AccessToken, Client, Response, Strategy}
 
@@ -19,8 +20,8 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
   @spec client(keyword) :: Client.t()
   def client(opts) do
     site = opts[:state]
-    authorize_url = Utils.merge_uri(site, @authorize_url_endpoint)
-    token_url = Utils.merge_uri(site, @token_endpoint)
+    authorize_url = HTTP.merge_uri(site, @authorize_url_endpoint)
+    token_url = HTTP.merge_uri(site, @token_endpoint)
 
     [strategy: __MODULE__, site: site, authorize_url: authorize_url, token_url: token_url]
     |> Keyword.merge(opts)

@@ -21,6 +21,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
     oauth2_module: __MODULE__.OAuth
 
   alias CPub.Config
+  alias CPub.Web.HTTP
   alias CPub.Web.OAuth.Strategy.Utils
 
   alias Ueberauth.Auth.{Credentials, Extra, Info}
@@ -43,7 +44,7 @@ defmodule CPub.Web.OAuth.Strategy.Pleroma do
     provider = Config.auth_provider_name(__MODULE__)
     scopes = option(conn, :default_scope)
     module = option(conn, :oauth2_module)
-    apps_url = Utils.merge_uri(provider_url, @provider_register_client_endpoint)
+    apps_url = HTTP.merge_uri(provider_url, @provider_register_client_endpoint)
 
     case Utils.ensure_registered_app(provider, apps_url, scopes) do
       {:ok, app} ->

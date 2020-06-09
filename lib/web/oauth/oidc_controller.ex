@@ -3,6 +3,9 @@ defmodule CPub.Web.OAuth.OIDCController do
 
   alias CPub.{Config, User}
 
+  @spec issuer_rel :: String.t()
+  def issuer_rel, do: "http://openid.net/specs/connect/1.0/issuer"
+
   @doc """
   Provides OpenID Provider Metadata.
   https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
@@ -62,8 +65,21 @@ defmodule CPub.Web.OAuth.OIDCController do
     json(conn, keys)
   end
 
+  @doc """
+  Returns authorized issuer in the Link header according to:
+  https://github.com/solid/webid-oidc-spec/blob/master/README.md#authorized-oidc-issuer-discovery
+  """
+  @spec authorized_issuer(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def authorized_issuer(%Plug.Conn{} = conn, _params) do
+    link_header = "<#{Config.base_url()}>; rel=\"#{issuer_rel()}\""
+
+    conn
+    |> put_resp_header("Link", link_header)
+    |> send_resp(:no_content, "")
+  end
+
   @spec url(String.t()) :: String.t()
-  def url(endpoint) do
+  defp url(endpoint) do
     Config.base_url()
     |> URI.merge(endpoint)
     |> URI.to_string()

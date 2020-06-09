@@ -49,6 +49,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
     oauth2_module: __MODULE__.OAuth
 
   alias CPub.Config
+  alias CPub.Web.HTTP
   alias CPub.Web.OAuth.Strategy.Utils
 
   alias Ueberauth.Auth.{Credentials, Extra, Info}
@@ -95,7 +96,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC do
     scopes = option(conn, :default_scope)
     module = option(conn, :oauth2_module)
     config_opts = Config.oidc_provider_opts(oidc_provider)
-    apps_url = Utils.merge_uri(provider_url, config_opts[:register_client_url])
+    apps_url = HTTP.merge_uri(provider_url, config_opts[:register_client_url])
 
     case Utils.ensure_registered_app("#{provider()}_#{oidc_provider}", apps_url, scopes) do
       {:ok, app} ->

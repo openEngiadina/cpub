@@ -6,6 +6,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC.OAuth do
   use OAuth2.Strategy
 
   alias CPub.Config
+  alias CPub.Web.HTTP
   alias CPub.Web.OAuth.App
   alias CPub.Web.OAuth.Strategy.{OIDC, Utils}
 
@@ -31,8 +32,8 @@ defmodule CPub.Web.OAuth.Strategy.OIDC.OAuth do
     case OIDC.multi_instances?(oidc_provider) do
       true ->
         site = state["provider_url"]
-        authorize_url = Utils.merge_uri(site, config_opts[:authorize_url])
-        token_url = Utils.merge_uri(site, config_opts[:token_url])
+        authorize_url = HTTP.merge_uri(site, config_opts[:authorize_url])
+        token_url = HTTP.merge_uri(site, config_opts[:token_url])
 
         [strategy: __MODULE__, site: site, authorize_url: authorize_url, token_url: token_url]
         |> Keyword.merge(Keyword.delete(opts, :state))
@@ -68,7 +69,7 @@ defmodule CPub.Web.OAuth.Strategy.OIDC.OAuth do
           {:ok, provider_metadata} =
             Utils.provider_metadata(
               "oidc_#{oidc_provider}",
-              Utils.merge_uri(params["provider_url"], @provider_metadata_endpoint)
+              HTTP.merge_uri(params["provider_url"], @provider_metadata_endpoint)
             )
 
           url = provider_metadata[:userinfo_endpoint]

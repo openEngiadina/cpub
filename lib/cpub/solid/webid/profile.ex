@@ -7,7 +7,7 @@ defmodule CPub.Solid.WebID.Profile do
   """
 
   alias CPub.ID
-  alias CPub.NS.FOAF
+  alias CPub.NS.{FOAF, SOLID}
 
   @spec create(RDF.Description.t(), map) :: RDF.Description.t()
   def create(default_profile, %{username: username}) do
@@ -35,5 +35,10 @@ defmodule CPub.Solid.WebID.Profile do
       |> Enum.find(&(RDF.iri(FOAF.Person) in (graph[&1][RDF.type()] || [])))
 
     graph[profile_subject]
+  end
+
+  @spec fetch_oidc_issuer(RDF.Description.t()) :: String.t()
+  def fetch_oidc_issuer(%RDF.Description{} = descr) do
+    with [issuer_iri] <- descr[SOLID.oidcIssuer()], do: issuer_iri.value
   end
 end
