@@ -3,10 +3,10 @@ defmodule CPub.Repo.Migrations.AddProviderToUser do
 
   def change do
     alter table(:users, primary_key: false) do
-      add :provider, :string
+      add(:provider, :string)
     end
 
-    drop unique_index(:users, [:username])
-    create unique_index(:users, [:username, :provider])
+    drop(unique_index(:users, [:username]))
+    create(unique_index(:users, [:username, :provider]))
   end
 end

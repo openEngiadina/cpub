@@ -186,11 +186,8 @@ defmodule CPub.User do
   @spec pop(t, atom) :: {any | nil, t}
   def pop(%__MODULE__{} = user, key) do
     case Access.pop(user.profile, key) do
-      {nil, _} ->
-        {nil, user}
-
-      {value, new_profile} ->
-        {value, %{user | profile: new_profile}}
+      {nil, _} -> {nil, user}
+      {value, new_profile} -> {value, %{user | profile: new_profile}}
     end
   end
 end

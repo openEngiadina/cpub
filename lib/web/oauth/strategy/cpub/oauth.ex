@@ -5,7 +5,9 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
 
   use OAuth2.Strategy
 
+  alias CPub.Web.HTTP
   alias CPub.Web.OAuth.App
+  alias CPub.Web.OAuth.Strategy.CPub
 
   alias OAuth2.{AccessToken, Client, Response, Strategy}
 
@@ -17,25 +19,12 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
   """
   @spec client(keyword) :: Client.t()
   def client(opts) do
-    site = Keyword.get(opts, :state)
+    site = opts[:state]
+    authorize_url = HTTP.merge_uri(site, @authorize_url_endpoint)
+    token_url = HTTP.merge_uri(site, @token_endpoint)
 
-    authorize_url =
-      site
-      |> URI.merge(@authorize_url_endpoint)
-      |> URI.to_string()
-
-    token_url =
-      site
-      |> URI.merge(@token_endpoint)
-      |> URI.to_string()
-
-    opts
-    |> Keyword.merge(
-      strategy: __MODULE__,
-      site: site,
-      authorize_url: authorize_url,
-      token_url: token_url
-    )
+    [strategy: __MODULE__, site: site, authorize_url: authorize_url, token_url: token_url]
+    |> Keyword.merge(opts)
     |> Client.new()
   end
 
@@ -57,9 +46,10 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
         headers \\ [],
         opts \\ []
       ) do
-    params = complete_params_from_app([token: token, state: provider_url], provider_url)
-
-    Client.get(client(params), url, headers, opts)
+    [token: token, state: provider_url]
+    |> complete_params_from_app(provider_url)
+    |> client()
+    |> Client.get(url, headers, opts)
   end
 
   @spec get_token!(keyword, keyword) :: AccessToken.t()
@@ -76,12 +66,12 @@ defmodule CPub.Web.OAuth.Strategy.CPub.OAuth do
 
   @spec complete_params_from_app(keyword, String.t()) :: keyword
   defp complete_params_from_app(params, provider_url) do
-    app = App.get_by(%{client_name: App.get_provider(provider_url)})
+    app = App.get_by(%{client_name: App.get_provider(provider_url), provider: CPub.provider()})
 
     Keyword.merge(params,
       client_id: app.client_id,
       client_secret: app.client_secret,
-      redirect_uri: app.redirect_uris
+      redirect_uri: app.redirect_uris |> List.wrap() |> List.first()
     )
   end
 

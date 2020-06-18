@@ -19,7 +19,7 @@ defmodule CPub.Web.Router do
   end
 
   pipeline :api do
-    plug :accepts, ["rj", "ttl"]
+    plug :accepts, ["rj", "ttl", "json"]
     plug ObjectIDPlug
 
     plug Plug.Parsers,
@@ -49,6 +49,14 @@ defmodule CPub.Web.Router do
   scope "/auth", CPub.Web.OAuth do
     pipe_through :oauth
 
+    ## OpenID Connect server
+
+    scope [] do
+      pipe_through :authenticated
+
+      get("/userinfo", OIDCController, :user_info)
+    end
+
     ## OAuth server
 
     post("/apps", AppController, :create)
@@ -68,6 +76,16 @@ defmodule CPub.Web.Router do
     get("/prepare_request", OAuthController, :prepare_request)
     get "/:provider", OAuthController, :handle_request
     get "/:provider/callback", OAuthController, :handle_callback
+  end
+
+  scope "/", CPub.Web.OAuth do
+    ## OpenID Connect server
+
+    get("/.well-known/openid-configuration", OIDCController, :provider_metadata)
+    get("/auth/jwks", OIDCController, :json_web_key_set)
+
+    options "/", OIDCController, :authorized_issuer
+    options "/users/:user_id/me", OIDCController, :authorized_issuer
   end
 
   scope "/", CPub.Web do

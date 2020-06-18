@@ -31,4 +31,9 @@ defmodule CPub.NS do
     base_iri: "http://xmlns.com/foaf/0.1/",
     file: "foaf.ttl"
   )
+
+  defvocab(SOLID,
+    base_iri: "http://www.w3.org/ns/solid/terms#",
+    file: "solid.ttl"
+  )
 end

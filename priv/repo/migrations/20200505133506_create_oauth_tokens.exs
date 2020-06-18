@@ -3,8 +3,8 @@ defmodule CPub.Repo.Migrations.CreateOAuthTokens do
 
   def change do
     create table(:oauth_tokens) do
-      add :app_id, references(:oauth_apps, on_delete: :delete_all, type: :integer)
-      add :user_id, references(:users, on_delete: :delete_all, type: :string)
+      add(:app_id, references(:oauth_apps, on_delete: :delete_all, type: :integer))
+      add(:user_id, references(:users, on_delete: :delete_all, type: :string))
 
       add(:access_token, :string)
       add(:refresh_token, :string)
@@ -14,10 +14,10 @@ defmodule CPub.Repo.Migrations.CreateOAuthTokens do
       timestamps()
     end
 
-    create_if_not_exists index(:oauth_tokens, [:app_id])
-    create_if_not_exists index(:oauth_tokens, [:user_id])
+    create_if_not_exists(index(:oauth_tokens, [:app_id]))
+    create_if_not_exists(index(:oauth_tokens, [:user_id]))
 
-    create_if_not_exists unique_index(:oauth_tokens, [:access_token])
-    create_if_not_exists unique_index(:oauth_tokens, [:refresh_token])
+    create_if_not_exists(unique_index(:oauth_tokens, [:access_token]))
+    create_if_not_exists(unique_index(:oauth_tokens, [:refresh_token]))
   end
 end

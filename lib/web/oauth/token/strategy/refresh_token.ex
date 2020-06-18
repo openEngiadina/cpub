@@ -37,7 +37,7 @@ defmodule CPub.Web.OAuth.Token.Strategy.RefreshToken do
 
   @spec add_refresh_token(map, String.t()) :: map
   defp add_refresh_token(params, refresh_token) do
-    case Config.oauth2_issue_new_refresh_token() do
+    case Config.auth_issue_new_refresh_token() do
       true -> Map.put(params, :refresh_token, refresh_token)
       false -> params
     end

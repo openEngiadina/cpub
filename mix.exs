@@ -61,6 +61,7 @@ defmodule CPub.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:oauth2, "~> 0.8.2"},
       {:ueberauth, "~> 0.5.0"},
+      {:joken, "~> 2.2"},
       {:gettext, "~> 0.11"},
       {:cachex, "~> 3.2"},
       {:jason, "~> 1.0"},
@@ -79,21 +80,22 @@ defmodule CPub.MixProject do
   end
 
   # Specifies OAuth dependencies.
-  def oauth_deps do
-    not_public_consumer_strategies = ["oidc", "cpub", "pleroma"]
-
+  defp oauth_deps do
     System.get_env("AUTH_CONSUMER_STRATEGIES")
     |> to_string()
     |> String.split()
-    |> Kernel.--(not_public_consumer_strategies)
+    |> Enum.filter(&public_oauth_provider?/1)
     |> Enum.map(fn strategy_entry ->
-      with [_strategy, dependency] <- String.split(strategy_entry, ":") do
-        dependency
-      else
+      case String.split(strategy_entry, ":") do
+        [_strategy, dependency] -> dependency
         [strategy] -> "ueberauth_#{strategy}"
       end
     end)
     |> Enum.map(&{String.to_atom(&1), ">= 0.0.0"})
+  end
+
+  defp public_oauth_provider?(provider) do
+    not (provider in ["solid", "cpub", "pleroma"] || String.starts_with?(provider, "oidc"))
   end
 
   defp dialyzer do

@@ -10,6 +10,9 @@ defmodule CPub.Web.OAuth.OAuthController do
 
   @oob_token_redirect_uri "urn:ietf:wg:oauth:2.0:oob"
 
+  @oauth_default_scopes ["read"]
+  @oidc_default_scopes ["openid"]
+
   action_fallback CPub.Web.OAuth.FallbackController
 
   plug :fetch_session
@@ -22,17 +25,32 @@ defmodule CPub.Web.OAuth.OAuthController do
   if Config.auth_consumer_enabled?(), do: plug(Ueberauth)
 
   @doc """
-  Prepares OAuth request to provider for Ueberauth.
+  Prepares OAuth request to an OpenID Connect provider for Ueberauth.
   """
   @spec prepare_request(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def prepare_request(
+        %Plug.Conn{} = conn,
+        %{"provider" => "oidc_" <> oidc_provider, "authorization" => auth_params}
+      ) do
+    params =
+      %{"oidc_provider" => oidc_provider}
+      |> put_if_present("provider_url", auth_params["provider_url"])
+      |> process_provider_url()
+
+    redirect(conn, to: Routes.o_auth_path(conn, :handle_request, "oidc", params))
+  end
+
+  @doc """
+  Prepares OAuth request to a provider for Ueberauth.
+  """
   def prepare_request(
         %Plug.Conn{} = conn,
         %{"provider" => provider, "authorization" => auth_params}
       ) do
     params =
-      Enum.reduce(["state", "provider_url"], %{}, fn key, params ->
-        if auth_params[key] != "", do: Map.put(params, key, auth_params[key]), else: params
-      end)
+      %{}
+      |> put_if_present("provider_url", auth_params["provider_url"])
+      |> process_provider_url()
 
     redirect(conn, to: Routes.o_auth_path(conn, :handle_request, provider, params))
   end
@@ -41,7 +59,6 @@ defmodule CPub.Web.OAuth.OAuthController do
   Handles those authorization requests which can not be handled by registered
   Ueberauth strategies.
   """
-  @spec handle_request(Plug.Conn.t(), map) :: Plug.Conn.t()
   def handle_request(%Plug.Conn{} = conn, %{"provider" => provider}) do
     message =
       if provider, do: "Unsupported OAuth provider: #{provider}.", else: "Bad OAuth request."
@@ -52,7 +69,6 @@ defmodule CPub.Web.OAuth.OAuthController do
   @doc """
   Handles a failure from external OAuth provider.
   """
-  # @spec handle_callback(Plug.Conn.t(), map) :: Plug.Conn.t()
   def handle_callback(
         %Plug.Conn{
           assigns: %{ueberauth_failure: %Failure{errors: [%Failure.Error{} = error | _]}}
@@ -73,16 +89,13 @@ defmodule CPub.Web.OAuth.OAuthController do
       ) do
     info = Map.delete(info, :__struct__)
     username = info.nickname || info.name
-    client_name = if params["state"], do: App.get_provider(params["state"]), else: nil
+    {provider, client_name, scopes} = app_attrs(provider, params["state"])
 
-    with {:ok, app} <- get_or_create_app(provider, client_name),
+    with {:ok, %App{client_id: client_id, redirect_uris: redirect_uri, scopes: scope} = app} <-
+           get_or_create_app(provider, client_name, scopes),
          {:ok, registration} <-
            Registration.get_or_create(%{username: username, provider: app.client_name}, info) do
-      auth_params = %{
-        "client_id" => app.client_id,
-        "redirect_uri" => app.redirect_uris,
-        "scope" => app.scopes
-      }
+      auth_params = %{"client_id" => client_id, "redirect_uri" => redirect_uri, "scope" => scope}
 
       case Repo.preload(registration, :user).user do
         %User{} = user ->
@@ -101,20 +114,24 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
-  @spec get_or_create_app(String.t(), String.t() | nil) :: {:ok, App.t()}
-  defp get_or_create_app(provider, nil) do
+  @spec get_or_create_app(String.t(), String.t() | nil, [String.t()]) :: {:ok, App.t()}
+  defp get_or_create_app(provider, nil, scopes) do
     case App.get_by(%{provider: provider, client_name: provider}) do
       %App{} = app ->
         {:ok, app}
 
       nil ->
-        app_credentials = Config.oauth2_provider_credentials(provider)
+        app_credentials =
+          case provider do
+            "oidc_" <> oidc_provider -> Config.oidc_provider_opts(oidc_provider)
+            provider -> Config.oauth2_provider_opts(provider)
+          end
 
         App.create_from_provider(%{
           client_name: provider,
           provider: provider,
-          redirect_uris: "#{Config.base_url()}auth/#{provider}/callback",
-          scopes: ["read"],
+          redirect_uris: ["#{Config.base_url()}auth/#{provider}/callback"],
+          scopes: scopes,
           client_id: app_credentials[:client_id],
           client_secret: app_credentials[:client_secret],
           trusted: true
@@ -122,7 +139,7 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
-  defp get_or_create_app(provider, client_name) do
+  defp get_or_create_app(provider, client_name, _scopes) do
     {:ok, App.get_by(%{provider: provider, client_name: client_name})}
   end
 
@@ -130,6 +147,9 @@ defmodule CPub.Web.OAuth.OAuthController do
   ### OAuth Server ###
   ####################
 
+  @doc """
+  Renders registration form after authentication via external provider.
+  """
   @spec registration_from_provider(Plug.Conn.t(), map) :: Plug.Conn.t()
   def registration_from_provider(%Plug.Conn{} = conn, %{"authorization" => auth_params}) do
     render(conn, "register_from_provider.html", %{
@@ -143,11 +163,17 @@ defmodule CPub.Web.OAuth.OAuthController do
     })
   end
 
+  @doc """
+  Renders registration form for local users.
+  """
   @spec registration_local(Plug.Conn.t(), map) :: Plug.Conn.t()
   def registration_local(%Plug.Conn{} = conn, _params) do
     render(conn, "register_local.html")
   end
 
+  @doc """
+  Connects an authorized via external provider user to an existed local user.
+  """
   @spec register(Plug.Conn.t(), map) :: Plug.Conn.t()
   def register(
         %Plug.Conn{} = conn,
@@ -164,10 +190,13 @@ defmodule CPub.Web.OAuth.OAuthController do
         handle_create_authorization_error(conn, error, params)
 
       _ ->
-        {:register, :generic_error}
+        {:web_register, :generic_error}
     end
   end
 
+  @doc """
+  Registers an authorized via external provider user as a new local user.
+  """
   def register(
         %Plug.Conn{} = conn,
         %{"authorization" => auth_params, "op" => "register_from_provider"} = params
@@ -179,6 +208,9 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Registers a new local user.
+  """
   def register(
         %Plug.Conn{} = conn,
         %{"authorization" => auth_params, "op" => "register_local"} = params
@@ -188,7 +220,7 @@ defmodule CPub.Web.OAuth.OAuthController do
          auth_params <-
            Map.merge(auth_params, %{
              "client_id" => app.client_id,
-             "redirect_uri" => app.redirect_uris,
+             "redirect_uri" => List.first(app.redirect_uris),
              "scope" => app.scopes,
              "provider" => "local"
            }),
@@ -199,54 +231,94 @@ defmodule CPub.Web.OAuth.OAuthController do
       create_authorization(conn, params, user: user)
     else
       false ->
-        {:register, :password_confirmation}
+        {:web_register, :password_confirmation}
 
       {:error, %Ecto.Changeset{} = error} ->
-        {:register, error}
+        client = params["client"] || "web"
+        {:"#{client}_register", error}
     end
   end
 
-  # Note: is only called from error-handling methods with `conn.params` as 2nd arg
+  @doc """
+  Registers a new local user (for REST API clients).
+  """
+  def register(%Plug.Conn{} = conn, _params) do
+    case Utils.fetch_user_credentials(conn) do
+      {username, password} when is_binary(username) and is_binary(password) ->
+        params = %{
+          "op" => "register_local",
+          "client" => "api",
+          "authorization" => %{
+            "username" => username,
+            "password" => password,
+            "password_confirmation" => password
+          }
+        }
+
+        register(conn, params)
+
+      _ ->
+        {:api_register, :invalid_credentials}
+    end
+  end
+
+  @doc """
+  Authentication from external provider.
+  Note: is only called from error-handling methods with `conn.params` as 2nd arg
+  """
   def authorize(%Plug.Conn{} = conn, %{"authorization" => _} = params) do
     {auth_attrs, params} = Map.pop(params, "authorization")
 
     authorize(conn, Map.merge(params, auth_attrs))
   end
 
-  # Authentication from external provider
+  @doc """
+  Authentication from external provider.
+  """
   @spec authorize(Plug.Conn.t(), map) :: Plug.Conn.t()
   def authorize(%Plug.Conn{} = conn, %{"client_id" => _, "redirect_uri" => _} = params) do
     do_authorize(conn, params)
   end
 
-  # Local authentication
+  @doc """
+  Local authentication.
+  """
   def authorize(%Plug.Conn{} = conn, params) do
-    app = App.get_by(%{client_name: "local", provider: "local"})
+    %App{client_id: client_id, redirect_uris: [redirect_uri]} =
+      App.get_by(%{client_name: "local", provider: "local"})
 
-    do_authorize(
-      conn,
-      Map.merge(params, %{"client_id" => app.client_id, "redirect_uri" => app.redirect_uris})
-    )
+    params = Map.merge(params, %{"client_id" => client_id, "redirect_uri" => redirect_uri})
+
+    do_authorize(conn, params)
   end
 
   defp do_authorize(
          %Plug.Conn{} = conn,
          %{"client_id" => client_id, "redirect_uri" => redirect_uri} = params
        ) do
-    app = App.get_by(%{client_id: client_id})
-    available_scopes = (app && app.scopes) || []
-    scopes = Scopes.fetch_scopes(params, available_scopes)
+    case App.get_provider(redirect_uri) != App.get_provider(Config.base_url()) do
+      true ->
+        app = App.get_by(%{client_id: client_id})
+        available_scopes = (app && app.scopes) || []
+        scopes = Scopes.fetch_scopes(params, available_scopes)
 
-    render(conn, "authorize.html", %{
-      app: app,
-      response_type: params["response_type"] || "password",
-      client_id: client_id,
-      available_scopes: available_scopes,
-      scopes: scopes,
-      redirect_uri: redirect_uri,
-      state: params["state"],
-      params: params
-    })
+        render(conn, "authorize.html", %{
+          app: app,
+          response_type: params["response_type"] || "password",
+          client_id: client_id,
+          available_scopes: available_scopes,
+          scopes: scopes,
+          redirect_uri: redirect_uri,
+          state: params["state"],
+          params: params
+        })
+
+      false ->
+        conn
+        |> put_status(:bad_request)
+        |> put_flash(:error, "The application itself cannot be an authentication server.")
+        |> authorize(Map.drop(params, ["client_id", "redirect_uri"]))
+    end
   end
 
   @spec create_authorization(Plug.Conn.t(), map, keyword) :: Plug.Conn.t()
@@ -267,17 +339,19 @@ defmodule CPub.Web.OAuth.OAuthController do
   @spec do_create_authorization(Plug.Conn.t(), map, User.t() | nil) ::
           {:ok, Authorization.t()} | {:error, Ecto.Changeset.t()}
   defp do_create_authorization(
-         %Plug.Conn{},
+         %Plug.Conn{} = conn,
          %{
            "authorization" =>
              %{"client_id" => client_id, "redirect_uri" => redirect_uri} = auth_params
          } = params,
          user \\ nil
        ) do
+    redirect_uri = redirect_uri |> List.wrap() |> List.first()
+
     with {:ok, %User{} = user} <-
-           (user && {:ok, user}) || Authenticator.get_user(params),
+           (user && {:ok, user}) || Authenticator.get_user(conn, params),
          %App{} = app <- App.get_by(%{client_id: client_id}),
-         true <- redirect_uri in String.split(app.redirect_uris),
+         true <- redirect_uri in app.redirect_uris,
          {:ok, scopes} <- Utils.validate_scopes(app, auth_params) do
       Authorization.create(app, user, scopes)
     end
@@ -301,7 +375,7 @@ defmodule CPub.Web.OAuth.OAuthController do
     case app.provider do
       "local" ->
         # server mode
-        if redirect_uri in String.split(app.redirect_uris) do
+        if redirect_uri in app.redirect_uris do
           redirect_uri = redirect_uri(conn, redirect_uri)
           url_params = put_if_present(%{"code" => auth_code}, "state", auth_params["state"])
           redirect_uri = Utils.append_uri_params(redirect_uri, url_params)
@@ -325,7 +399,7 @@ defmodule CPub.Web.OAuth.OAuthController do
          %{"authorization" => _} = params
        ) do
     conn
-    |> put_flash(:error, "Invalid credentials")
+    |> put_flash(:error, "Invalid credentials.")
     |> put_status(:unauthorized)
     |> authorize(params)
   end
@@ -351,13 +425,16 @@ defmodule CPub.Web.OAuth.OAuthController do
     end
   end
 
+  @doc """
+  Exchanges token for the Authorization Code strategy:
+  http://tools.ietf.org/html/rfc6749#section-1.3.1
+  """
   @spec exchange_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def exchange_token(
         %Plug.Conn{} = conn,
         %{"grant_type" => "authorization_code", "code" => auth_code}
       ) do
-    # The Authorization Code Strategy: http://tools.ietf.org/html/rfc6749#section-1.3.1
-    with {:ok, app} <- Utils.fetch_app(conn),
+    with %App{} = app <- Utils.fetch_app(conn),
          auth_code <- Utils.ensure_padding(auth_code),
          {:ok, auth} <- Authorization.get_by_code(app, auth_code),
          {:ok, token} <- Token.exchange_token(app, auth) do
@@ -366,16 +443,20 @@ defmodule CPub.Web.OAuth.OAuthController do
       json(conn, Token.serialize(token, response_attrs))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
+  @doc """
+  Exchanges token for the Refresh Token strategy:
+  https://tools.ietf.org/html/rfc6749#section-1.5
+  """
   def exchange_token(
         %Plug.Conn{} = conn,
         %{"grant_type" => "refresh_token", "refresh_token" => refresh_token}
       ) do
-    # The Refresh Token Strategy: https://tools.ietf.org/html/rfc6749#section-1.5
-    with {:ok, app} <- Utils.fetch_app(conn),
+    with %App{} = app <-
+           Utils.fetch_app(conn) || App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, token} <- Token.get_by_refresh_token(app, refresh_token),
          {:ok, token} <- RefreshToken.grant(token) do
       response_attrs = %{created_at: Token.format_creation_date(token.inserted_at)}
@@ -383,57 +464,52 @@ defmodule CPub.Web.OAuth.OAuthController do
       json(conn, Token.serialize(token, response_attrs))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
-  def exchange_token(
-        %Plug.Conn{} = conn,
-        %{"grant_type" => "password", "name" => _, "password" => _} = params
-      ) do
-    # The Resource Owner Password Credentials Authorization Strategy:
-    # http://tools.ietf.org/html/rfc6749#section-1.3.3
-    with {:ok, user} <- Authenticator.get_user(params),
-         {:ok, app} <- Utils.fetch_app(conn),
+  @doc """
+  Exchanges token for the Resource Owner Password Credentials Authorization strategy:
+  http://tools.ietf.org/html/rfc6749#section-1.3.3
+  """
+  def exchange_token(%Plug.Conn{} = conn, %{"grant_type" => "password"} = params) do
+    with {:ok, user} <- Authenticator.get_user(conn, params),
+         %App{} = app <- App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, scopes} <- Utils.validate_scopes(app, params),
          {:ok, auth} <- Authorization.create(app, user, scopes),
          {:ok, token} <- Token.exchange_token(app, auth) do
       json(conn, Token.serialize(token))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
-  def exchange_token(
-        %Plug.Conn{} = conn,
-        %{"grant_type" => "password", "username" => _, "password" => _} = params
-      ) do
-    exchange_token(conn, params)
-  end
-
-  def exchange_token(
-        %Plug.Conn{} = conn,
-        %{"grant_type" => "client_credentials"}
-      ) do
-    # The Client Credentials Strategy: http://tools.ietf.org/html/rfc6749#section-1.3.4
-    with {:ok, app} <- Utils.fetch_app(conn),
+  @doc """
+  Exchanges token for the Client Credentials strategy:
+  http://tools.ietf.org/html/rfc6749#section-1.3.4
+  """
+  def exchange_token(%Plug.Conn{} = conn, %{"grant_type" => "client_credentials"}) do
+    with %App{} = app <- App.get_by(%{client_name: "local", provider: "local"}),
          {:ok, auth} <- Authorization.create(app, %User{}),
          {:ok, token} <- Token.exchange_token(app, auth) do
       json(conn, Token.serialize_for_client_credentials(token))
     else
       _error ->
-        render_invalid_credentials_error(conn)
+        error_resp(conn, :unauthorized, "Invalid credentials.")
     end
   end
 
   def exchange_token(%Plug.Conn{} = conn, _params) do
-    error_resp(conn, :bad_request, "Bad request.")
+    error_resp(conn, :unauthorized, "Invalid credentials.")
   end
 
+  @doc """
+  Revokes token.
+  """
   @spec revoke_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def revoke_token(%Plug.Conn{} = conn, %{"access_token" => _} = params) do
-    with {:ok, app} <- Utils.fetch_app(conn),
+    with %App{} = app <- Utils.fetch_app(conn),
          {:ok, _token} <- RevokeToken.revoke(app, params) do
       json(conn, %{})
     else
@@ -453,6 +529,26 @@ defmodule CPub.Web.OAuth.OAuthController do
     |> halt()
   end
 
+  @spec app_attrs(String.t(), String.t() | nil) :: {String.t(), String.t() | nil, [String.t()]}
+  # OpenID Connect provider
+  defp app_attrs("oidc", state) do
+    %{"oidc_provider" => oidc_provider} = state = Jason.decode!(state)
+
+    case "oidc_#{oidc_provider}" in Config.auth_multi_instances_consumer_strategies() do
+      true ->
+        {"oidc_#{oidc_provider}", App.get_provider(state["provider_url"]), @oidc_default_scopes}
+
+      false ->
+        {"oidc_#{oidc_provider}", nil, @oidc_default_scopes}
+    end
+  end
+
+  # Sinlge instance OAuth2 provider (eg. Gitlab)
+  defp app_attrs(provider, nil), do: {provider, nil, @oauth_default_scopes}
+  # Multiple instances OAuth2 provider (eg. Pleroma)
+  defp app_attrs(provider, provider_url),
+    do: {provider, App.get_provider(provider_url), @oauth_default_scopes}
+
   # process redirect_uri for local auth app
   @spec redirect_uri(Plug.Conn.t(), String.t()) :: String.t()
   defp redirect_uri(%Plug.Conn{} = conn, "."), do: Routes.o_auth_url(conn, :login)
@@ -466,7 +562,22 @@ defmodule CPub.Web.OAuth.OAuthController do
     |> URI.to_string()
   end
 
-  @spec put_if_present(map, atom | String.t(), String.t()) :: map
+  @spec put_if_present(map, atom | String.t(), String.t() | nil) :: map
   defp put_if_present(map, _param_name, nil), do: map
+  defp put_if_present(map, _param_name, ""), do: map
   defp put_if_present(map, name, value), do: Map.put(map, name, value)
+
+  @spec process_provider_url(map) :: map
+  defp process_provider_url(%{"provider_url" => provider_url} = params) do
+    provider_url =
+      case provider_url = String.downcase(provider_url) do
+        "http://" <> _ -> provider_url
+        "https://" <> _ -> provider_url
+        _ -> "https://#{provider_url}"
+      end
+
+    Map.put(params, "provider_url", provider_url)
+  end
+
+  defp process_provider_url(params), do: params
 end

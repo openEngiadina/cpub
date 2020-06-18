@@ -87,19 +87,17 @@ defmodule CPub.ID do
 
   @spec ensure_id(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp ensure_id(%Ecto.Changeset{} = changeset) do
-    if is_nil(Ecto.Changeset.get_field(changeset, :id)) do
-      Ecto.Changeset.put_change(changeset, :id, generate())
-    else
-      changeset
+    case is_nil(Ecto.Changeset.get_field(changeset, :id)) do
+      true -> Ecto.Changeset.put_change(changeset, :id, generate())
+      false -> changeset
     end
   end
 
   @spec validate_local_id(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_local_id(%Ecto.Changeset{} = changeset) do
-    if is_local?(Ecto.Changeset.get_field(changeset, :id)) do
-      changeset
-    else
-      Ecto.Changeset.add_error(changeset, :id, "not a local id")
+    case is_local?(Ecto.Changeset.get_field(changeset, :id)) do
+      true -> changeset
+      false -> Ecto.Changeset.add_error(changeset, :id, "not a local id")
     end
   end
 end

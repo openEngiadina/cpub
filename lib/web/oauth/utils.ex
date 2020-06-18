@@ -6,17 +6,20 @@ defmodule CPub.Web.OAuth.Utils do
   alias CPub.Web.BasicAuthenticationPlug
   alias CPub.Web.OAuth.{App, Scopes}
 
-  @spec fetch_app(Plug.Conn.t()) :: {:ok, App.t()} | {:error, atom}
-  def fetch_app(%Plug.Conn{} = conn) do
-    app =
-      conn
-      |> fetch_client_credentials()
-      |> fetch_client
-
-    case app do
-      %App{} -> {:ok, app}
-      nil -> {:error, :not_found}
+  @spec fetch_user_credentials(Plug.Conn.t()) :: {String.t() | nil, String.t() | nil}
+  def fetch_user_credentials(%Plug.Conn{} = conn) do
+    # Per RFC 6749, HTTP Basic is preferred to body params
+    case BasicAuthenticationPlug.fetch_credentials(conn) do
+      {username, password} -> {username, password}
+      nil -> {conn.params["username"], conn.params["password"]}
     end
+  end
+
+  @spec fetch_app(Plug.Conn.t()) :: App.t() | nil
+  def fetch_app(%Plug.Conn{} = conn) do
+    conn
+    |> fetch_client_credentials()
+    |> fetch_client
   end
 
   @spec fetch_client_credentials(Plug.Conn.t()) :: {String.t() | nil, String.t() | nil}

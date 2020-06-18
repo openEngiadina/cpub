@@ -32,11 +32,7 @@ defmodule CPub.ActivityPub.Request do
 
   @spec new(RDF.Graph.t(), User.t()) :: t
   def new(%RDF.Graph{} = data, %User{} = user) do
-    %__MODULE__{
-      multi: Multi.new(),
-      data: data,
-      user: user
-    }
+    %__MODULE__{multi: Multi.new(), data: data, user: user}
   end
 
   @doc """

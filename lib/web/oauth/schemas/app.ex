@@ -13,27 +13,28 @@ defmodule CPub.Web.OAuth.App do
   @type t :: %__MODULE__{
           client_name: String.t() | nil,
           provider: String.t() | nil,
-          redirect_uris: String.t() | nil,
+          redirect_uris: [String.t()] | nil,
           scopes: [String.t()] | nil,
           website: String.t() | nil,
           client_id: String.t() | nil,
           client_secret: String.t() | nil,
-          trusted: boolean | nil
+          trusted: boolean | nil,
+          metadata: map | nil
         }
 
   schema "oauth_apps" do
-    field(:client_name, :string)
-    field(:provider, :string)
-    # TODO use {:array, :string} for :redirect_uris
-    field(:redirect_uris, :string)
-    field(:scopes, {:array, :string}, default: [])
-    field(:website, :string)
-    field(:client_id, :string)
-    field(:client_secret, :string)
-    field(:trusted, :boolean, default: true)
+    field :client_name, :string
+    field :provider, :string
+    field :redirect_uris, {:array, :string}, default: []
+    field :scopes, {:array, :string}, default: []
+    field :website, :string
+    field :client_id, :string
+    field :client_secret, :string
+    field :trusted, :boolean, default: true
+    field :metadata, :map, default: %{}
 
-    has_many(:authorizations, Authorization, on_delete: :delete_all)
-    has_many(:tokens, Token, on_delete: :delete_all)
+    has_many :authorizations, Authorization, on_delete: :delete_all
+    has_many :tokens, Token, on_delete: :delete_all
 
     timestamps()
   end
@@ -42,7 +43,7 @@ defmodule CPub.Web.OAuth.App do
   def create_changeset(%__MODULE__{} = app, attrs \\ %{}) do
     changeset =
       app
-      |> cast(attrs, [:client_name, :redirect_uris, :scopes, :website, :trusted])
+      |> cast(attrs, [:client_name, :redirect_uris, :scopes, :website, :trusted, :metadata])
       |> validate_required([:client_name, :redirect_uris, :scopes])
       |> unique_constraint(:client_name, name: "oauth_apps_client_name_provider_index")
 
@@ -58,26 +59,22 @@ defmodule CPub.Web.OAuth.App do
 
   @spec create_from_provider_changeset(t, map) :: Ecto.Changeset.t()
   defp create_from_provider_changeset(%__MODULE__{} = app, attrs) do
+    optional_attrs = [:website]
+
+    required_attrs = [
+      :client_name,
+      :provider,
+      :redirect_uris,
+      :scopes,
+      :client_id,
+      :client_secret,
+      :trusted,
+      :metadata
+    ]
+
     app
-    |> cast(attrs, [
-      :client_name,
-      :provider,
-      :redirect_uris,
-      :scopes,
-      :website,
-      :client_id,
-      :client_secret,
-      :trusted
-    ])
-    |> validate_required([
-      :client_name,
-      :provider,
-      :redirect_uris,
-      :scopes,
-      :client_id,
-      :client_secret,
-      :trusted
-    ])
+    |> cast(attrs, optional_attrs ++ required_attrs)
+    |> validate_required(required_attrs)
     |> unique_constraint(:client_name, name: "oauth_apps_client_name_provider_index")
   end
 
@@ -113,25 +110,15 @@ defmodule CPub.Web.OAuth.App do
   @spec get_or_create(map, [String.t()]) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def get_or_create(attrs, scopes) do
     case get_by(attrs) do
-      %__MODULE__{} = app ->
-        update_scopes(app, scopes)
-
-      nil ->
-        create(Map.put(attrs, :scopes, scopes))
+      %__MODULE__{} = app -> update_scopes(app, scopes)
+      nil -> create(Map.put(attrs, :scopes, scopes))
     end
   end
 
   @spec get_or_create_local_app :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def get_or_create_local_app do
-    get_or_create(
-      %{
-        client_name: "local",
-        provider: "local",
-        redirect_uris: ". urn:ietf:wg:oauth:2.0:oob",
-        trusted: true
-      },
-      ["read"]
-    )
+    %{client_name: "local", provider: "local", redirect_uris: ["."], trusted: true}
+    |> get_or_create(["read"])
   end
 
   @spec update_scopes(t, [String.t()]) :: {:ok, t} | {:error, Ecto.Changeset.t()}
