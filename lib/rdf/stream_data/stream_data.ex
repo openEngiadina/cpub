@@ -8,7 +8,7 @@ defmodule RDF.StreamData do
 
   import StreamData
 
-  alias RDF.{BlankNode, Description, Graph, IRI, Literal, Statement, Triple}
+  alias RDF.{BlankNode, Description, FragmentGraph, Graph, IRI, Literal, Statement, Triple}
 
   @spec literal :: StreamData.t(Literal.t())
   @dialyzer {:nowarn_function, literal: 0}
@@ -84,5 +84,23 @@ defmodule RDF.StreamData do
     triple()
     |> list_of()
     |> map(&Graph.new/1)
+  end
+
+  @spec fragment_graph :: StreamData.t(FragmentGraph.t())
+  @dialyzer {:nowarn_function, fragment_graph: 0}
+  def fragment_graph do
+    subject = iri()
+    fg_objects = one_of([iri(), literal()]) |> list_of |> map(&MapSet.new/1)
+    statements = map_of(iri(), fg_objects)
+    fragment_statements = map_of(string(:alphanumeric), statements)
+
+    {subject, statements, fragment_statements}
+    |> map(fn {subject, statements, fragment_statements} ->
+      %FragmentGraph{
+        subject: subject,
+        statements: statements,
+        fragment_statements: fragment_statements
+      }
+    end)
   end
 end
