@@ -97,10 +97,31 @@ defmodule RDF.FragmentGraphTest do
     assert fg["abc"] == fragment_description
   end
 
+  test "rename base_subject" do
+    iri = ~I<http://example.com/>
+
+    description =
+      Description.new(iri)
+      |> Description.add(RDF.type(), ~I<http://something.org/>)
+      |> Description.add(~I<http://example.com/property>, 5)
+
+    fg =
+      FragmentGraph.new(iri)
+      |> FragmentGraph.add(description)
+
+    assert Data.description(fg, iri) == description
+
+    new_iri = ~I<http://new-iri.org/>
+
+    fg = FragmentGraph.set_subject(fg, new_iri)
+
+    assert Data.describes?(fg, new_iri)
+    assert Data.description(fg, new_iri) |> Description.count() == 2
+  end
+
   test "coerce_iri recognizes base_subject" do
-    assert FragmentGraph.coerce_iri(~I<http://example.com/>,
-             base_subject: ~I<http://example.com/>
-           ) == :base_subject
+    assert FragmentGraph.coerce_iri(~I<http://example.com/>, base_subject: ~I<http://example.com/>) ==
+             :base_subject
   end
 
   test "coerce_iri recognizes fragment" do
