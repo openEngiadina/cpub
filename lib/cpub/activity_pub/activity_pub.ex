@@ -101,7 +101,8 @@ defmodule CPub.ActivityPub do
     end
   end
 
-  # TODO: this should be an utility function in RDF.FragmentGraph. Maybe even a general way of mapping over `RDF.Data` structures efficiently.
+  # TODO: this should be an utility function in RDF.FragmentGraph. Maybe even a
+  # general way of mapping over `RDF.Data` structures efficiently.
   defp replace_object_in_fragment_graph(fg, from, to) do
     FragmentGraph.new(fg.base_subject)
     |> FragmentGraph.add(

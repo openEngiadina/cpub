@@ -37,7 +37,7 @@ defmodule CPub.Object do
   end
 
   @spec new() :: t
-  def new() do
+  def new do
     id = RDF.UUID.generate()
     content = RDF.FragmentGraph.new(id)
 
