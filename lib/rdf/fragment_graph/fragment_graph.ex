@@ -17,8 +17,8 @@ defmodule RDF.FragmentGraph do
   alias RDF.{IRI, Literal, Statement}
 
   @type subject :: IRI.t()
-  @type predicate :: IRI.t()
-  @type object :: IRI.t() | Literal.t()
+  @type predicate :: IRI.t() | FragmentReference.t()
+  @type object :: IRI.t() | Literal.t() | FragmentReference.t()
 
   @type coercible_subject :: IRI.coercible()
   @type coercible_predicate :: IRI.coercible()
@@ -38,57 +38,154 @@ defmodule RDF.FragmentGraph do
   @enforce_keys [:subject]
   defstruct subject: nil, statements: %{}, fragment_statements: %{}
 
-  # Coercers that do not allow blank nodes
+  defmodule FragmentReference do
+    @moduledoc """
+    An reference inside a `RDF.FragmentGraph` to another fragment.
+    """
+    @type t :: %__MODULE__{
+            identifier: String.t()
+          }
+    defstruct identifier: nil
+
+    @doc """
+    Returns a new `FragmentReference`
+    """
+    def new(identifier) do
+      %__MODULE__{identifier: identifier}
+    end
+  end
+
+  # Coercers that do not allow blank nodes and retunr FragmentReferences
+
+  @type coerce_options :: [base_subject: IRI.t()]
+
+  @spec coerce_iri(IRI.t(), coerce_options()) ::
+          IRI.t() | FragmentReference.t() | boolean()
+  def coerce_iri(%IRI{} = iri, base_subject: base_subject) do
+    uri = IRI.parse(iri)
+    base_subject_uri = IRI.parse(base_subject)
+
+    cond do
+      base_subject == iri ->
+        :base_subject
+
+      %{uri | fragment: nil} == base_subject_uri ->
+        FragmentReference.new(uri.fragment)
+
+      true ->
+        iri
+    end
+  end
+
+  def coerce_iri(iri, base_subject: base_subject) do
+    IRI.new!(iri)
+    |> coerce_iri(base_subject: base_subject)
+  end
 
   @doc false
-  @spec coerce_subject(coercible_subject()) :: subject
-  def coerce_subject(%IRI{} = iri), do: iri
-  def coerce_subject(iri) when is_atom(iri) or is_binary(iri), do: RDF.iri!(iri)
-  def coerce_subject(arg), do: raise(RDF.Triple.InvalidSubjectError, subject: arg)
+  @spec coerce_predicate(coercible_predicate(), coerce_options()) :: predicate
+  defp coerce_predicate(%IRI{} = iri, opts), do: coerce_iri(iri, opts)
+
+  defp coerce_predicate(iri, opts) when is_atom(iri) or is_binary(iri),
+    do: coerce_predicate(RDF.iri!(iri), opts)
+
+  defp coerce_predicate(arg, _), do: raise(RDF.Triple.InvalidPredicateError, predicate: arg)
 
   @doc false
-  @spec coerce_predicate(coercible_predicate()) :: predicate
-  def coerce_predicate(%IRI{} = iri), do: iri
-  def coerce_predicate(iri) when is_atom(iri) or is_binary(iri), do: RDF.iri!(iri)
-  def coerce_predicate(arg), do: raise(RDF.Triple.InvalidPredicateError, predicate: arg)
+  @spec coerce_object(coericble_object(), coerce_options()) :: object
+  defp coerce_object(%IRI{} = iri, opts), do: coerce_iri(iri, opts)
 
-  @doc false
-  @spec coerce_object(coericble_object()) :: object
-  def coerce_object(%IRI{} = iri), do: iri
-  def coerce_object(iri) when is_atom(iri) or is_binary(iri), do: RDF.iri!(iri)
-  def coerce_object(arg), do: Literal.new(arg)
+  defp coerce_object(iri, opts) when is_atom(iri) or is_binary(iri),
+    do: coerce_object(RDF.iri!(iri), opts)
 
-  @doc """
-  Returns true if `b` is an fragment IRI of `a`.
+  defp coerce_object(arg, _), do: Literal.new(arg)
 
-  ## Examples
+  defp expand_term(%IRI{} = iri, _opts), do: iri
 
-    iex> RDF.FragmentGraph.is_fragment(~I<http://example.com>, ~I<http://example.com#something>)
-    true
-    iex> RDF.FragmentGraph.is_fragment(~I<http://example.com>,~I<http://example.org>)
-    false
-  """
-  @spec is_fragment(RDF.IRI.t(), RDF.IRI.t()) :: boolean()
-  def is_fragment(a, b) do
-    a_uri = RDF.IRI.parse(a)
-    b_uri = RDF.IRI.parse(b)
-    %{b_uri | fragment: nil} == a_uri and a_uri != b_uri
+  defp expand_term(%FragmentReference{identifier: identifier}, base_subject: base_subject) do
+    parsed = IRI.parse(base_subject)
+    IRI.new!(%{parsed | fragment: identifier})
+  end
+
+  defp expand_term(%Literal{} = literal, _opts), do: literal
+
+  defp expand_statements(statements, subject, base_subject) do
+    statements
+    |> Enum.reduce([], fn {p, object_set}, sts ->
+      expanded_p = expand_term(p, base_subject: base_subject)
+
+      sts ++
+        (object_set
+         |> Enum.map(fn object ->
+           {subject, expanded_p, expand_term(object, base_subject: base_subject)}
+         end))
+    end)
+  end
+
+  defp expand_fragment_subject(fragment_identifier, base_subject) do
+    expand_term(FragmentReference.new(fragment_identifier), base_subject: base_subject)
   end
 
   @doc """
-  Returns the fragment part of the IRI.
+  Returns a `RDF.Description` of the given subject with statements in `RDF.FragmentGraph`.
   """
-  @spec get_fragment_identifier(RDF.IRI.t()) :: nil | fragment_identifier()
-  def get_fragment_identifier(iri) do
-    uri = RDF.IRI.parse(iri)
-    uri.fragment
+  def description(%__MODULE__{} = fg, subject) do
+    case(coerce_iri(subject, base_subject: fg.subject)) do
+      :base_subject ->
+        RDF.Description.new(subject)
+        |> RDF.Description.add(expand_statements(fg.statements, subject, fg.subject))
+
+      %FragmentReference{identifier: identifier} ->
+        with fragment_subject <-
+               expand_fragment_subject(identifier, fg.subject) do
+          RDF.Description.new(fragment_subject)
+          |> RDF.Description.add(
+            Map.get(fg.fragment_statements, identifier, %{})
+            |> expand_statements(fragment_subject, fg.subject)
+          )
+        end
+
+      %RDF.IRI{} = iri ->
+        RDF.Description.new(iri)
+    end
   end
 
+  @doc """
+  Returns a list of all statements in `RDF.FragmentGraph`.
+  """
+  def statements(%__MODULE__{} = fg) do
+    with expanded_statements <-
+           fg.statements |> expand_statements(fg.subject, fg.subject),
+         expanded_fragment_statements <-
+           fg.fragment_statements
+           |> Enum.flat_map(fn {id, statements} ->
+             statements
+             |> expand_statements(
+               expand_fragment_subject(id, fg.subject),
+               fg.subject
+             )
+           end) do
+      expanded_statements ++ expanded_fragment_statements
+    end
+  end
+
+  @doc """
+  Returns a set of all subjects in `RDF.FragmentGraph`.
+  """
+  def subjects(%__MODULE__{} = fg) do
+    (if(Enum.empty?(fg.statements), do: [], else: [fg.subject]) ++
+       (fg.fragment_statements
+        |> Map.keys()
+        |> Enum.map(&expand_fragment_subject(&1, fg.subject))))
+    |> MapSet.new()
+  end
+
+  # Helper to get a subject from RDF.Data
   defp find_subject(data) do
     data
     |> RDF.Data.subjects()
-    |> Enum.find(nil, fn %RDF.IRI{} = iri ->
-      iri |> RDF.IRI.parse() |> Map.get(:fragment) |> is_nil()
+    |> Enum.find(nil, fn %IRI{} = iri ->
+      iri |> IRI.parse() |> Map.get(:fragment) |> is_nil()
     end)
   end
 
@@ -108,9 +205,11 @@ defmodule RDF.FragmentGraph do
     end
   end
 
-  defp add_to_statements(statements, coercible_predicate, coercible_object) do
-    with predicate <- coerce_predicate(coercible_predicate),
-         object <- coerce_object(coercible_object) do
+  defp add_to_statements(statements, coercible_predicate, coercible_object,
+         base_subject: base_subject
+       ) do
+    with predicate <- coerce_predicate(coercible_predicate, base_subject: base_subject),
+         object <- coerce_object(coercible_object, base_subject: base_subject) do
       Map.update(statements, predicate, MapSet.new([object]), fn objects ->
         MapSet.put(objects, object)
       end)
@@ -126,7 +225,8 @@ defmodule RDF.FragmentGraph do
         predicate,
         object
       ) do
-    with new_statements <- add_to_statements(statements, predicate, object) do
+    with new_statements <-
+           add_to_statements(statements, predicate, object, base_subject: fg.subject) do
       %{fg | statements: new_statements}
     end
   end
@@ -150,10 +250,12 @@ defmodule RDF.FragmentGraph do
            Map.update(
              fragment_statements,
              fragment_identifier,
-             add_to_statements(%{}, predicate, object),
-             fn statements -> add_to_statements(statements, predicate, object) end
+             add_to_statements(%{}, predicate, object, base_subject: fg.subject),
+             fn statements ->
+               add_to_statements(statements, predicate, object, base_subject: fg.subject)
+             end
            ) do
-      %{fg | fragments: new_fragments}
+      %{fg | fragment_statements: new_fragments}
     end
   end
 
@@ -166,15 +268,15 @@ defmodule RDF.FragmentGraph do
   def add(fg, {predicate, object}),
     do: add(fg, predicate, object)
 
-  def add(%__MODULE__{subject: subject} = fg, {s, p, o}) do
-    cond do
-      subject == s ->
+  def add(%__MODULE__{} = fg, {s, p, o}) do
+    case coerce_iri(s, base_subject: fg.subject) do
+      :base_subject ->
         add(fg, p, o)
 
-      is_fragment(subject, s) ->
-        add_fragment_statement(fg, get_fragment_identifier(s), p, o)
+      %FragmentReference{identifier: identifier} ->
+        add_fragment_statement(fg, identifier, p, o)
 
-      true ->
+      _ ->
         fg
     end
   end
@@ -187,5 +289,149 @@ defmodule RDF.FragmentGraph do
 
   def add(fg, data) do
     add(fg, RDF.Data.statements(data))
+  end
+
+  @doc """
+  Set subject of `RDF.FragmentGraph`
+  """
+  @spec set_subject(t, IRI.t()) :: t
+  def set_subject(%__MODULE__{} = fg, subject) do
+    %{fg | subject: subject}
+  end
+
+  defimpl RDF.Data, for: RDF.FragmentGraph do
+    def delete(%RDF.FragmentGraph{}, _) do
+      # TODO
+      raise "not implemented"
+    end
+
+    def describes?(%RDF.FragmentGraph{subject: subject} = fg, %IRI{} = iri) do
+      case RDF.FragmentGraph.coerce_iri(iri, base_subject: subject) do
+        :base_subject ->
+          not Enum.empty?(fg.statements)
+
+        %FragmentReference{identifier: identifier} ->
+          not is_nil(fg.fragment_statements[identifier])
+
+        _ ->
+          false
+      end
+    end
+
+    def description(%RDF.FragmentGraph{} = fg, subject),
+      do: RDF.FragmentGraph.description(fg, subject)
+
+    @doc """
+    Returns all descriptions of the `RDF.FragmentGraph`.
+    """
+    def descriptions(%RDF.FragmentGraph{} = fg) do
+      fg
+      |> RDF.Data.subjects()
+      |> Enum.map(&description(fg, &1))
+    end
+
+    def equal?(_data1, _data2) do
+      # TODO
+      raise "not implemented"
+    end
+
+    def include?(%RDF.FragmentGraph{} = fg, {s, p, o}) do
+      case RDF.FragmentGraph.coerce_iri(s, fg.subject) do
+        :base_subject ->
+          Map.get(fg.statements, p, MapSet.new())
+          |> MapSet.member?(o)
+
+        %FragmentReference{identifier: identifier} ->
+          Map.get(fg.fragment_statements, identifier, %{})
+          |> Map.get(p, MapSet.new())
+          |> MapSet.member?(o)
+
+        _ ->
+          false
+      end
+    end
+
+    def merge(%RDF.FragmentGraph{} = fg, data) do
+      fg
+      |> RDF.FragmentGraph.add(data)
+    end
+
+    def objects(%RDF.FragmentGraph{}) do
+      # TODO
+      raise "not implemented"
+    end
+
+    def pop(%RDF.FragmentGraph{}) do
+      # TODO
+      raise "not implemented"
+    end
+
+    def predicates(%RDF.FragmentGraph{}) do
+      # TODO
+      raise "not implemented"
+    end
+
+    def resources(%RDF.FragmentGraph{}) do
+      # TODO
+      raise "not implemented"
+    end
+
+    def statement_count(%RDF.FragmentGraph{} = fg) do
+      fg
+      |> RDF.Data.statements()
+      |> Enum.count()
+    end
+
+    def statements(%RDF.FragmentGraph{} = fg), do: RDF.FragmentGraph.statements(fg)
+
+    def subject_count(%RDF.FragmentGraph{} = fg) do
+      fg
+      |> RDF.Data.subjects()
+      |> Enum.count()
+    end
+
+    def subjects(%RDF.FragmentGraph{} = fg), do: RDF.FragmentGraph.subjects(fg)
+
+    def values(%RDF.FragmentGraph{}) do
+      # TODO
+      raise "not implemented"
+    end
+
+    def values(%RDF.FragmentGraph{}, _mapping) do
+      # TODO
+      raise "not implemented"
+    end
+  end
+
+  # Implement the Access Behaviour
+
+  @behaviour Access
+
+  @impl Access
+  def fetch(%__MODULE__{} = fg, %IRI{} = key) do
+    if key in RDF.Data.subjects(fg) do
+      {:ok, RDF.Data.description(fg, key)}
+    else
+      :error
+    end
+  end
+
+  def fetch(%__MODULE__{} = fg, key) when is_binary(key) do
+    subject = expand_fragment_subject(key, fg.subject)
+    Access.fetch(fg, subject)
+  end
+
+  def fetch(%__MODULE__{} = fg, :base_subject) do
+    Access.fetch(fg, fg.subject)
+  end
+
+  @impl Access
+  def pop(%__MODULE__{}, _key) do
+    raise "not implemented"
+  end
+
+  @impl Access
+  def get_and_update(%__MODULE__{}, _key, _function) do
+    raise "not implemented"
   end
 end
