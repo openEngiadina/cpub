@@ -16,12 +16,12 @@ defmodule RDF.FragmentGraph.JSON do
   """
   @spec from_rdf(FragmentGraph.t()) :: map
   def from_rdf(%FragmentGraph{} = data) do
-    with encoded_subject <- IRI.to_string(data.subject),
+    with encoded_base_subject <- IRI.to_string(data.base_subject),
          encoded_statements <- data.statements |> encode_statements,
          encoded_fragment_statements <- data.fragment_statements |> encode_fragment_statements() do
       {:ok,
        %{
-         "subject" => encoded_subject,
+         "base_subject" => encoded_base_subject,
          "statements" => encoded_statements,
          "fragment_statements" => encoded_fragment_statements
        }}
@@ -33,13 +33,13 @@ defmodule RDF.FragmentGraph.JSON do
   end
 
   def to_rdf(data) do
-    with subject <- IRI.new!(Map.get(data, "subject")),
+    with base_subject <- IRI.new!(Map.get(data, "base_subject")),
          statements <- decode_statements(Map.get(data, "statements", %{})),
          fragment_statements <-
            decode_fragment_statements(Map.get(data, "fragment_statements", %{})) do
       {:ok,
        %FragmentGraph{
-         subject: subject,
+         base_subject: base_subject,
          statements: statements,
          fragment_statements: fragment_statements
        }}

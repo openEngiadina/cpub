@@ -30,13 +30,13 @@ defmodule RDF.FragmentGraph do
   @type fragment_statements :: %{optional(fragment_identifier()) => statements()}
 
   @type t :: %__MODULE__{
-          subject: subject,
+          base_subject: subject,
           statements: statements,
           fragment_statements: fragment_statements
         }
 
-  @enforce_keys [:subject]
-  defstruct subject: nil, statements: %{}, fragment_statements: %{}
+  @enforce_keys [:base_subject]
+  defstruct base_subject: nil, statements: %{}, fragment_statements: %{}
 
   defmodule FragmentReference do
     @moduledoc """
@@ -130,18 +130,18 @@ defmodule RDF.FragmentGraph do
   Returns a `RDF.Description` of the given subject with statements in `RDF.FragmentGraph`.
   """
   def description(%__MODULE__{} = fg, subject) do
-    case(coerce_iri(subject, base_subject: fg.subject)) do
+    case(coerce_iri(subject, base_subject: fg.base_subject)) do
       :base_subject ->
         RDF.Description.new(subject)
-        |> RDF.Description.add(expand_statements(fg.statements, subject, fg.subject))
+        |> RDF.Description.add(expand_statements(fg.statements, subject, fg.base_subject))
 
       %FragmentReference{identifier: identifier} ->
         with fragment_subject <-
-               expand_fragment_subject(identifier, fg.subject) do
+               expand_fragment_subject(identifier, fg.base_subject) do
           RDF.Description.new(fragment_subject)
           |> RDF.Description.add(
             Map.get(fg.fragment_statements, identifier, %{})
-            |> expand_statements(fragment_subject, fg.subject)
+            |> expand_statements(fragment_subject, fg.base_subject)
           )
         end
 
@@ -155,14 +155,14 @@ defmodule RDF.FragmentGraph do
   """
   def statements(%__MODULE__{} = fg) do
     with expanded_statements <-
-           fg.statements |> expand_statements(fg.subject, fg.subject),
+           fg.statements |> expand_statements(fg.base_subject, fg.base_subject),
          expanded_fragment_statements <-
            fg.fragment_statements
            |> Enum.flat_map(fn {id, statements} ->
              statements
              |> expand_statements(
-               expand_fragment_subject(id, fg.subject),
-               fg.subject
+               expand_fragment_subject(id, fg.base_subject),
+               fg.base_subject
              )
            end) do
       expanded_statements ++ expanded_fragment_statements
@@ -173,10 +173,10 @@ defmodule RDF.FragmentGraph do
   Returns a set of all subjects in `RDF.FragmentGraph`.
   """
   def subjects(%__MODULE__{} = fg) do
-    (if(Enum.empty?(fg.statements), do: [], else: [fg.subject]) ++
+    (if(Enum.empty?(fg.statements), do: [], else: [fg.base_subject]) ++
        (fg.fragment_statements
         |> Map.keys()
-        |> Enum.map(&expand_fragment_subject(&1, fg.subject))))
+        |> Enum.map(&expand_fragment_subject(&1, fg.base_subject))))
     |> MapSet.new()
   end
 
@@ -194,14 +194,14 @@ defmodule RDF.FragmentGraph do
   """
   @spec new(RDF.Data.t() | subject | IRI.coercible()) :: t
   def new(data_or_iri)
-  def new(%IRI{} = iri), do: %__MODULE__{subject: iri}
+  def new(%IRI{} = iri), do: %__MODULE__{base_subject: iri}
 
   def new(data_or_iri) do
     if RDF.Data.impl_for(data_or_iri) do
       subject = find_subject(data_or_iri)
       add(new(subject), data_or_iri)
     else
-      %__MODULE__{subject: IRI.new!(data_or_iri)}
+      %__MODULE__{base_subject: IRI.new!(data_or_iri)}
     end
   end
 
@@ -226,7 +226,7 @@ defmodule RDF.FragmentGraph do
         object
       ) do
     with new_statements <-
-           add_to_statements(statements, predicate, object, base_subject: fg.subject) do
+           add_to_statements(statements, predicate, object, base_subject: fg.base_subject) do
       %{fg | statements: new_statements}
     end
   end
@@ -250,9 +250,9 @@ defmodule RDF.FragmentGraph do
            Map.update(
              fragment_statements,
              fragment_identifier,
-             add_to_statements(%{}, predicate, object, base_subject: fg.subject),
+             add_to_statements(%{}, predicate, object, base_subject: fg.base_subject),
              fn statements ->
-               add_to_statements(statements, predicate, object, base_subject: fg.subject)
+               add_to_statements(statements, predicate, object, base_subject: fg.base_subject)
              end
            ) do
       %{fg | fragment_statements: new_fragments}
@@ -269,7 +269,7 @@ defmodule RDF.FragmentGraph do
     do: add(fg, predicate, object)
 
   def add(%__MODULE__{} = fg, {s, p, o}) do
-    case coerce_iri(s, base_subject: fg.subject) do
+    case coerce_iri(s, base_subject: fg.base_subject) do
       :base_subject ->
         add(fg, p, o)
 
@@ -296,7 +296,7 @@ defmodule RDF.FragmentGraph do
   """
   @spec set_subject(t, IRI.t()) :: t
   def set_subject(%__MODULE__{} = fg, subject) do
-    %{fg | subject: subject}
+    %{fg | base_subject: subject}
   end
 
   defimpl RDF.Data, for: RDF.FragmentGraph do
@@ -305,8 +305,8 @@ defmodule RDF.FragmentGraph do
       raise "not implemented"
     end
 
-    def describes?(%RDF.FragmentGraph{subject: subject} = fg, %IRI{} = iri) do
-      case RDF.FragmentGraph.coerce_iri(iri, base_subject: subject) do
+    def describes?(%RDF.FragmentGraph{base_subject: base_subject} = fg, %IRI{} = iri) do
+      case RDF.FragmentGraph.coerce_iri(iri, base_subject: base_subject) do
         :base_subject ->
           not Enum.empty?(fg.statements)
 
@@ -336,7 +336,7 @@ defmodule RDF.FragmentGraph do
     end
 
     def include?(%RDF.FragmentGraph{} = fg, {s, p, o}) do
-      case RDF.FragmentGraph.coerce_iri(s, fg.subject) do
+      case RDF.FragmentGraph.coerce_iri(s, fg.base_subject) do
         :base_subject ->
           Map.get(fg.statements, p, MapSet.new())
           |> MapSet.member?(o)
@@ -417,12 +417,12 @@ defmodule RDF.FragmentGraph do
   end
 
   def fetch(%__MODULE__{} = fg, key) when is_binary(key) do
-    subject = expand_fragment_subject(key, fg.subject)
+    subject = expand_fragment_subject(key, fg.base_subject)
     Access.fetch(fg, subject)
   end
 
   def fetch(%__MODULE__{} = fg, :base_subject) do
-    Access.fetch(fg, fg.subject)
+    Access.fetch(fg, fg.base_subject)
   end
 
   @impl Access

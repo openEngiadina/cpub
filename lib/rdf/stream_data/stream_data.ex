@@ -89,15 +89,15 @@ defmodule RDF.StreamData do
   @spec fragment_graph :: StreamData.t(FragmentGraph.t())
   @dialyzer {:nowarn_function, fragment_graph: 0}
   def fragment_graph do
-    subject = iri()
+    base_subject = iri()
     fg_objects = one_of([iri(), literal()]) |> list_of |> map(&MapSet.new/1)
     statements = map_of(iri(), fg_objects)
     fragment_statements = map_of(string(:alphanumeric), statements)
 
-    {subject, statements, fragment_statements}
-    |> map(fn {subject, statements, fragment_statements} ->
+    {base_subject, statements, fragment_statements}
+    |> map(fn {base_subject, statements, fragment_statements} ->
       %FragmentGraph{
-        subject: subject,
+        base_subject: base_subject,
         statements: statements,
         fragment_statements: fragment_statements
       }
