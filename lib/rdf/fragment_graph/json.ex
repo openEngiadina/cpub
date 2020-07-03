@@ -53,9 +53,12 @@ defmodule RDF.FragmentGraph.JSON do
   @spec encode_statements(FragmentGraph.statements()) :: %{String.t() => encoded_object()}
   defp encode_statements(statements) do
     statements
-    |> Enum.map(fn {p, objects} ->
-      {IRI.to_string(p), objects |> Enum.map(&encode_object/1)}
-    end)
+    |> Enum.reduce(
+      %{},
+      fn {p, objects}, encoded ->
+        Map.put(encoded, encode_predicate(p), objects |> Enum.map(&encode_object/1))
+      end
+    )
   end
 
   @spec decode_statements(%{String.t() => encoded_object()}) :: FragmentGraph.statements()
@@ -64,7 +67,7 @@ defmodule RDF.FragmentGraph.JSON do
   defp decode_statements(statements_object) do
     statements_object
     |> Enum.reduce(Map.new(), fn {encoded_p, encoded_objects}, statements ->
-      with predicate <- IRI.new!(encoded_p),
+      with predicate <- decode_predicate(encoded_p),
            objects <-
              encoded_objects
              |> Enum.reduce(MapSet.new(), fn object, mapset ->
@@ -75,10 +78,28 @@ defmodule RDF.FragmentGraph.JSON do
     end)
   end
 
+  @spec encode_predicate(FragmentGraph.predicate()) :: String.t()
+  def encode_predicate(%IRI{} = iri) do
+    IRI.to_string(iri)
+  end
+
+  def encode_predicate(%FragmentGraph.FragmentReference{identifier: id}) do
+    "_:" <> id
+  end
+
+  @spec decode_predicate(String.t()) :: FragmentGraph.predicate()
+  def decode_predicate("_:" <> id) do
+    FragmentGraph.FragmentReference.new(id)
+  end
+
+  def decode_predicate(iri) do
+    IRI.new!(iri)
+  end
+
   defp encode_fragment_statements(fragment_statements) do
     fragment_statements
-    |> Enum.map(fn {fragment_id, statements} ->
-      {fragment_id, statements |> encode_statements()}
+    |> Enum.reduce(%{}, fn {fragment_id, statements}, encoded ->
+      Map.put(encoded, fragment_id, statements |> encode_statements())
     end)
   end
 
@@ -94,6 +115,10 @@ defmodule RDF.FragmentGraph.JSON do
   @spec encode_object(FragmentGraph.object()) :: encoded_object
   defp encode_object(%IRI{} = object), do: %{"type" => "uri", "value" => IRI.to_string(object)}
 
+  defp encode_object(%FragmentGraph.FragmentReference{identifier: id}) do
+    %{"type" => "f", "value" => id}
+  end
+
   defp encode_object(%Literal{} = literal) do
     %{"type" => "literal", "value" => literal.value}
     |> encode_literal_datatype(literal)
@@ -102,6 +127,10 @@ defmodule RDF.FragmentGraph.JSON do
 
   defp decode_object(%{"type" => "uri", "value" => value}) do
     IRI.new!(value)
+  end
+
+  defp decode_object(%{"type" => "f", "value" => id}) do
+    FragmentGraph.FragmentReference.new(id)
   end
 
   defp decode_object(%{"type" => "literal", "value" => value} = object) do

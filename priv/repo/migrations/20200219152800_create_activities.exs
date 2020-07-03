@@ -8,7 +8,9 @@ defmodule CPub.Repo.Migrations.CreateActivities do
       add(:type, :string)
       add(:actor, :string)
       add(:recipients, {:array, :string})
-      add(:data, :map)
+
+      add(:activity_object_id, references(:objects, on_delete: :delete_all, type: :string))
+      add(:object_id, references(:objects, on_delete: :delete_all, type: :string))
 
       timestamps()
     end

@@ -9,7 +9,7 @@ defmodule CPub.Activity do
 
   import Ecto.Changeset
 
-  alias CPub.{ActivityPub, ID, Object}
+  alias CPub.{ActivityPub, Object}
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
 
@@ -18,10 +18,11 @@ defmodule CPub.Activity do
           type: RDF.IRI.t() | nil,
           actor: RDF.IRI.t() | nil,
           recipients: [RDF.IRI.t()] | nil,
-          data: RDF.Description.t() | nil
+          activity_object_id: RDF.IRI.t() | nil,
+          object_id: RDF.IRI.t() | nil
         }
 
-  @primary_key {:id, CPub.ID, autogenerate: true}
+  @primary_key {:id, RDF.IRI.EctoType, []}
   schema "activities" do
     field :type, RDF.IRI.EctoType
 
@@ -32,9 +33,11 @@ defmodule CPub.Activity do
     # Recipients of the activity. This includes bcc and bto and should not be made public.
     field :recipients, {:array, RDF.IRI.EctoType}
 
-    field :data, RDF.Description.EctoType
+    # the Activity object
+    belongs_to :activity_object, Object, type: RDF.IRI.EctoType
 
-    has_one :object, Object
+    # optional object attached to Activity
+    belongs_to :object, Object, type: RDF.IRI.EctoType
 
     timestamps()
   end
@@ -43,39 +46,37 @@ defmodule CPub.Activity do
   def create_changeset(%__MODULE__{} = activity) do
     activity
     |> change()
-    |> validate_required([:id, :actor, :data])
+    |> validate_required([:id, :actor, :activity_object])
     |> unique_constraint(:id, name: "activities_pkey")
     |> validate_activity_type()
-    |> ID.validate()
   end
 
   @spec validate_activity_type(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_activity_type(changeset) do
-    case is_activity?(get_field(changeset, :data)) do
+    case is_activity?(get_field(changeset, :activity_object)[:base_subject]) do
       true -> changeset
-      false -> add_error(changeset, :data, "not an ActivityPub activity")
+      false -> add_error(changeset, :activity_object, "not an ActivityPub activity")
     end
   end
 
-  @spec new(RDF.Description.t()) :: t
-  def new(%RDF.Description{} = activity) do
-    %__MODULE__{data: activity}
+  @spec new(Object.t(), Object.t() | nil) :: t
+  def new(%Object{} = activity, %Object{} = object) do
+    %__MODULE__{activity_object: activity, object: object}
     |> extract_id
     |> extract_type
     |> extract_actor
     |> extract_recipients
-    |> remove_bcc
   end
 
   @spec extract_id(t) :: t
   defp extract_id(%__MODULE__{} = activity) do
-    %{activity | id: activity.data.subject}
+    %{activity | id: activity.activity_object.id}
   end
 
   @spec extract_type(t) :: t
   defp extract_type(%__MODULE__{} = activity) do
     type =
-      activity.data
+      activity.activity_object[:base_subject]
       |> Access.get(RDF.type(), [])
       |> Enum.find(&(&1 in ActivityPub.activity_types()))
 
@@ -84,7 +85,7 @@ defmodule CPub.Activity do
 
   @spec extract_actor(t) :: t
   defp extract_actor(%__MODULE__{} = activity) do
-    case activity.data[AS.actor()] do
+    case activity.activity_object[:base_subject][AS.actor()] do
       [actor] -> %{activity | actor: actor}
       _ -> activity
     end
@@ -93,21 +94,11 @@ defmodule CPub.Activity do
   @spec extract_recipients(t) :: t
   defp extract_recipients(%__MODULE__{} = activity) do
     recipients =
-      activity.data
+      activity.activity_object[:base_subject]
       |> get_all([AS.to(), AS.bto(), AS.cc(), AS.bcc(), AS.audience()], [])
       |> Enum.concat()
 
     %{activity | recipients: recipients}
-  end
-
-  @spec remove_bcc(t) :: t
-  defp remove_bcc(%__MODULE__{} = activity) do
-    data =
-      activity.data
-      |> RDF.Description.delete_predicates(AS.bto())
-      |> RDF.Description.delete_predicates(AS.bcc())
-
-    %{activity | data: data}
   end
 
   @spec get_all(RDF.Description.t(), [RDF.IRI.t()], any) :: [any]
@@ -151,8 +142,8 @@ defmodule CPub.Activity do
   """
   @impl Access
   @spec fetch(t, atom) :: {:ok, any} | :error
-  def fetch(%__MODULE__{data: data}, key) do
-    Access.fetch(data, key)
+  def fetch(%__MODULE__{activity_object: activity_object}, key) do
+    Access.fetch(activity_object, key)
   end
 
   @doc """
@@ -161,8 +152,9 @@ defmodule CPub.Activity do
   @impl Access
   @spec get_and_update(t, atom, fun) :: {any, t}
   def get_and_update(%__MODULE__{} = activity, key, fun) do
-    with {get_value, new_data} <- Access.get_and_update(activity.data, key, fun) do
-      {get_value, %{activity | data: new_data}}
+    with {get_value, new_activity_object} <-
+           Access.get_and_update(activity.activity_object, key, fun) do
+      {get_value, %{activity | activity_object: new_activity_object}}
     end
   end
 
@@ -172,9 +164,9 @@ defmodule CPub.Activity do
   @impl Access
   @spec pop(t, atom) :: {any | nil, t}
   def pop(%__MODULE__{} = activity, key) do
-    case Access.pop(activity.data, key) do
+    case Access.pop(activity.activity_object, key) do
       {nil, _} -> {nil, activity}
-      {value, new_graph} -> {value, %{activity | data: new_graph}}
+      {value, new_activity_object} -> {value, %{activity | activity_object: new_activity_object}}
     end
   end
 
@@ -185,12 +177,17 @@ defmodule CPub.Activity do
   """
   @spec to_rdf(t) :: RDF.Description.t()
   def to_rdf(%__MODULE__{} = activity) do
-    activity_description =
-      RDF.Description.add(activity.data, AS.published(), activity.inserted_at)
+    graph =
+      RDF.Graph.new()
+      |> RDF.Graph.add(activity.activity_object |> RDF.Data.statements())
 
     case activity.object do
-      %Object{} = object -> RDF.Data.merge(activity_description, object.data)
-      _ -> activity_description
+      %Object{} = object ->
+        graph
+        |> RDF.Graph.add(object |> RDF.Data.statements())
+
+      _ ->
+        graph
     end
   end
 

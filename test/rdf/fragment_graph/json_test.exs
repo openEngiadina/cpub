@@ -11,6 +11,8 @@ defmodule RDF.FragmentGraph.JSONTest do
       assert fragment_graph ==
                fragment_graph
                |> FragmentGraph.JSON.from_rdf!()
+               |> Jason.encode!()
+               |> Jason.decode!()
                |> FragmentGraph.JSON.to_rdf!()
     end
   end

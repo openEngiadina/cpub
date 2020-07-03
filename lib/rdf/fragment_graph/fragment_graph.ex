@@ -84,7 +84,12 @@ defmodule RDF.FragmentGraph do
 
   @doc false
   @spec coerce_predicate(coercible_predicate(), coerce_options()) :: predicate
-  defp coerce_predicate(%IRI{} = iri, opts), do: coerce_iri(iri, opts)
+  defp coerce_predicate(%IRI{} = iri, opts) do
+    case coerce_iri(iri, opts) do
+      :base_subject -> FragmentReference.new("")
+      p -> p
+    end
+  end
 
   defp coerce_predicate(iri, opts) when is_atom(iri) or is_binary(iri),
     do: coerce_predicate(RDF.iri!(iri), opts)
@@ -93,7 +98,12 @@ defmodule RDF.FragmentGraph do
 
   @doc false
   @spec coerce_object(coericble_object(), coerce_options()) :: object
-  defp coerce_object(%IRI{} = iri, opts), do: coerce_iri(iri, opts)
+  defp coerce_object(%IRI{} = iri, opts) do
+    case coerce_iri(iri, opts) do
+      :base_subject -> FragmentReference.new("")
+      o -> o
+    end
+  end
 
   defp coerce_object(iri, opts) when is_atom(iri) or is_binary(iri),
     do: coerce_object(RDF.iri!(iri), opts)

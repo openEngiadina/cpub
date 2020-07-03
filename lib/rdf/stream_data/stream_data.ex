@@ -68,7 +68,7 @@ defmodule RDF.StreamData do
   @spec description :: StreamData.t(Description.t())
   @dialyzer {:nowarn_function, description: 0}
   def description do
-    {subject(), {predicate(), object()} |> list_of}
+    {subject(), {predicate(), object()} |> list_of(min_length: 1)}
     |> map(fn {subject, predicate_objects} ->
       Enum.reduce(
         predicate_objects,
