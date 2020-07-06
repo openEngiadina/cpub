@@ -53,7 +53,7 @@ defmodule CPub.Activity do
 
   @spec validate_activity_type(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_activity_type(changeset) do
-    case is_activity?(get_field(changeset, :activity_object)[:base_subject]) do
+    case is_activity?(get_field(changeset, :activity_object)) do
       true -> changeset
       false -> add_error(changeset, :activity_object, "not an ActivityPub activity")
     end
@@ -109,32 +109,9 @@ defmodule CPub.Activity do
   @doc """
   Returns true if description is an ActivityStreams activity, false otherwise.
   """
-  @spec is_activity?(RDF.Description.t()) :: boolean
-  def is_activity?(description) do
-    Enum.any?(description[RDF.type()] || [], &(&1 in ActivityPub.activity_types()))
-  end
-
-  @doc """
-  Add objects to a predicate of an `CPub.Activity`.
-  """
-  @spec add(
-          t,
-          RDF.Statement.coercible_predicate(),
-          RDF.Statement.coercible_object() | [RDF.Statement.coercible_object()]
-        ) :: t
-  def add(%__MODULE__{} = activity, predicate, objects) do
-    %{activity | data: RDF.Description.add(activity.data, predicate, objects)}
-  end
-
-  @doc """
-  Deletes all statements with the given predicates.
-  """
-  @spec delete_predicates(
-          t,
-          RDF.Statement.coercible_predicate() | [RDF.Statement.coercible_predicate()]
-        ) :: t
-  def delete_predicates(%__MODULE__{} = activity, predicates) do
-    %{activity | data: RDF.Description.delete_predicates(activity.data, predicates)}
+  @spec is_activity?(RDF.FragmentGraph.t()) :: boolean
+  def is_activity?(fg) do
+    Enum.any?(fg[:base_subject][RDF.type()] || [], &(&1 in ActivityPub.activity_types()))
   end
 
   @doc """
@@ -142,20 +119,15 @@ defmodule CPub.Activity do
   """
   @impl Access
   @spec fetch(t, atom) :: {:ok, any} | :error
-  def fetch(%__MODULE__{activity_object: activity_object}, key) do
-    Access.fetch(activity_object, key)
+  def fetch(%__MODULE__{} = activity, key) do
+    Access.fetch(activity |> to_rdf, key)
   end
 
-  @doc """
-  See `RDF.Description.get_and_update`
-  """
   @impl Access
   @spec get_and_update(t, atom, fun) :: {any, t}
-  def get_and_update(%__MODULE__{} = activity, key, fun) do
-    with {get_value, new_activity_object} <-
-           Access.get_and_update(activity.activity_object, key, fun) do
-      {get_value, %{activity | activity_object: new_activity_object}}
-    end
+  def get_and_update(%__MODULE__{} = _activity, _key, _fun) do
+    # TODO
+    raise "not implemented"
   end
 
   @doc """
@@ -163,11 +135,9 @@ defmodule CPub.Activity do
   """
   @impl Access
   @spec pop(t, atom) :: {any | nil, t}
-  def pop(%__MODULE__{} = activity, key) do
-    case Access.pop(activity.activity_object, key) do
-      {nil, _} -> {nil, activity}
-      {value, new_activity_object} -> {value, %{activity | activity_object: new_activity_object}}
-    end
+  def pop(%__MODULE__{} = _activity, _key) do
+    # TODO
+    raise "not implemented"
   end
 
   @doc """
@@ -175,7 +145,7 @@ defmodule CPub.Activity do
 
   If object is loaded it will be included in returned data.
   """
-  @spec to_rdf(t) :: RDF.Description.t()
+  @spec to_rdf(t) :: RDF.Graph.t()
   def to_rdf(%__MODULE__{} = activity) do
     graph =
       RDF.Graph.new()

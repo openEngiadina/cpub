@@ -14,7 +14,7 @@ defmodule RDF.FragmentGraph.JSON do
   @doc """
   Encode a `RDF.FragmentGraph` as a JSON encodable map.
   """
-  @spec from_rdf(FragmentGraph.t()) :: map
+  @spec from_rdf(FragmentGraph.t()) :: {atom, map}
   def from_rdf(%FragmentGraph{} = data) do
     with encoded_base_subject <- IRI.to_string(data.base_subject),
          encoded_statements <- data.statements |> encode_statements,

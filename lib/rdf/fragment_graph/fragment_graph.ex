@@ -8,12 +8,13 @@ defmodule RDF.FragmentGraph do
   subject that is suitable for content-addressing (see
   https://openengiadina.net/papers/content-addressable-rdf.html)
 
-  It is similar to an `RDF.Description` but additionally allows statements with
+  It is similar to a `RDF.Description` but additionally allows statements with
   fragments of the base subject as subject (e.g. If ~I<http://example.com/> is
-  the subject of the `RDF.FragmentGraph` then statements with subject
+  the base subject of the `RDF.FragmentGraph` then statements with subject
   ~I<http://example.com/#a-fragment> are also permitted).
   """
 
+  alias RDF.FragmentGraph.FragmentReference
   alias RDF.{IRI, Literal, Statement}
 
   @type subject :: IRI.t()
@@ -55,12 +56,14 @@ defmodule RDF.FragmentGraph do
     end
   end
 
-  # Coercers that do not allow blank nodes and retunr FragmentReferences
+  #########################
+  # Specialized coercers that do not allow blank nodes and return
+  # FragmentReferences
 
   @type coerce_options :: [base_subject: IRI.t()]
 
   @spec coerce_iri(IRI.t(), coerce_options()) ::
-          IRI.t() | FragmentReference.t() | boolean()
+          IRI.t() | FragmentReference.t() | atom
   def coerce_iri(%IRI{} = iri, base_subject: base_subject) do
     uri = IRI.parse(iri)
     base_subject_uri = IRI.parse(base_subject)
@@ -109,6 +112,10 @@ defmodule RDF.FragmentGraph do
     do: coerce_object(RDF.iri!(iri), opts)
 
   defp coerce_object(arg, _), do: Literal.new(arg)
+
+  #########################
+  # Expand terms and statements to usual `RDF` term and statements (without
+  # `FragmentReference`)
 
   defp expand_term(%IRI{} = iri, _opts), do: iri
 
@@ -188,6 +195,29 @@ defmodule RDF.FragmentGraph do
         |> Map.keys()
         |> Enum.map(&expand_fragment_subject(&1, fg.base_subject))))
     |> MapSet.new()
+  end
+
+  @doc """
+  Retuns a set of all predicates in `RDF.FragmentGraph`
+  """
+  def predicates(%__MODULE__{} = fg) do
+    fg.fragment_statements
+    |> Map.values()
+    |> Enum.flat_map(&Map.keys(&1))
+    |> Enum.concat(fg.statements |> Map.keys())
+    |> MapSet.new()
+  end
+
+  @doc """
+  Returns a set of all objects in `RDF.FragmentGraph`
+  """
+  def objects(%__MODULE__{} = fg) do
+    fg.fragment_statements
+    |> Map.values()
+    |> Enum.reduce(fg.statements, &Map.merge(&1, &2))
+    |> Map.values()
+    |> Enum.reduce(MapSet.new(), &MapSet.union(&1, &2))
+    |> Enum.map(&expand_term(&1, base_subject: fg.base_subject))
   end
 
   # Helper to get a subject from RDF.Data
@@ -309,6 +339,9 @@ defmodule RDF.FragmentGraph do
     %{fg | base_subject: subject}
   end
 
+  #########################
+  # Implement the `RDF.Data` protocol.
+
   defimpl RDF.Data, for: RDF.FragmentGraph do
     def delete(%RDF.FragmentGraph{}, _) do
       # TODO
@@ -340,9 +373,8 @@ defmodule RDF.FragmentGraph do
       |> Enum.map(&description(fg, &1))
     end
 
-    def equal?(_data1, _data2) do
-      # TODO
-      raise "not implemented"
+    def equal?(data1, data2) do
+      data1 == data2
     end
 
     def include?(%RDF.FragmentGraph{} = fg, {s, p, o}) do
@@ -366,10 +398,7 @@ defmodule RDF.FragmentGraph do
       |> RDF.FragmentGraph.add(data)
     end
 
-    def objects(%RDF.FragmentGraph{}) do
-      # TODO
-      raise "not implemented"
-    end
+    def objects(%RDF.FragmentGraph{} = fg), do: RDF.FragmentGraph.objects(fg)
 
     def pop(%RDF.FragmentGraph{}) do
       # TODO
@@ -437,11 +466,13 @@ defmodule RDF.FragmentGraph do
 
   @impl Access
   def pop(%__MODULE__{}, _key) do
+    # TODO
     raise "not implemented"
   end
 
   @impl Access
   def get_and_update(%__MODULE__{}, _key, _function) do
+    # TODO
     raise "not implemented"
   end
 end

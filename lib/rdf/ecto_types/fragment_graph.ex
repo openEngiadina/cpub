@@ -1,9 +1,8 @@
 defmodule RDF.FragmentGraph.EctoType do
   @moduledoc """
-  Implements the `Ecto.Type` behaviour for `RDF.Description`.
+  Implements the `Ecto.Type` behaviour for `RDF.FragmentGraph`.
 
-  Serialization is based on `RDF.Graph.EctoType`.
-  An Ecto field using this type can also be read as `RDF.Graph.EctoType` (but not vice-versa).
+  Serialization is based on `RDF.FragmentGraph.JSON`.
   """
 
   use Ecto.Type
