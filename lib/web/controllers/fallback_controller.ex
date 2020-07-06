@@ -7,7 +7,7 @@ defmodule CPub.Web.FallbackController do
 
   use CPub.Web, :controller
 
-  alias CPub.Web.{ChangesetView, ErrorView}
+  alias CPub.Web.ChangesetView
 
   @type error_tuple ::
           {:error, Ecto.Changeset.t() | String.Chars.t() | atom}
@@ -32,8 +32,13 @@ defmodule CPub.Web.FallbackController do
   def call(%Plug.Conn{} = conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> put_view(ErrorView)
-    |> render(:"404")
+    |> text("Not found")
+  end
+
+  def call(%Plug.Conn{} = conn, {:error, "Invalid argument; Not a valid UUID: " <> _ = msg}) do
+    conn
+    |> put_status(400)
+    |> text(msg)
   end
 
   def call(%Plug.Conn{} = conn, {:error, msg}) do

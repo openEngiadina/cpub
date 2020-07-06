@@ -108,7 +108,7 @@ defmodule RDF.FragmentGraph do
     end
   end
 
-  defp coerce_object(iri, opts) when is_atom(iri) or is_binary(iri),
+  defp coerce_object(iri, opts) when is_atom(iri),
     do: coerce_object(RDF.iri!(iri), opts)
 
   defp coerce_object(arg, _), do: Literal.new(arg)

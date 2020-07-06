@@ -70,6 +70,7 @@ defmodule CPub.MixProject do
       {:sparql, "~> 0.3.4"},
       {:json_ld, "~> 0.3.0"},
       {:stream_data, "~> 0.4.3"},
+      {:elixir_uuid, "~> 1.2"},
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.0.2"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},

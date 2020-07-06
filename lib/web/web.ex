@@ -28,6 +28,8 @@ defmodule CPub.Web do
 
       alias CPub.Web.RDFView
 
+      alias CPub.Repo
+
       plug :set_put_layout
 
       defp set_put_layout(conn, _), do: put_layout(conn, "app.html")
