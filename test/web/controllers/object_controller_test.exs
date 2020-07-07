@@ -30,7 +30,7 @@ defmodule CPub.Web.ObjectControllerTest do
       response =
         conn
         |> put_req_header("accept", "text/turtle")
-        |> get(Routes.object_path(conn, :show, uuid))
+        |> get(Routes.object_uuid_path(conn, :show, uuid))
 
       assert response.status == 200
       assert {:ok, response_rdf} = RDF.Turtle.Decoder.decode(response.resp_body)
@@ -44,7 +44,7 @@ defmodule CPub.Web.ObjectControllerTest do
       response =
         conn
         |> put_req_header("accept", "application/rdf+json")
-        |> get(Routes.object_path(conn, :show, uuid))
+        |> get(Routes.object_uuid_path(conn, :show, uuid))
 
       assert response.status == 200
       assert {:ok, response_rdf} = RDF.JSON.Decoder.decode(response.resp_body)
@@ -59,7 +59,7 @@ defmodule CPub.Web.ObjectControllerTest do
 
       response =
         conn
-        |> get(Routes.object_path(conn, :show, uuid))
+        |> get(Routes.object_uuid_path(conn, :show, uuid))
 
       assert response.status == 404
     end
@@ -69,7 +69,7 @@ defmodule CPub.Web.ObjectControllerTest do
 
       response =
         conn
-        |> get(Routes.object_path(conn, :show, uuid))
+        |> get(Routes.object_uuid_path(conn, :show, uuid))
 
       assert response.status == 400
     end

@@ -88,7 +88,7 @@ defmodule CPub.ActivityPub do
         activity =
           RDF.FragmentGraph.new(activity_id)
           |> FragmentGraph.add(request.graph)
-          |> FragmentGraph.set_subject(RDF.UUID.generate())
+          |> FragmentGraph.set_base_subject(RDF.UUID.generate())
 
         %{request | activity_object: activity}
 
@@ -126,7 +126,7 @@ defmodule CPub.ActivityPub do
             | object:
                 FragmentGraph.new(object_id)
                 |> FragmentGraph.add(request.graph)
-                |> FragmentGraph.set_subject(generated_object_id),
+                |> FragmentGraph.set_base_subject(generated_object_id),
               activity_object:
                 activity_object
                 |> replace_object_in_fragment_graph(object_id, generated_object_id)

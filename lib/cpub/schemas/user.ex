@@ -40,14 +40,16 @@ defmodule CPub.User do
     timestamps()
   end
 
-  @spec create_changeset(t) :: Ecto.Changeset.t()
-  defp create_changeset(%__MODULE__{} = user) do
+  @spec create_changeset(t, map) :: Ecto.Changeset.t()
+  defp create_changeset(%__MODULE__{} = user, attrs) do
     user
-    |> change()
-    |> validate_required([:username, :password, :profile_object])
+    |> cast(attrs, [:username, :password])
+    |> put_assoc(:profile_object, attrs.profile_object)
+    |> validate_required([:username, :password])
     |> put_change(:provider, "local")
     |> unique_constraint(:username, name: "users_username_provider_index")
     |> unique_constraint(:id, name: "users_pkey")
+    |> assoc_constraint(:profile_object)
   end
 
   @spec create_from_provider_changeset(t, map) :: Ecto.Changeset.t()
@@ -63,8 +65,8 @@ defmodule CPub.User do
   def create(%{username: username, password: password} = attrs) do
     profile_object = default_profile(attrs) |> Object.new()
 
-    %__MODULE__{username: username, password: password, profile_object: profile_object}
-    |> create_changeset()
+    %__MODULE__{}
+    |> create_changeset(%{username: username, password: password, profile_object: profile_object})
     |> Repo.insert()
   end
 
@@ -83,6 +85,7 @@ defmodule CPub.User do
   defp default_profile(%{username: username}, from_provider? \\ false) do
     username = if from_provider?, do: "#{username}-#{Crypto.random_string(8)}", else: username
 
+    # TODO: get rid of base url in database
     inbox_id = ID.merge_with_base_url("users/#{username}/inbox")
     outbox_id = ID.merge_with_base_url("users/#{username}/outbox")
 
@@ -97,9 +100,17 @@ defmodule CPub.User do
     default_profile
   end
 
-  @spec get_by(map) :: t | nil
+  @doc """
+  Get a single `CPub.User`.
+
+  Returns {:error, :not_found} if user is not found. Raises if more than one entry.
+  """
+  @spec get_by(map) :: {:ok, t} | {:error, :not_found}
   def get_by(attrs) do
-    Repo.get_by(__MODULE__, attrs)
+    case Repo.get_by(__MODULE__, attrs) |> Repo.preload(:profile_object) do
+      nil -> {:error, :not_found}
+      user -> {:ok, user}
+    end
   end
 
   @spec get_by_password(String.t(), String.t()) :: {:ok, t} | {:error, String.t()}

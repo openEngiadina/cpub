@@ -5,7 +5,6 @@ defmodule CPub.Web.Router do
     BasicAuthenticationPlug,
     EnsureAuthenticationPlug,
     OAuthAuthenticationPlug,
-    ObjectIDPlug,
     RDFParser
   }
 
@@ -20,7 +19,6 @@ defmodule CPub.Web.Router do
 
   pipeline :api do
     plug :accepts, ["rj", "ttl", "json"]
-    plug ObjectIDPlug
 
     plug Plug.Parsers,
       parsers: [RDFParser],
@@ -92,7 +90,7 @@ defmodule CPub.Web.Router do
     pipe_through :api
 
     resources "/activities", ActivityController, only: [:show]
-    get "/objects/uuid/:id", ObjectController, :show
+    get "/objects/uuid/:id", ObjectController, :show, as: :object_uuid
 
     get "/public", PublicController, :get_public
   end
@@ -103,19 +101,15 @@ defmodule CPub.Web.Router do
 
     scope [] do
       pipe_through :authenticated
-
       get "/id", UserController, :id
       get "/verify", UserController, :verify
     end
 
     resources "/", UserController, only: [:show] do
-      get "/me", UserController, :show_me
-
       pipe_through :authenticated
-
-      post "/outbox", UserController, :post_to_outbox
-      get "/outbox", UserController, :get_outbox
-      get "/inbox", UserController, :get_inbox
+      post "/outbox", UserController, :post_to_outbox, as: :outbox
+      get "/outbox", UserController, :get_outbox, as: :outbox
+      get "/inbox", UserController, :get_inbox, as: :inbox
     end
   end
 end

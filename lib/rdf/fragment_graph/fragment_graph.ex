@@ -343,11 +343,11 @@ defmodule RDF.FragmentGraph do
   end
 
   @doc """
-  Set subject of `RDF.FragmentGraph`
+  Set the base subject of `RDF.FragmentGraph`.
   """
-  @spec set_subject(t, IRI.t()) :: t
-  def set_subject(%__MODULE__{} = fg, subject) do
-    %{fg | base_subject: subject}
+  @spec set_base_subject(t, IRI.t()) :: t
+  def set_base_subject(%__MODULE__{} = fg, new_base_subject) do
+    %{fg | base_subject: new_base_subject |> IRI.new!()}
   end
 
   #########################

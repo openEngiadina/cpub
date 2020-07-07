@@ -1,34 +1,25 @@
 defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
-  alias CPub.{ActivityPub, Repo, User}
-  alias RDF.{Graph, IRI}
+  alias CPub.{ActivityPub, User}
+  alias RDF.{FragmentGraph, Graph, IRI}
 
   action_fallback CPub.Web.FallbackController
 
+  @doc """
+  Show the `CPub.User`s profile.`
+  """
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(%Plug.Conn{assigns: %{id: user_id}} = conn, _params) do
-    with {:ok, user} <- Repo.get_one(User, user_id),
-         profile <- Graph.set_base_iri(user.profile, IRI.new!("#{user_id}/")) do
+  def show(%Plug.Conn{} = conn, %{"id" => username}) do
+    with {:ok, user} <- User.get_by(%{username: username}) do
       conn
       |> put_view(RDFView)
-      |> render(:show, data: profile)
-    end
-  end
-
-  @spec show_me(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show_me(%Plug.Conn{assigns: %{id: user_id}} = conn, _params) do
-    id =
-      user_id.value
-      |> String.trim_trailing("/me")
-      |> IRI.new!()
-
-    with {:ok, user} <- Repo.get_one(User, id),
-         {:ok, me} <- Graph.fetch(user.profile, id),
-         me <- Graph.set_base_iri(Graph.new(me), IRI.new!("#{id}/")) do
-      conn
-      |> put_view(RDFView)
-      |> render(:show, data: me)
+      |> render(:show,
+        data:
+          user.profile_object.content
+          # Replace the UUID of the profile object with the request URL
+          |> FragmentGraph.set_base_subject(request_url(conn))
+      )
     end
   end
 

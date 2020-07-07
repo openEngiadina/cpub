@@ -47,8 +47,9 @@ defmodule CPub.Activity do
     activity
     |> change()
     |> validate_required([:id, :actor, :activity_object])
-    |> unique_constraint(:id, name: "activities_pkey")
     |> validate_activity_type()
+    |> unique_constraint(:id, name: "activities_pkey")
+    |> assoc_constraint(:activity_object)
   end
 
   @spec validate_activity_type(Ecto.Changeset.t()) :: Ecto.Changeset.t()

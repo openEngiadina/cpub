@@ -113,7 +113,7 @@ defmodule RDF.FragmentGraphTest do
 
     new_iri = ~I<http://new-iri.org/>
 
-    fg = FragmentGraph.set_subject(fg, new_iri)
+    fg = FragmentGraph.set_base_subject(fg, new_iri)
 
     assert Data.describes?(fg, new_iri)
     assert Data.description(fg, new_iri) |> Description.count() == 2
