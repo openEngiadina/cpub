@@ -94,6 +94,8 @@ defmodule RDF.FragmentGraph do
     end
   end
 
+  defp coerce_predicate(%FragmentReference{} = f, _), do: f
+
   defp coerce_predicate(iri, opts) when is_atom(iri) or is_binary(iri),
     do: coerce_predicate(RDF.iri!(iri), opts)
 
@@ -107,6 +109,8 @@ defmodule RDF.FragmentGraph do
       o -> o
     end
   end
+
+  defp coerce_object(%FragmentReference{} = f, _), do: f
 
   defp coerce_object(iri, opts) when is_atom(iri),
     do: coerce_object(RDF.iri!(iri), opts)
@@ -244,6 +248,13 @@ defmodule RDF.FragmentGraph do
       %__MODULE__{base_subject: IRI.new!(data_or_iri)}
     end
   end
+
+  @doc """
+  Returns a fragment reference to `id`.
+
+  This is a shortcut to `RDF.FragmentGraph.FragmentReference.new(id)`.
+  """
+  def fragment_reference(id), do: FragmentReference.new(id)
 
   defp add_to_statements(statements, coercible_predicate, coercible_object,
          base_subject: base_subject

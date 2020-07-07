@@ -6,11 +6,14 @@ defmodule CPub.Repo.Migrations.CreateUsers do
       add(:id, :string, primary_key: true)
       add(:username, :string)
       add(:password, :string)
-      add(:profile, :map)
+
+      add(:profile_object_id, references(:objects, on_delete: :delete_all, type: :string))
+
+      add(:provider, :string)
 
       timestamps()
     end
 
-    create(unique_index(:users, [:username]))
+    create(unique_index(:users, [:username, :provider]))
   end
 end

@@ -10,39 +10,42 @@ defmodule CPub.User do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
-  alias CPub.{Activity, Crypto, ID, Repo}
+  alias CPub.{Activity, Crypto, ID, Object, Repo}
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
   alias CPub.Solid.WebID
+
+  alias RDF.FragmentGraph
 
   @type t :: %__MODULE__{
           id: RDF.IRI.t() | nil,
           username: String.t() | nil,
           password: String.t() | nil,
           provider: String.t() | nil,
-          profile: RDF.Graph.t() | nil
+          profile_object_id: RDF.IRI.t() | nil
         }
 
-  @primary_key {:id, ID, autogenerate: true}
-  @foreign_key_type ID
+  @primary_key {:id, RDF.IRI.EctoType, []}
   schema "users" do
     field :username, :string
     field :password, Comeonin.Ecto.Password
-    field :provider, :string
 
-    field :profile, RDF.Graph.EctoType
+    belongs_to :profile_object, Object, type: RDF.IRI.EctoType
 
     # has_many :authorizations, Authorization
+
+    # TODO: can the provider field be replaced for registrations?
     # has_many :registrations, Registration
+    field :provider, :string
 
     timestamps()
   end
 
-  @spec create_changeset(t, map) :: Ecto.Changeset.t()
-  defp create_changeset(%__MODULE__{} = user, attrs) do
+  @spec create_changeset(t) :: Ecto.Changeset.t()
+  defp create_changeset(%__MODULE__{} = user) do
     user
-    |> cast(attrs, [:username, :password, :profile])
-    |> validate_required([:username, :password, :profile])
+    |> change()
+    |> validate_required([:username, :password, :profile_object])
     |> put_change(:provider, "local")
     |> unique_constraint(:username, name: "users_username_provider_index")
     |> unique_constraint(:id, name: "users_pkey")
@@ -59,14 +62,18 @@ defmodule CPub.User do
 
   @spec create(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def create(%{username: username, password: password} = attrs) do
-    {id, default_profile} = default_profile(attrs)
-    profile = Map.get(attrs, :profile, default_profile)
+    id_string = "users/#{username}"
+    # TODO remove base_url from database to make data portable
+    id = ID.merge_with_base_url(id_string)
 
-    %__MODULE__{id: id}
-    |> create_changeset(%{username: username, password: password, profile: profile})
+    profile_object = default_profile(attrs) |> Object.new()
+
+    %__MODULE__{id: id, username: username, password: password, profile_object: profile_object}
+    |> create_changeset()
     |> Repo.insert()
   end
 
+  # TODO fix (profile -> profile_object)
   @spec create_from_provider(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def create_from_provider(%{username: username, provider: provider} = attrs) do
     {id, default_profile} = default_profile(attrs, true)
@@ -77,24 +84,22 @@ defmodule CPub.User do
     |> Repo.insert()
   end
 
-  @spec default_profile(map, boolean) :: {RDF.IRI.t(), RDF.Description.t()}
+  @spec default_profile(map, boolean) :: FragmentGraph.t()
   defp default_profile(%{username: username}, from_provider? \\ false) do
     username = if from_provider?, do: "#{username}-#{Crypto.random_string(8)}", else: username
-    id_string = "users/#{username}"
 
-    id = ID.merge_with_base_url(id_string)
     inbox_id = ID.merge_with_base_url("users/#{username}/inbox")
     outbox_id = ID.merge_with_base_url("users/#{username}/outbox")
 
     default_profile =
-      RDF.Description.new(id)
-      |> RDF.Description.add(RDF.type(), RDF.iri(AS.Person))
-      |> RDF.Description.add(LDP.inbox(), inbox_id)
-      |> RDF.Description.add(AS.outbox(), outbox_id)
-      |> RDF.Description.add(AS.preferredUsername(), username)
-      |> WebID.Profile.create(%{username: username})
+      FragmentGraph.new(RDF.UUID.generate())
+      |> FragmentGraph.add(RDF.type(), AS.Person)
+      |> FragmentGraph.add(LDP.inbox(), inbox_id)
+      |> FragmentGraph.add(AS.outbox(), outbox_id)
+      |> FragmentGraph.add(AS.preferredUsername(), username)
+      |> WebID.Profile.create()
 
-    {id, default_profile}
+    default_profile
   end
 
   @spec get_by(map) :: t | nil
@@ -164,7 +169,7 @@ defmodule CPub.User do
   """
   @impl Access
   @spec fetch(t, atom) :: {:ok, any} | :error
-  def fetch(%__MODULE__{profile: profile}, key) do
+  def fetch(%__MODULE__{profile_object: profile}, key) do
     Access.fetch(profile, key)
   end
 
@@ -175,7 +180,7 @@ defmodule CPub.User do
   @spec get_and_update(t, atom, fun) :: {any, t}
   def get_and_update(%__MODULE__{} = user, key, fun) do
     with {get_value, new_profile} <- Access.get_and_update(user.profile, key, fun) do
-      {get_value, %{user | profile: new_profile}}
+      {get_value, %{user | profile_object: new_profile}}
     end
   end
 
@@ -187,7 +192,7 @@ defmodule CPub.User do
   def pop(%__MODULE__{} = user, key) do
     case Access.pop(user.profile, key) do
       {nil, _} -> {nil, user}
-      {value, new_profile} -> {value, %{user | profile: new_profile}}
+      {value, new_profile} -> {value, %{user | profile_object: new_profile}}
     end
   end
 end
