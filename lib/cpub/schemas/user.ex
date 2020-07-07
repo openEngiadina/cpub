@@ -18,14 +18,13 @@ defmodule CPub.User do
   alias RDF.FragmentGraph
 
   @type t :: %__MODULE__{
-          id: RDF.IRI.t() | nil,
           username: String.t() | nil,
           password: String.t() | nil,
           provider: String.t() | nil,
           profile_object_id: RDF.IRI.t() | nil
         }
 
-  @primary_key {:id, RDF.IRI.EctoType, []}
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "users" do
     field :username, :string
     field :password, Comeonin.Ecto.Password
@@ -62,13 +61,9 @@ defmodule CPub.User do
 
   @spec create(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def create(%{username: username, password: password} = attrs) do
-    id_string = "users/#{username}"
-    # TODO remove base_url from database to make data portable
-    id = ID.merge_with_base_url(id_string)
-
     profile_object = default_profile(attrs) |> Object.new()
 
-    %__MODULE__{id: id, username: username, password: password, profile_object: profile_object}
+    %__MODULE__{username: username, password: password, profile_object: profile_object}
     |> create_changeset()
     |> Repo.insert()
   end

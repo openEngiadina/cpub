@@ -3,7 +3,7 @@ defmodule CPub.Repo.Migrations.CreateRegistrations do
 
   def change do
     create table(:registrations) do
-      add(:user_id, references(:users, on_delete: :delete_all, type: :string))
+      add(:user_id, references(:users, on_delete: :delete_all, type: :binary_id))
 
       add(:username, :string)
       add(:provider, :string)

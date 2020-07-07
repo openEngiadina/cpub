@@ -3,6 +3,7 @@ defmodule CPub.UserTest do
   use CPub.DataCase
 
   alias CPub.User
+  alias CPub.Object
 
   doctest CPub.User
 

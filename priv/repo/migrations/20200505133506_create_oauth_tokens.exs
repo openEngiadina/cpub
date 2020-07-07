@@ -4,7 +4,7 @@ defmodule CPub.Repo.Migrations.CreateOAuthTokens do
   def change do
     create table(:oauth_tokens) do
       add(:app_id, references(:oauth_apps, on_delete: :delete_all, type: :integer))
-      add(:user_id, references(:users, on_delete: :delete_all, type: :string))
+      add(:user_id, references(:users, on_delete: :delete_all, type: :binary_id))
 
       add(:access_token, :string)
       add(:refresh_token, :string)
