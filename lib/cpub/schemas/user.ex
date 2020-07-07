@@ -81,6 +81,16 @@ defmodule CPub.User do
     |> Repo.insert()
   end
 
+  @doc """
+  Returns an externally usable URL.
+
+  NOTE: Goal is to not rely on any base_url. How can an actor be addessed?
+  """
+  @spec actor_url(t) :: RDF.IRI.t()
+  def actor_url(%__MODULE__{username: username}) do
+    ID.merge_with_base_url("users/#{username}/")
+  end
+
   @spec default_profile(map, boolean) :: FragmentGraph.t()
   defp default_profile(%{username: username}, from_provider? \\ false) do
     username = if from_provider?, do: "#{username}-#{Crypto.random_string(8)}", else: username

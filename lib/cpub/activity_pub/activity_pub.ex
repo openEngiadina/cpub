@@ -149,11 +149,12 @@ defmodule CPub.ActivityPub do
         %{
           request
           | activity_object:
-              request.activity_object |> FragmentGraph.add(AS.actor(), request.user.id)
+              request.activity_object
+              |> FragmentGraph.add(AS.actor(), User.actor_url(request.user))
         }
 
       [actor_in_activity] ->
-        if actor_in_activity != request.user.id do
+        if actor_in_activity != User.actor_url(request.user) do
           Request.error(
             request,
             :ensure_correct_actor,
