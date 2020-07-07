@@ -7,6 +7,7 @@ defmodule CPub.Web.UserControllerTest do
   alias CPub.User
 
   alias RDF.FragmentGraph
+  alias RDF.JSON, as: RDFJSON
 
   doctest CPub.Web.UserController
 
@@ -31,10 +32,10 @@ defmodule CPub.Web.UserControllerTest do
 
       assert response.status == 200
 
-      assert {:ok, response_rdf} = RDF.JSON.Decoder.decode(response.resp_body)
+      assert {:ok, response_rdf} = RDFJSON.Decoder.decode(response.resp_body)
 
       assert user.profile_object.content |> FragmentGraph.set_base_subject(url) ==
-               response_rdf |> RDF.FragmentGraph.new()
+               response_rdf |> FragmentGraph.new()
     end
 
     test "returns 404 for unknown profile", %{conn: conn} do
