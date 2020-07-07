@@ -195,7 +195,7 @@ defmodule CPub.User do
   @impl Access
   @spec get_and_update(t, atom, fun) :: {any, t}
   def get_and_update(%__MODULE__{} = user, key, fun) do
-    with {get_value, new_profile} <- Access.get_and_update(user.profile, key, fun) do
+    with {get_value, new_profile} <- Access.get_and_update(user.profile_object, key, fun) do
       {get_value, %{user | profile_object: new_profile}}
     end
   end
@@ -206,7 +206,7 @@ defmodule CPub.User do
   @impl Access
   @spec pop(t, atom) :: {any | nil, t}
   def pop(%__MODULE__{} = user, key) do
-    case Access.pop(user.profile, key) do
+    case Access.pop(user.profile_object, key) do
       {nil, _} -> {nil, user}
       {value, new_profile} -> {value, %{user | profile_object: new_profile}}
     end

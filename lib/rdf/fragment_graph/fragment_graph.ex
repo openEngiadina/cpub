@@ -22,8 +22,8 @@ defmodule RDF.FragmentGraph do
   @type object :: IRI.t() | Literal.t() | FragmentReference.t()
 
   @type coercible_subject :: IRI.coercible()
-  @type coercible_predicate :: IRI.coercible()
-  @type coericble_object :: IRI.coercible() | Literal.literal_value()
+  @type coercible_predicate :: IRI.coercible() | FragmentReference.t()
+  @type coericble_object :: IRI.coercible() | Literal.literal_value() | FragmentReference.t()
 
   @type fragment_identifier :: String.t()
 
@@ -345,7 +345,7 @@ defmodule RDF.FragmentGraph do
   @doc """
   Set the base subject of `RDF.FragmentGraph`.
   """
-  @spec set_base_subject(t, IRI.t()) :: t
+  @spec set_base_subject(t, RDF.IRI.coercible()) :: t
   def set_base_subject(%__MODULE__{} = fg, new_base_subject) do
     %{fg | base_subject: new_base_subject |> IRI.new!()}
   end
