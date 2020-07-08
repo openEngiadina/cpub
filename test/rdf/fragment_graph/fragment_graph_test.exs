@@ -1,138 +1,215 @@
 defmodule RDF.FragmentGraphTest do
   use ExUnit.Case
   use ExUnitProperties
+  use CPub.RDFCase
 
-  import RDF.Sigils
+  alias RDF.Data
+  alias RDF.Description
   alias RDF.FragmentGraph
-  alias RDF.{Data, Description}
 
   doctest RDF.FragmentGraph
 
-  test "create an empty FragmentGraph" do
-    fg = FragmentGraph.new(~I<http://example.com/>)
-    assert Data.statements(fg) == []
-    assert Data.subjects(fg) == MapSet.new()
-    refute Data.describes?(fg, ~I<http://example.com/>)
-
-    assert Data.description(fg, ~I<http://example.com/>) ==
-             Description.new(~I<http://example.com/>)
+  def empty_fragment_graph?(%FragmentGraph{} = fg) do
+    fg.fragment_statements == %{} and fg.statements == %{}
   end
 
-  test "create a FragmentGraph with a single statement" do
-    triple = {~I<http://example.com/>, RDF.type(), ~I<http://something.org/>}
-
-    fg =
-      FragmentGraph.new(~I<http://example.com/>)
-      |> FragmentGraph.add(triple)
-
-    assert Data.statements(fg) == [triple]
-    assert Data.subjects(fg) == [triple |> elem(0)] |> MapSet.new()
-    assert Data.describes?(fg, triple |> elem(0))
-
-    description =
-      Description.new(~I<http://example.com/>)
-      |> Description.add(RDF.type(), ~I<http://something.org/>)
-
-    assert Data.description(fg, ~I<http://example.com/>) == description
-
-    assert fg[~I<http://example.com/>] == description
-    assert fg[:base_subject] == description
+  def is_base_subject?(%FragmentGraph{} = fg, base_subject) do
+    fg.base_subject == RDF.IRI.new!(base_subject)
   end
 
-  test "create a FragmentGraph with a single fragment statement" do
-    triple = {~I<http://example.com/#abc>, RDF.type(), ~I<http://something.org/>}
-
-    fg =
-      FragmentGraph.new(~I<http://example.com/>)
-      |> FragmentGraph.add(triple)
-
-    assert Data.statements(fg) == [triple]
-    assert Data.subjects(fg) == [triple |> elem(0)] |> MapSet.new()
-    assert Data.describes?(fg, triple |> elem(0))
-
-    description =
-      Description.new(~I<http://example.com/#abc>)
-      |> Description.add(RDF.type(), ~I<http://something.org/>)
-
-    assert Data.description(fg, ~I<http://example.com/#abc>) == description
-    assert fg["abc"] == description
-    assert fg[~I<http://example.com/#abc>] == description
-    assert fg[:base_subject] == nil
+  describe "new/1" do
+    test "creates an empty FragmentGraph" do
+      fg = FragmentGraph.new(EX.Foo)
+      assert empty_fragment_graph?(fg)
+      assert is_base_subject?(fg, EX.Foo)
+    end
   end
 
-  test "create a FragmentGraph with a statement and fragment statement" do
-    iri = ~I<http://example.com/>
+  describe "add/3" do
+    test "adds a statement" do
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(RDF.type(), EX.Bar)
 
-    description =
-      Description.new(iri)
-      |> Description.add(RDF.type(), ~I<http://something.org/>)
-      |> Description.add(~I<http://example.com/property>, 5)
+      assert RDF.Data.statements(fg) == [RDF.Triple.new(EX.Foo, RDF.type(), EX.Bar)]
+    end
 
-    fragment_iri = ~I<http://example.com/#abc>
+    test "adds a statement with a fragment reference" do
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(RDF.type(), FragmentGraph.FragmentReference.new("abc"))
 
-    fragment_description =
-      Description.new(fragment_iri)
-      |> Description.add(RDF.type(), ~I<http://something.org/else>)
-      |> Description.add(~I<http://example.com/property2>, "hello")
+      assert RDF.Data.statements(fg) == [
+               RDF.Triple.new(EX.Foo, RDF.type(), ~I<http://example.com/Foo#abc>)
+             ]
 
-    fg =
-      FragmentGraph.new(iri)
-      |> FragmentGraph.add(description)
-      |> FragmentGraph.add(fragment_description)
+      # set a new base subject to make sure that the fragment reference
+      # is stored as a fragment reference (and not as an IRI)
+      assert RDF.Data.statements(fg |> FragmentGraph.set_base_subject(EX.Foo2)) == [
+               RDF.Triple.new(EX.Foo2, RDF.type(), ~I<http://example.com/Foo2#abc>)
+             ]
+    end
+  end
 
-    assert Data.subjects(fg) ==
-             MapSet.union(
-               RDF.Data.subjects(description),
-               RDF.Data.subjects(fragment_description)
+  describe "delete/3" do
+    test "deletes a statement" do
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(RDF.type(), EX.Bar)
+
+      assert RDF.Data.statements(fg) == [RDF.Triple.new(EX.Foo, RDF.type(), EX.Bar)]
+
+      assert empty_fragment_graph?(fg |> FragmentGraph.delete(RDF.type(), EX.Bar))
+    end
+  end
+
+  describe "add_fragment_statement/3" do
+    test "adds a fragment statement" do
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Bar)
+
+      triple = RDF.Triple.new(~I<http://example.com/Foo#abc>, RDF.type(), EX.Bar)
+
+      assert RDF.Data.statements(fg) == [triple]
+    end
+  end
+
+  describe "delete_fragment_statement/3" do
+    test "deletes a fragment statement" do
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Bar)
+
+      triple = RDF.Triple.new(~I<http://example.com/Foo#abc>, RDF.type(), EX.Bar)
+
+      assert RDF.Data.statements(fg) == [triple]
+
+      assert empty_fragment_graph?(
+               fg
+               |> FragmentGraph.delete_fragment_statement("abc", RDF.type(), EX.Bar)
              )
-
-    assert Data.describes?(fg, iri)
-    assert Data.describes?(fg, fragment_iri)
-
-    assert Data.statements(fg) ==
-             Data.statements(description) ++ Data.statements(fragment_description)
-
-    assert Data.descriptions(fg) == [description, fragment_description]
-    assert fg[:base_subject] == description
-    assert fg["abc"] == fragment_description
+    end
   end
 
-  test "rename base_subject" do
-    iri = ~I<http://example.com/>
+  describe "add/2" do
+    test "adds a single statment" do
+      triple = RDF.Triple.new(EX.Foo, RDF.type(), EX.Bar)
 
-    description =
-      Description.new(iri)
-      |> Description.add(RDF.type(), ~I<http://something.org/>)
-      |> Description.add(~I<http://example.com/property>, 5)
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(triple)
 
-    fg =
-      FragmentGraph.new(iri)
-      |> FragmentGraph.add(description)
+      assert RDF.Data.statements(fg) == [triple]
+    end
 
-    assert Data.description(fg, iri) == description
+    test "does not add unrelated statement" do
+      triple = RDF.Triple.new(EX.Foo2, RDF.type(), EX.Bar)
 
-    new_iri = ~I<http://new-iri.org/>
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(triple)
 
-    fg = FragmentGraph.set_base_subject(fg, new_iri)
+      assert empty_fragment_graph?(fg)
+    end
 
-    assert Data.describes?(fg, new_iri)
-    assert Data.description(fg, new_iri) |> Description.count() == 2
+    test "adds a list of statements" do
+      statements = [
+        RDF.Triple.new(EX.Foo, RDF.type(), EX.Bar),
+        RDF.Triple.new(EX.Foo, EX.p1(), "Hello!"),
+        RDF.Triple.new(~I<http://example.com/Foo#abc>, EX.p2(), 42),
+        # this statement will not be added to the Fragment Graph
+        RDF.Triple.new(EX.Foo2, EX.p3(), 3.141)
+      ]
+
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(statements)
+
+      assert MapSet.equal?(
+               FragmentGraph.statements(fg) |> MapSet.new(),
+               statements |> Enum.take(3) |> MapSet.new()
+             )
+    end
+
+    test "adds RDF.Data" do
+      description =
+        Description.new(EX.Foo)
+        |> Description.add(RDF.type(), EX.Bar)
+        |> Description.add(EX.p(), EX.FooBar)
+
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(description)
+
+      assert FragmentGraph.description(fg, EX.Foo) == description
+    end
   end
 
-  test "coerce_iri recognizes base_subject" do
-    assert FragmentGraph.coerce_iri(~I<http://example.com/>, base_subject: ~I<http://example.com/>) ==
-             :base_subject
+  describe "delete/2" do
+    test "deletes a single statement" do
+      triple = RDF.Triple.new(EX.Foo, RDF.type(), EX.Bar)
+
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(triple)
+        |> FragmentGraph.delete(triple)
+
+      assert empty_fragment_graph?(fg)
+    end
+
+    test "deletes a list of statements" do
+      statements = [
+        RDF.Triple.new(EX.Foo, RDF.type(), EX.Bar),
+        RDF.Triple.new(EX.Foo, EX.p1(), "Hello!"),
+        RDF.Triple.new(~I<http://example.com/Foo#abc>, EX.p2(), 42),
+        # this statement will not be added to the Fragment Graph
+        RDF.Triple.new(EX.Foo2, EX.p3(), 3.141)
+      ]
+
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(statements)
+        |> FragmentGraph.delete(statements)
+
+      assert empty_fragment_graph?(fg)
+    end
+
+    test "deletes RDF.Data" do
+      description =
+        Description.new(EX.Foo)
+        |> Description.add(RDF.type(), EX.Bar)
+        |> Description.add(EX.p(), EX.FooBar)
+
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(description)
+        |> FragmentGraph.delete(description)
+
+      assert empty_fragment_graph?(fg)
+    end
   end
 
-  test "coerce_iri recognizes fragment" do
-    assert FragmentGraph.coerce_iri(RDF.IRI.new("http://example.com/#abc"),
-             base_subject: ~I<http://example.com/>
-           ) == %FragmentGraph.FragmentReference{identifier: "abc"}
-  end
+  describe "set_base_subject/2" do
+    test "sets the base subject" do
+      description =
+        Description.new(EX.Foo)
+        |> Description.add(RDF.type(), EX.Bar)
+        |> Description.add(EX.property(), 5)
 
-  test "coerce_iri returns unchanged IRI for unrelated IRI" do
-    assert FragmentGraph.coerce_iri(~I<http://example.com/>,
-             base_subject: ~I<http://example.com/abc>
-           ) == ~I<http://example.com/>
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add(description)
+
+      assert is_base_subject?(fg, EX.Foo)
+
+      new_iri = ~I<http://new-iri.org/>
+
+      fg = FragmentGraph.set_base_subject(fg, new_iri)
+
+      assert is_base_subject?(fg, new_iri)
+      assert Data.describes?(fg, new_iri)
+      assert Data.description(fg, new_iri) |> Description.count() == 2
+    end
   end
 end
