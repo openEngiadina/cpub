@@ -90,7 +90,7 @@ defmodule RDF.StreamData do
   @dialyzer {:nowarn_function, fragment_graph: 0}
   def fragment_graph do
     base_subject = iri()
-    fg_objects = one_of([iri(), literal()]) |> list_of |> map(&MapSet.new/1)
+    fg_objects = one_of([iri(), literal()]) |> list_of(min_length: 1) |> map(&MapSet.new/1)
     statements = map_of(iri(), fg_objects)
     fragment_statements = map_of(string(:alphanumeric), statements)
 

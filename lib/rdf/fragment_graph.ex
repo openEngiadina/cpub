@@ -15,6 +15,7 @@ defmodule RDF.FragmentGraph do
   """
 
   alias RDF.FragmentGraph.FragmentReference
+  alias RDF.FragmentGraph.CSexp
   alias RDF.{IRI, Literal, Statement}
 
   @type subject :: IRI.t()
@@ -455,6 +456,22 @@ defmodule RDF.FragmentGraph do
   @spec set_base_subject(t, RDF.IRI.coercible()) :: t
   def set_base_subject(%__MODULE__{} = fg, new_base_subject) do
     %{fg | base_subject: new_base_subject |> IRI.new!()}
+  end
+
+  defp blake2b_hash_urn(binary) do
+    hash = :crypto.hash(:blake2b, binary)
+
+    ("urn:blake2b:" <> Base.encode32(hash, padding: false))
+    |> RDF.IRI.new()
+  end
+
+  @doc """
+  Set the base subject of `RDF.FragmentGraph` to the Blake2b hash of the canonical representation of the `RDF.FragmentGraph`.
+  """
+  @spec set_base_subject_to_hash(t) :: t
+  def set_base_subject_to_hash(%__MODULE__{} = fg) do
+    csexp_encoded = CSexp.encode(fg)
+    set_base_subject(fg, blake2b_hash_urn(csexp_encoded))
   end
 
   #########################
