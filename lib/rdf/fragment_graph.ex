@@ -14,8 +14,9 @@ defmodule RDF.FragmentGraph do
   ~I<http://example.com/#a-fragment> are also permitted).
   """
 
-  alias RDF.FragmentGraph.FragmentReference
   alias RDF.FragmentGraph.CSexp
+  alias RDF.FragmentGraph.FragmentReference
+
   alias RDF.{IRI, Literal, Statement}
 
   @type subject :: IRI.t()

@@ -6,7 +6,6 @@ defmodule CPub.Solid.WebID.Profile do
   https://github.com/solid/solid-spec/blob/master/solid-webid-profiles.md
   """
 
-  alias CPub.ID
   alias CPub.NS.{ActivityStreams, FOAF, SOLID}
 
   alias RDF.FragmentGraph
