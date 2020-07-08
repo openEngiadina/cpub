@@ -15,6 +15,7 @@ defmodule CPub.ActivityPub do
   alias CPub.{Activity, Object, User}
   alias CPub.ActivityPub.Request
   alias CPub.NS.ActivityStreams, as: AS
+
   alias RDF.FragmentGraph
 
   @activity_streams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
@@ -88,7 +89,7 @@ defmodule CPub.ActivityPub do
         activity =
           RDF.FragmentGraph.new(activity_id)
           |> FragmentGraph.add(request.graph)
-          |> FragmentGraph.set_base_subject(RDF.UUID.generate())
+          |> FragmentGraph.set_base_subject_to_hash()
 
         %{request | activity_object: activity}
 
@@ -120,16 +121,17 @@ defmodule CPub.ActivityPub do
   defp extract_object(%Request{activity_object: activity_object} = request) do
     case activity_object[:base_subject][AS.object()] do
       [object_id] ->
-        with generated_object_id <- RDF.UUID.generate() do
+        with object <-
+               FragmentGraph.new(object_id)
+               |> FragmentGraph.add(request.graph)
+               |> FragmentGraph.set_base_subject_to_hash(),
+             new_activity_object <-
+               activity_object
+               |> replace_object_in_fragment_graph(object_id, object.base_subject) do
           %{
             request
-            | object:
-                FragmentGraph.new(object_id)
-                |> FragmentGraph.add(request.graph)
-                |> FragmentGraph.set_base_subject(generated_object_id),
-              activity_object:
-                activity_object
-                |> replace_object_in_fragment_graph(object_id, generated_object_id)
+            | activity_object: new_activity_object,
+              object: object
           }
         end
 

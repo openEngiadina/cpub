@@ -36,27 +36,22 @@ defmodule CPub.Object do
     %__MODULE__{id: base_subject, content: content}
   end
 
-  @spec new() :: t
-  def new do
-    id = RDF.UUID.generate()
-    content = RDF.FragmentGraph.new(id)
-
-    %__MODULE__{id: id, content: content}
-  end
-
   @behaviour Access
 
   @impl Access
   def fetch(%__MODULE__{content: content}, key), do: Access.fetch(content, key)
 
   @impl Access
+  # TODO: returns FragmentGraph instead of object
   def pop(%__MODULE__{content: content}, key), do: Access.pop(content, key)
 
   @impl Access
+  # TODO: returns FragmentGraph instead of object
   def get_and_update(%__MODULE__{content: content}, key, function),
     do: Access.get_and_update(content, key, function)
 
   defimpl RDF.Data, for: CPub.Object do
+    # TODO: all mutating implementations are wrong.
     def delete(obj, statements), do: RDF.Data.delete(obj.content, statements)
 
     def describes?(obj, subject), do: RDF.Data.describes?(obj.content, subject)
