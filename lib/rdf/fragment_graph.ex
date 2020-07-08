@@ -506,8 +506,7 @@ defmodule RDF.FragmentGraph do
     def pop(%RDF.FragmentGraph{} = fg) do
       case subjects(fg) do
         [] -> {nil, fg}
-        # TODO: how to pattern match and get first element from list?
-        subjects -> Access.pop(fg, subjects |> List.first())
+        [subject | _] -> Access.pop(fg, subject)
       end
     end
 
