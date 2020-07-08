@@ -35,6 +35,12 @@ defmodule CPub.Web.FallbackController do
     |> text("Not found")
   end
 
+  def call(%Plug.Conn{} = conn, {:error, :bad_request}) do
+    conn
+    |> put_status(:bad_request)
+    |> text("Bad request")
+  end
+
   def call(%Plug.Conn{} = conn, {:error, "Invalid argument; Not a valid UUID: " <> _ = msg}) do
     conn
     |> put_status(400)

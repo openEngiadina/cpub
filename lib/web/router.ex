@@ -90,7 +90,7 @@ defmodule CPub.Web.Router do
     pipe_through :api
 
     resources "/activities", ActivityController, only: [:show]
-    get "/objects/blake2b/:hash", ObjectController, :show_by_blake2b, as: :object_uuid
+    get "/objects", ObjectController, :show
 
     get "/public", PublicController, :get_public
   end
