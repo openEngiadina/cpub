@@ -26,19 +26,25 @@ defmodule CPub.ActivityPubTest do
           |> Description.add(AS.object(), object.subject)
         )
         |> Graph.add(object)
+        |> RDF.Skolem.skolemize_graph()
 
-      {:ok, request} = CPub.ActivityPub.handle_activity(data, user)
+      assert {:ok, request} = CPub.ActivityPub.handle_activity(data, user)
 
       # Ensure activity was inserted
       assert request.activity
 
+      assert CPub.Repo.get(CPub.Activity, request.activity.id)
+      assert CPub.Repo.get(CPub.Object, request.activity.activity_object_id)
+      assert CPub.Repo.get(CPub.Object, request.activity.object_id)
+
       # Ensure associated object was inserted
       assert CPub.Repo.exists?(
-               from o in CPub.Object, where: o.id in ^request.activity[AS.object()]
+               from o in CPub.Object,
+                 where: o.id in ^request.activity.activity_object[:base_subject][AS.object()]
              )
 
-      # T O D O: check that activity was placed in user outbox
-      # T O D O: add recipients and check for proper delivery
+      # TODO: check that activity was placed in user outbox
+      # TODO: add recipients and check for proper delivery
     end
   end
 end

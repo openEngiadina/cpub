@@ -10,7 +10,25 @@ defmodule RDF.UUID do
   """
   @spec generate() :: RDF.IRI.t()
   def generate do
-    ("urn:uuid:" <> Ecto.UUID.generate())
+    ("urn:uuid:" <> UUID.uuid4())
     |> RDF.IRI.new()
+  end
+
+  def cast(uuid) when is_binary(uuid) do
+    with {:ok, uuid_info} <- UUID.info(uuid) do
+      {:ok,
+       ("urn:uuid:" <> uuid_info[:uuid])
+       |> RDF.IRI.new()}
+    end
+  end
+
+  def to_string(%RDF.IRI{} = iri) do
+    case RDF.IRI.to_string(iri) do
+      "urn:uuid:" <> uuid ->
+        {:ok, uuid}
+
+      _ ->
+        {:error, :invalid_uuid_urn}
+    end
   end
 end

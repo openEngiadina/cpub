@@ -6,24 +6,22 @@ defmodule CPub.Solid.WebID.Profile do
   https://github.com/solid/solid-spec/blob/master/solid-webid-profiles.md
   """
 
-  alias CPub.ID
-  alias CPub.NS.{FOAF, SOLID}
+  alias CPub.NS.{ActivityStreams, FOAF, SOLID}
 
-  @spec create(RDF.Description.t(), map) :: RDF.Description.t()
-  def create(default_profile, %{username: username}) do
-    me = ID.merge_with_base_url("users/#{username}/me")
+  alias RDF.FragmentGraph
 
-    web_id_profile =
-      me
-      |> RDF.Description.new()
-      |> RDF.Description.add(RDF.type(), RDF.iri(FOAF.Person))
-      |> RDF.Description.add(FOAF.name(), username)
-      |> RDF.Description.add(FOAF.nick(), username)
+  @spec create(FragmentGraph.t()) :: FragmentGraph.t()
+  def create(default_profile) do
+    username =
+      default_profile[:base_subject][ActivityStreams.preferredUsername()]
+      |> List.first()
 
     default_profile
-    |> RDF.Description.add(RDF.type(), RDF.iri(FOAF.PersonalProfileDocument))
-    |> RDF.Description.add(FOAF.primaryTopic(), me)
-    |> RDF.Data.merge(web_id_profile)
+    |> FragmentGraph.add(RDF.type(), FOAF.PersonalProfileDocument)
+    |> FragmentGraph.add(FOAF.primaryTopic(), FragmentGraph.fragment_reference("me"))
+    |> FragmentGraph.add_fragment_statement("me", RDF.type(), FOAF.Person)
+    |> FragmentGraph.add_fragment_statement("me", FOAF.name(), username)
+    |> FragmentGraph.add_fragment_statement("me", FOAF.nick(), username)
   end
 
   @spec fetch_profile(RDF.Graph.t()) :: RDF.Description.t()

@@ -5,17 +5,17 @@ defmodule CPub.ActivityPub.Request do
   Inspired by Plug.
   """
 
-  alias CPub.{Repo, User}
+  alias CPub.{Activity, Repo, User}
 
   alias Ecto.Multi
 
   @type t :: %__MODULE__{
           multi: Multi.t() | nil,
-          id: RDF.IRI.t() | nil,
-          activity: RDF.Description.t() | nil,
-          object: RDF.Description.t() | nil,
-          data: RDF.Graph.t() | nil,
-          user: User.t() | nil
+          graph: RDF.Graph.t() | nil,
+          user: User.t() | nil,
+          activity_object: RDF.FragmentGraph.t() | nil,
+          object: RDF.FragmentGraph.t() | nil,
+          activity: Activity.t() | nil
         }
 
   @type operation ::
@@ -28,11 +28,11 @@ defmodule CPub.ActivityPub.Request do
           | {:error, any}
           | {:error, Ecto.Multi.name(), any, %{required(Ecto.Multi.name()) => any}}
 
-  defstruct [:multi, :id, :object, :activity, :data, :user]
+  defstruct [:multi, :graph, :user, :activity_object, :object, :activity]
 
   @spec new(RDF.Graph.t(), User.t()) :: t
-  def new(%RDF.Graph{} = data, %User{} = user) do
-    %__MODULE__{multi: Multi.new(), data: data, user: user}
+  def new(%RDF.Graph{} = graph, %User{} = user) do
+    %__MODULE__{multi: Multi.new(), graph: graph, user: user}
   end
 
   @doc """
