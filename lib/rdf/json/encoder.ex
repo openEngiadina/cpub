@@ -59,7 +59,7 @@ defmodule RDF.JSON.Encoder do
 
   defp value_object(%Literal{} = literal) do
     # %{type: "literal", value: RDF.Literal.lexical(literal)}
-    %{type: "literal", value: literal.value}
+    %{type: "literal", value: Literal.canonical_lexical(literal)}
     |> put_literal_datatype(literal)
     |> put_literal_language(literal)
   end
@@ -67,7 +67,7 @@ defmodule RDF.JSON.Encoder do
   @spec put_literal_datatype(value_object, Literal.t()) :: value_object
   defp put_literal_datatype(value_object, literal) do
     if Literal.has_datatype?(literal) do
-      Map.put(value_object, :datatype, literal.datatype.value)
+      Map.put(value_object, :datatype, literal |> Literal.datatype_id() |> IRI.to_string())
     else
       value_object
     end
@@ -76,7 +76,7 @@ defmodule RDF.JSON.Encoder do
   @spec put_literal_language(value_object, Literal.t()) :: value_object
   defp put_literal_language(value_object, literal) do
     if Literal.has_language?(literal) do
-      Map.put(value_object, :lang, literal.language)
+      Map.put(value_object, :lang, literal |> Literal.language())
     else
       value_object
     end

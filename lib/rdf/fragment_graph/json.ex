@@ -7,7 +7,7 @@ defmodule RDF.FragmentGraph.JSON do
   Encoding is based on RDF/JSON.
   """
 
-  alias RDF.{FragmentGraph, IRI, LangString, Literal}
+  alias RDF.{FragmentGraph, IRI, Literal}
 
   @type encoded_object :: %{String.t() => String.t()}
 
@@ -120,7 +120,7 @@ defmodule RDF.FragmentGraph.JSON do
   end
 
   defp encode_object(%Literal{} = literal) do
-    %{"type" => "literal", "value" => literal.value}
+    %{"type" => "literal", "value" => literal |> Literal.canonical_lexical()}
     |> encode_literal_datatype(literal)
     |> encode_literal_language(literal)
   end
@@ -143,14 +143,16 @@ defmodule RDF.FragmentGraph.JSON do
   @spec encode_literal_datatype(encoded_object, Literal.t()) :: encoded_object
   defp encode_literal_datatype(value_object, literal) do
     if Literal.has_datatype?(literal) do
-      Map.put(value_object, "datatype", literal.datatype.value)
+      Map.put(value_object, "datatype", literal |> Literal.datatype_id() |> IRI.to_string())
     else
       value_object
     end
   end
 
   defp decode_literal_datatype(literal, %{"datatype" => datatype}) do
-    Literal.new(literal.value, datatype: datatype)
+    literal
+    |> Literal.value()
+    |> Literal.new(datatype: datatype)
   end
 
   defp decode_literal_datatype(literal, _), do: literal
@@ -158,14 +160,16 @@ defmodule RDF.FragmentGraph.JSON do
   @spec encode_literal_language(encoded_object, Literal.t()) :: encoded_object
   defp encode_literal_language(value_object, literal) do
     if Literal.has_language?(literal) do
-      Map.put(value_object, "lang", literal.language)
+      Map.put(value_object, "lang", literal |> Literal.language())
     else
       value_object
     end
   end
 
   defp decode_literal_language(literal, %{"lang" => language}) do
-    LangString.new!(literal, language: language)
+    literal
+    |> Literal.value()
+    |> Literal.new(language: language)
   end
 
   defp decode_literal_language(literal, _), do: literal

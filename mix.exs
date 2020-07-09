@@ -51,8 +51,8 @@ defmodule CPub.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.3"},
-      {:phoenix_pubsub, "~> 1.1"},
+      {:phoenix, "~> 1.5"},
+      {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.14"},
       {:plug_cowboy, "~> 2.0"},
@@ -64,18 +64,18 @@ defmodule CPub.MixProject do
       {:joken, "~> 2.2"},
       {:gettext, "~> 0.11"},
       {:cachex, "~> 3.2"},
-      {:jason, "~> 1.0"},
+      {:jason, "~> 1.2"},
       {:poison, "~> 4.0"},
-      {:rdf, "~> 0.7.1"},
-      {:sparql, "~> 0.3.4"},
-      {:json_ld, "~> 0.3.0"},
-      {:stream_data, "~> 0.4.3"},
+      {:rdf, "~> 0.8"},
+      {:sparql, "~> 0.3"},
+      {:json_ld, "~> 0.3"},
+      {:stream_data, "~> 0.5"},
       {:elixir_uuid, "~> 1.2"},
       {:comeonin_ecto_password, "~> 3.0.0"},
-      {:pbkdf2_elixir, "~> 1.0.2"},
+      {:pbkdf2_elixir, "~> 1.2"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.12.2", only: :test},
+      {:excoveralls, "~> 0.13", only: :test},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
     ]
   end

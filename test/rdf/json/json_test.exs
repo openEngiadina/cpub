@@ -11,6 +11,8 @@ defmodule RDF.JSONTest do
       assert graph ==
                graph
                |> Encoder.encode!()
+               |> Jason.encode!()
+               |> Jason.decode!()
                |> Decoder.decode!()
     end
   end

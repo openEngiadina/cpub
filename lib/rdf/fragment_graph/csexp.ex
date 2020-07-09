@@ -9,8 +9,6 @@ defmodule RDF.FragmentGraph.CSexp do
   alias RDF.IRI
   alias RDF.Literal
 
-  import RDF.Sigils
-
   defp mark_encoded(csexp), do: {:encoded_csexp, csexp}
 
   def encode(%FragmentGraph{} = fg) do
@@ -36,24 +34,20 @@ defmodule RDF.FragmentGraph.CSexp do
   def encode_term(%IRI{} = iri), do: IRI.to_string(iri)
   def encode_term(%FragmentGraph.FragmentReference{identifier: identifier}), do: ["f", identifier]
 
-  def encode_term(
-        %Literal{
-          datatype: ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#langString>
-        } = literal
-      ) do
+  def encode_term(%Literal{literal: %RDF.LangString{}} = literal) do
     [
       "l",
-      literal |> Literal.canonical() |> Literal.lexical(),
-      literal.datatype |> IRI.to_string(),
-      literal.language
+      literal |> Literal.canonical_lexical(),
+      literal |> Literal.datatype_id() |> IRI.to_string(),
+      literal |> Literal.language()
     ]
   end
 
   def encode_term(%Literal{} = literal) do
     [
       "l",
-      literal |> Literal.canonical() |> Literal.lexical(),
-      literal.datatype |> IRI.to_string()
+      literal |> Literal.canonical_lexical(),
+      literal |> Literal.datatype_id() |> IRI.to_string()
     ]
   end
 

@@ -190,7 +190,7 @@ defmodule CPub.Web.OAuth.Strategy.WebIDOIDC do
   end
 
   @spec fetch_literal([RDF.Literal.t()]) :: String.t()
-  defp fetch_literal([%RDF.Literal{value: value}]), do: value
+  defp fetch_literal([%RDF.Literal{} = literal]), do: RDF.Literal.canonical_lexical(literal)
 
   @spec to_snake_case(String.t()) :: String.t()
   defp to_snake_case(str), do: str |> String.replace(" ", "_") |> String.downcase()

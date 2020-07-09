@@ -3,7 +3,7 @@ defmodule RDF.JSON.Decoder do
 
   use RDF.Serialization.Decoder
 
-  alias RDF.{BlankNode, Graph, IRI, LangString, Literal, Serialization, Statement, Triple}
+  alias RDF.{BlankNode, Graph, IRI, Literal, Serialization, Statement, Triple}
 
   @type object :: %{String.t() => String.t()}
 
@@ -87,14 +87,18 @@ defmodule RDF.JSON.Decoder do
 
   @spec put_literal_datatype(Literal.t(), object) :: Literal.t()
   defp put_literal_datatype(literal, %{"datatype" => datatype}) do
-    Literal.new!(literal.value, datatype: datatype)
+    literal
+    |> Literal.value()
+    |> Literal.new(datatype: datatype)
   end
 
   defp put_literal_datatype(literal, _value_object), do: literal
 
   @spec put_literal_language(Literal.t(), object) :: Literal.t()
   defp put_literal_language(literal, %{"lang" => language}) do
-    LangString.new!(literal, language: language)
+    literal
+    |> Literal.value()
+    |> Literal.new(language: language)
   end
 
   defp put_literal_language(literal, _value_object), do: literal
