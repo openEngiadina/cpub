@@ -44,21 +44,20 @@ defmodule CPub.Web.Router do
     plug EnsureAuthenticationPlug
   end
 
-  scope "/auth", CPub.Web.OAuth do
+  scope "/auth", CPub.Web, as: :oauth do
     pipe_through :oauth
 
     ## OpenID Connect server
-
     scope [] do
       pipe_through :authenticated
 
       get("/userinfo", OIDCController, :user_info)
     end
 
-    ## OAuth server
+    ## OAuth 2.0 server
 
-    post("/apps", AppController, :create)
-    get("/apps/verify", AppController, :verify)
+    # Client
+    resources("/clients", OAuthServer.ClientController, only: [:create, :show])
 
     get("/register", OAuthController, :registration_local)
     post("/register", OAuthController, :register)
@@ -70,7 +69,6 @@ defmodule CPub.Web.Router do
     post("/revoke", OAuthController, :revoke_token)
 
     ## OAuth client
-
     get("/prepare_request", OAuthController, :prepare_request)
     get "/:provider", OAuthController, :handle_request
     get "/:provider/callback", OAuthController, :handle_callback

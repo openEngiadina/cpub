@@ -21,12 +21,7 @@ defmodule CPub.Application do
         cachex_children()
 
     opts = [strategy: :one_for_one, name: CPub.Supervisor]
-    {:ok, pid} = Supervisor.start_link(children, opts)
-
-    # Create a OAuth App for local authentication
-    _ = App.get_or_create_local_app()
-
-    {:ok, pid}
+    Supervisor.start_link(children, opts)
   end
 
   @spec config_change(keyword, keyword, [atom]) :: :ok
