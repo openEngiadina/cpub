@@ -10,9 +10,17 @@ defmodule CPub.Web.OAuthServer.ClientControllerTest do
     test "creates a new client", %{conn: conn} do
       response =
         conn
-        |> post(Routes.oauth_client_path(conn, :create), %{client_name: "Test Client"})
+        |> post(Routes.oauth_server_client_path(conn, :create), %{
+          client_name: "Test Client",
+          redirect_uris: ["http://example.com/"],
+          scopes: ["test"]
+        })
 
-      assert %{"client_name" => "Test Client"} =
+      assert %{
+               "client_name" => "Test Client",
+               "redirect_uris" => ["http://example.com/"],
+               "scopes" => ["test"]
+             } =
                response
                |> json_response(201)
     end
@@ -20,11 +28,16 @@ defmodule CPub.Web.OAuthServer.ClientControllerTest do
 
   describe "show/2" do
     test "responds with the client", %{conn: conn} do
-      assert {:ok, client} = Client.create(%{client_name: "Test Client"})
+      assert {:ok, client} =
+               Client.create(%{
+                 client_name: "Test Client",
+                 redirect_uris: ["http://example.com"],
+                 scopes: ["test"]
+               })
 
       response =
         conn
-        |> get(Routes.oauth_client_path(conn, :show, client.id))
+        |> get(Routes.oauth_server_client_path(conn, :show, client.id))
 
       assert client_response =
                response

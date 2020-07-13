@@ -18,7 +18,7 @@ defmodule CPub.Web.OAuthServer.ClientController do
   def create(%Plug.Conn{body_params: body} = conn, _params) do
     attrs =
       body
-      |> Map.take(["client_name", "redirect_uris"])
+      |> Map.take(["client_name", "redirect_uris", "scopes"])
 
     with {:ok, client} <- Client.create(attrs) do
       conn

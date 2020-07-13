@@ -14,10 +14,15 @@ defmodule CPub.Web.Authentication.AuthenticationController do
   plug :fetch_session
   plug :fetch_flash
 
+  # TODO set to something nice
+  @default_on_success "/"
+
   @doc """
   Authenticate a user and set a session and redirect to `on_success`.
   """
-  def login(%Plug.Conn{assigns: %{session: %Session{}}} = conn, %{"on_success" => on_success}) do
+  def login(%Plug.Conn{assigns: %{session: %Session{}}} = conn, params) do
+    on_success = Map.get(params, "on_success", @default_on_success)
+
     conn
     |> redirect(to: on_success)
   end
@@ -46,18 +51,11 @@ defmodule CPub.Web.Authentication.AuthenticationController do
   end
 
   def login(%Plug.Conn{} = conn, %{} = params) do
-    on_success = Map.get(params, "on_success", "/")
+    on_success = Map.get(params, "on_success", @default_on_success)
 
     conn
     |> render("login.html", %{
       on_success: on_success
     })
-  end
-
-  def login(%Plug.Conn{} = conn, on_success: on_success) do
-    conn
-    |> redirect(
-      to: Routes.authentication_authentication_path(conn, :login, %{"on_success" => on_success})
-    )
   end
 end

@@ -47,22 +47,8 @@ defmodule CPub.Web.Router do
   end
 
   pipeline :session_authentication do
+    plug :fetch_session
     plug Authentication.SessionPlug
-  end
-
-  ## OAuth 2.0 server
-  scope "/oauth", CPub.Web.OAuthServer, as: :oauth do
-    pipe_through :json_api
-    pipe_through :session_authentication
-
-    # Endpoint to register clients TODO move this to /oidc/register
-    resources("/clients", ClientController, only: [:create, :show])
-
-    # Authorization Endpoint
-    get("/authorize", AuthorizationController, :authorize)
-
-    # Token Endpoint
-    get("/token", AuthorizationController, :token)
   end
 
   ## Authentication
@@ -76,6 +62,22 @@ defmodule CPub.Web.Router do
 
     # TODO
     # post("/logout", AuthenticationController, :logout)
+  end
+
+  ## OAuth 2.0 server
+  scope "/oauth", CPub.Web.OAuthServer, as: :oauth_server do
+    pipe_through :json_api
+    pipe_through :session_authentication
+
+    # Endpoint to register clients TODO move this to /oidc/register
+    resources("/clients", ClientController, only: [:create, :show])
+
+    # Authorization Endpoint
+    get("/authorize", AuthorizationController, :authorize)
+    post("/authorize", AuthorizationController, :authorize)
+
+    # Token Endpoint
+    get("/token", AuthorizationController, :token)
   end
 
   # scope "/auth", CPub.Web, as: :oauth do

@@ -1,0 +1,26 @@
+<%= if get_flash(@conn, :info) do %>
+<p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+<% end %>
+<%= if get_flash(@conn, :error) do %>
+<p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+<% end %>
+
+<h2>OAuth 2.0 Authorization</h2>
+
+Client <%= @client.client_name %> wants authorization of scope   @oauth_params.scope for user @user.username.
+
+<%= form_for @conn, Routes.oauth_server_authorization_path(@conn, :authorize, @oauth_params), [as: "request_accepted"], fn f -> %>
+
+<%= submit "Accept" %>
+
+
+<%= hidden_input f, :client_id, value: @client.id %>
+<% end %>
+
+<%= form_for @conn, Routes.oauth_server_authorization_path(@conn, :authorize, @oauth_params), [as: "request_denied"], fn f -> %>
+
+<%= submit "Deny" %>
+
+<%= hidden_input f, :client_id, value: @client.id %>
+<% end %>
+
