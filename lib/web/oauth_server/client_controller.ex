@@ -23,14 +23,33 @@ defmodule CPub.Web.OAuthServer.ClientController do
     with {:ok, client} <- Client.create(attrs) do
       conn
       |> put_status(:created)
-      |> render("show.json", client: client)
+      |> put_view(JSONView)
+      |> render(:show,
+        data: %{
+          client_name: client.client_name,
+          client_id: client.client_id,
+          client_secret: client.client_secret,
+          redirect_uris: client.redirect_uris,
+          scopes: client.scopes
+        }
+      )
     end
   end
 
   def show(%Plug.Conn{} = conn, %{"id" => id}) do
     with {:ok, client} <- Repo.get_one(Client, id) do
       conn
-      |> render("show.json", client: client)
+      |> put_status(:ok)
+      |> put_view(JSONView)
+      |> render(:show,
+        data: %{
+          client_name: client.client_name,
+          client_id: client.client_id,
+          client_secret: client.client_secret,
+          redirect_uris: client.redirect_uris,
+          scopes: client.scopes
+        }
+      )
     end
   end
 

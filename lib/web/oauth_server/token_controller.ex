@@ -12,7 +12,6 @@ defmodule CPub.Web.OAuthServer.TokenController do
   alias CPub.Repo
 
   alias CPub.Web.OAuthServer.Authorization
-  alias CPub.Web.OAuthServer.Client
   alias CPub.Web.OAuthServer.Token
 
   defp get_grant_type(%Plug.Conn{} = conn) do
