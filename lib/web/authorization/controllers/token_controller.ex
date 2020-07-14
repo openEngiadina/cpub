@@ -9,23 +9,12 @@ defmodule CPub.Web.Authorization.TokenController do
 
   import CPub.Web.Authorization.Utils
 
+  alias CPub.User
   alias CPub.Repo
 
+  alias CPub.Web.Authorization.Client
   alias CPub.Web.Authorization.Authorization
   alias CPub.Web.Authorization.Token
-
-  defp get_grant_type(%Plug.Conn{} = conn) do
-    case Map.get(conn.params, "grant_type") do
-      "authorization_code" ->
-        :authorization_code
-
-      "refresh_token" ->
-        :refresh_token
-
-      _ ->
-        {:error, :unsupported_grant_type, "unsupported grant_type."}
-    end
-  end
 
   defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code, client: client}) do
     case Repo.get_one_by(Authorization, %{code: conn.params["code"]}) do
@@ -54,8 +43,8 @@ defmodule CPub.Web.Authorization.TokenController do
   end
 
   def token(%Plug.Conn{} = conn, %{} = _params) do
-    case get_grant_type(conn) do
-      :authorization_code ->
+    case Map.get(conn.params, "grant_type") do
+      "authorization_code" ->
         with {:ok, client} <- get_client(conn),
              {:ok, authorization} <-
                get_authorization(conn, %{grant_type: :authorization_code, client: client}),
@@ -73,7 +62,7 @@ defmodule CPub.Web.Authorization.TokenController do
           )
         end
 
-      :refresh_token ->
+      "refresh_token" ->
         with {:ok, authorization} <-
                get_authorization(conn, %{grant_type: :refresh_token}),
              {:ok, token} <-
@@ -90,6 +79,42 @@ defmodule CPub.Web.Authorization.TokenController do
             }
           )
         end
+
+      "password" ->
+        with {:ok, user} <-
+               User.get_by_password(conn.params["username"], conn.params["password"]),
+             client_name <- "OAuth 2.0 Resource Owner Password Credentials Grant Client",
+             scope <- Map.get(conn.params, "scope", "default-scope-TODO"),
+             redirect_uri <- "dummy-redirect-uri",
+             {:ok, client} <-
+               Client.create(%{
+                 client_name: client_name,
+                 redirect_uris: [redirect_uri],
+                 scopes: [scope]
+               }),
+             {:ok, authorization} <-
+               Authorization.create(%{
+                 user: user,
+                 client: client,
+                 scope: scope,
+                 redirect_uri: redirect_uri
+               }),
+             {:ok, token} <- Token.create(authorization) do
+          conn
+          |> put_status(:ok)
+          |> put_view(JSONView)
+          |> render(:show,
+            data: %{
+              access_token: token.access_token,
+              token_type: "bearer",
+              expires_in: Token.valid_for(),
+              refresh_token: authorization.refresh_token
+            }
+          )
+        end
+
+      _ ->
+        {:error, :unsupported_grant_type, "unsupported grant_type."}
     end
   end
 end

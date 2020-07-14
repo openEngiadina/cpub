@@ -111,18 +111,8 @@ defmodule CPub.User do
   end
 
   @doc """
-  Get a single `CPub.User`.
-
-  Returns {:error, :not_found} if user is not found. Raises if more than one entry.
+  Get a single user by username and check the password
   """
-  @spec get_by(map) :: {:ok, t} | {:error, :not_found}
-  def get_by(attrs) do
-    case Repo.get_by(__MODULE__, attrs) |> Repo.preload(:profile_object) do
-      nil -> {:error, :not_found}
-      user -> {:ok, user}
-    end
-  end
-
   @spec get_by_password(String.t(), String.t()) :: {:ok, t} | {:error, String.t()}
   def get_by_password(username, password) do
     __MODULE__
@@ -135,7 +125,7 @@ defmodule CPub.User do
     key = "id:#{id}"
 
     with {:ok, nil} <- Cachex.get(:user_cache, key),
-         user when not is_nil(user) <- get_by(%{id: id}),
+         user when not is_nil(user) <- Repo.get_one_by(__MODULE__, %{id: id}),
          {:ok, true} <- Cachex.put(:user_cache, key, user) do
       user
     else

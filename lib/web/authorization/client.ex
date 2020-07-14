@@ -31,8 +31,6 @@ defmodule CPub.Web.Authorization.Client do
     |> put_change(:client_id, random_id_token())
     |> put_change(:client_secret, random_id_token())
     |> validate_required([:client_name, :redirect_uris, :scopes])
-    |> validate_length(:redirect_uris, min: 1)
-    |> validate_length(:scopes, min: 1)
     # TODO validate that scopes are valid
     |> unique_constraint(:id, name: "oauth_server_clients_pkey")
     |> unique_constraint(:client_id, name: "oauth_server_clients_client_id_client_secret_index")

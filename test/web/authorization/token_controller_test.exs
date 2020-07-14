@@ -116,4 +116,24 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
       assert refresh_token == authorization.refresh_token
     end
   end
+
+  describe "token/2 with :password flow" do
+    test "returns a token", %{conn: conn, user: user} do
+      response =
+        conn
+        |> post(Routes.oauth_server_token_path(conn, :token), %{
+          grant_type: "password",
+          username: user.username,
+          password: "123"
+        })
+
+      assert %{
+               "access_token" => access_token,
+               "expires_in" => expires_in,
+               "refresh_token" => refresh_token
+             } = json_response(response, 200)
+
+      assert {:ok, token} = Repo.get_one_by(Token, %{access_token: access_token})
+    end
+  end
 end
