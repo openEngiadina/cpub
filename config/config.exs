@@ -17,7 +17,7 @@ config :cpub, CPub.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "tohOUv9KpQMbJJ4XMCUhibCzI/kt6yhXXwkeWYCHy+FfDx55PHnkoqAe11nOk6fq",
   render_errors: [view: CPub.Web.ErrorView, accepts: ~w(json)],
-  pubsub: [name: CPub.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub_server: CPub.PubSub
 
 # Configures Elixir's Logger
 config :logger, :console,

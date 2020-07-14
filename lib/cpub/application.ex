@@ -15,6 +15,8 @@ defmodule CPub.Application do
       [
         CPub.Repo,
         CPub.Web.Endpoint
+        # Start the PubSub system
+        # {Phoenix.PubSub, name: CPub.PubSub},
       ] ++
         cachex_children()
 
