@@ -27,6 +27,7 @@ defmodule CPub.Web do
       alias CPub.Web.Router.Helpers, as: Routes
 
       alias CPub.Web.RDFView
+      alias CPub.Web.JSONView
 
       alias CPub.Repo
 

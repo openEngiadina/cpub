@@ -77,7 +77,7 @@ defmodule CPub.Web.Router do
     post("/authorize", AuthorizationController, :authorize)
 
     # Token Endpoint
-    get("/token", AuthorizationController, :token)
+    post("/token", TokenController, :token)
   end
 
   # scope "/auth", CPub.Web, as: :oauth do

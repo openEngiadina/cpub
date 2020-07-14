@@ -7,35 +7,37 @@ defmodule CPub.Web.OAuthServer.FallbackController do
 
   use CPub.Web, :controller
 
+  import CPub.Web.OAuthServer.Utils
+
   @doc """
   Redirect connection to redirect_uri with error code and description
   """
   def call(
-        %Plug.Conn{assigns: %{redirect_uri: redirect_uri, state: state}} = conn,
+        %Plug.Conn{} = conn,
         {:error, code, description}
       ) do
-    cb_uri =
-      redirect_uri
-      |> Map.put(
-        :query,
-        URI.encode_query(%{
-          error: code,
-          error_description: description,
-          state: state
-        })
-      )
-      |> URI.to_string()
+    with {:ok, client} <- get_client(conn),
+         {:ok, redirect_uri} <- get_redirect_uri(conn, client),
+         {:ok, state} <- get_state(conn) do
+      cb_uri =
+        redirect_uri
+        |> Map.put(
+          :query,
+          URI.encode_query(%{
+            error: code,
+            error_description: description,
+            state: state
+          })
+        )
+        |> URI.to_string()
 
-    conn
-    |> redirect(external: cb_uri)
-  end
-
-  @doc """
-  If redirect_uri is invalid or not present print an ugly message
-  """
-  def call(%Plug.Conn{} = conn, {:error, _t, msg}) do
-    conn
-    |> put_status(:bad_request)
-    |> text(msg)
+      conn
+      |> redirect(external: cb_uri)
+    else
+      {:error, _t, description} ->
+        conn
+        |> put_status(:bad_request)
+        |> text(description)
+    end
   end
 end

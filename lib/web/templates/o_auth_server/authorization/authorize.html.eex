@@ -7,7 +7,7 @@
 
 <h2>OAuth 2.0 Authorization</h2>
 
-Client <%= @client.client_name %> wants authorization of scope   @oauth_params.scope for user @user.username.
+<%= @client.client_name %> wants authorization of scope  <%= @oauth_params.scope %> for user <%= @user.username %>.
 
 <%= form_for @conn, Routes.oauth_server_authorization_path(@conn, :authorize, @oauth_params), [as: "request_accepted"], fn f -> %>
 

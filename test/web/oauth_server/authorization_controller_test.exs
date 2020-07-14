@@ -7,6 +7,8 @@ defmodule CPub.Web.OAuthServer.AuthorizationControllerTest do
   alias CPub.Web.OAuthServer.Authorization
   alias CPub.Web.OAuthServer.Client
 
+  doctest CPub.Web.OAuthServer.AuthorizationController
+
   setup do
     with {:ok, client} =
            Client.create(%{
@@ -63,7 +65,7 @@ defmodule CPub.Web.OAuthServer.AuthorizationControllerTest do
       assert html_response(response, 200) =~ "OAuth 2.0 Authorization"
     end
 
-    test "return error when redirec_uri is invalid", %{conn: conn, client: client} do
+    test "return error when redirect_uri is invalid", %{conn: conn, client: client} do
       authorization_params = %{
         "client_id" => client.client_id,
         "response_type" => "code",
