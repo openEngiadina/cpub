@@ -1,10 +1,10 @@
-defmodule CPub.Web.OAuthServer.Authorization do
+defmodule CPub.Web.Authorization.Authorization do
   @moduledoc """
   An OAuth 2.0 Authorization.
 
-  An `CPub.Web.OAuthServer.Authorization` includes a code that can be used to obtain a `CPub.Web.OAuthServer.Token`. The token can be used to access resources. The Authorization can only be used once and is valid for only 10 minutes after creation.
+  An `CPub.Web.Authorization.Authorization` includes a code that can be used to obtain a `CPub.Web.Authorization.Token`. The token can be used to access resources. The Authorization can only be used once and is valid for only 10 minutes after creation.
 
-  TODO The `CPub.Web.OAuthServer.Authorization` remains in the database and can be reused to refresh a token (see https://tools.ietf.org/html/rfc6749#section-6) until it is explicitly revoked (deleted). On deletion all `CPub.Web.OAuthServer.Token`s that were created based on the Authorization are revoked (deleted).
+  TODO The `CPub.Web.Authorization.Authorization` remains in the database and can be reused to refresh a token (see https://tools.ietf.org/html/rfc6749#section-6) until it is explicitly revoked (deleted). On deletion all `CPub.Web.Authorization.Token`s that were created based on the Authorization are revoked (deleted).
 
   """
 
@@ -14,8 +14,8 @@ defmodule CPub.Web.OAuthServer.Authorization do
 
   alias CPub.User
   alias CPub.Repo
-  alias CPub.Web.OAuthServer.Client
-  alias CPub.Web.OAuthServer.Token
+  alias CPub.Web.Authorization.Client
+  alias CPub.Web.Authorization.Token
 
   defp random_code() do
     :crypto.strong_rand_bytes(32)

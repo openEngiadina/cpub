@@ -1,10 +1,10 @@
-defmodule CPub.Web.OAuthServer.ClientControllerTest do
+defmodule CPub.Web.Authorization.ClientControllerTest do
   use ExUnit.Case
   use CPub.Web.ConnCase
 
-  alias CPub.Web.OAuthServer.Client
+  alias CPub.Web.Authorization.Client
 
-  doctest CPub.Web.OAuthServer.ClientController
+  doctest CPub.Web.Authorization.ClientController
 
   describe "create/2" do
     test "creates a new client", %{conn: conn} do

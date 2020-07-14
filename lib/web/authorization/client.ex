@@ -1,4 +1,4 @@
-defmodule CPub.Web.OAuthServer.Client do
+defmodule CPub.Web.Authorization.Client do
   @moduledoc """
   An OAuth 2.0 client that authenticates with CPub (see https://tools.ietf.org/html/rfc6749#section-2).
   """

@@ -1,18 +1,18 @@
-defmodule CPub.Web.OAuthServer.TokenController do
+defmodule CPub.Web.Authorization.TokenController do
   @moduledoc """
   Implements the OAuth 2.0 Token Endpoint (https://tools.ietf.org/html/rfc6749#section-3.2).
   """
 
   use CPub.Web, :controller
 
-  action_fallback CPub.Web.OAuthServer.FallbackController
+  action_fallback CPub.Web.Authorization.FallbackController
 
-  import CPub.Web.OAuthServer.Utils
+  import CPub.Web.Authorization.Utils
 
   alias CPub.Repo
 
-  alias CPub.Web.OAuthServer.Authorization
-  alias CPub.Web.OAuthServer.Token
+  alias CPub.Web.Authorization.Authorization
+  alias CPub.Web.Authorization.Token
 
   defp get_grant_type(%Plug.Conn{} = conn) do
     case Map.get(conn.params, "grant_type") do

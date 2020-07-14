@@ -4,7 +4,7 @@ defmodule CPub.Web.Router do
   alias CPub.Web.RDFParser
 
   alias CPub.Web.Authentication
-  alias CPub.Web.OAuthServer
+  alias CPub.Web.Authorization
 
   pipeline :json_api do
     plug :accepts, ["json"]
@@ -31,7 +31,7 @@ defmodule CPub.Web.Router do
 
   # Authorization plug
   pipeline :authorization do
-    plug OAuthServer.AuthorizationPlug
+    plug Authorization.AuthorizationPlug
   end
 
   ## Authentication
@@ -48,7 +48,7 @@ defmodule CPub.Web.Router do
   end
 
   ## OAuth 2.0 server
-  scope "/oauth", CPub.Web.OAuthServer, as: :oauth_server do
+  scope "/oauth", CPub.Web.Authorization, as: :oauth_server do
     pipe_through :json_api
     pipe_through :session_authentication
 

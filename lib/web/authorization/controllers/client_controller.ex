@@ -1,4 +1,4 @@
-defmodule CPub.Web.OAuthServer.ClientController do
+defmodule CPub.Web.Authorization.ClientController do
   @moduledoc """
   Controller that handles OAuth 2.0 client registration.
 
@@ -7,7 +7,7 @@ defmodule CPub.Web.OAuthServer.ClientController do
   use CPub.Web, :controller
 
   alias CPub.Repo
-  alias CPub.Web.OAuthServer.Client
+  alias CPub.Web.Authorization.Client
 
   action_fallback CPub.Web.FallbackController
 

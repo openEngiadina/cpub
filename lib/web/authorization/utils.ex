@@ -1,4 +1,4 @@
-defmodule CPub.Web.OAuthServer.Utils do
+defmodule CPub.Web.Authorization.Utils do
   @moduledoc """
   Helpers and utils for dealing with OAuth 2.0 Endpoint requests.
   """
@@ -6,11 +6,11 @@ defmodule CPub.Web.OAuthServer.Utils do
   import Plug.Conn
 
   alias CPub.Repo
-  alias CPub.Web.OAuthServer.Client
-  alias CPub.Web.OAuthServer.Authorization
+  alias CPub.Web.Authorization.Client
+  alias CPub.Web.Authorization.Authorization
 
   @doc """
-  Returns the `CPub.Web.OAuthServer.Client` associated with the connection.
+  Returns the `CPub.Web.Authorization.Client` associated with the connection.
   """
   def get_client(%Plug.Conn{} = conn) do
     case Repo.get_one_by(Client, %{client_id: conn.params["client_id"]}) do

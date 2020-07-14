@@ -1,4 +1,4 @@
-defmodule CPub.Repo.Migrations.CreateOAuthServer do
+defmodule CPub.Repo.Migrations.CreateAuthorization do
   use Ecto.Migration
 
   def change do

@@ -1,6 +1,6 @@
-defmodule CPub.Web.OAuthServer.AuthorizationPlug do
+defmodule CPub.Web.Authorization.AuthorizationPlug do
   @moduledoc """
-  Plug that assigns a `CPub.Web.OAuthServer.Authorization` to the connection if valid access token is found in headers.
+  Plug that assigns a `CPub.Web.Authorization.Authorization` to the connection if valid access token is found in headers.
 
   Note that routes that require authorization still need to manually check if the authorization assigned in the connection by this plug is valid for the ressource being accessed.
   """
@@ -9,7 +9,7 @@ defmodule CPub.Web.OAuthServer.AuthorizationPlug do
   import Plug.Conn
 
   alias CPub.Repo
-  alias CPub.Web.OAuthServer.Token
+  alias CPub.Web.Authorization.Token
 
   def init(opts), do: opts
 

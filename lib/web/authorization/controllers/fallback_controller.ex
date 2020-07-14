@@ -1,4 +1,4 @@
-defmodule CPub.Web.OAuthServer.FallbackController do
+defmodule CPub.Web.Authorization.FallbackController do
   @moduledoc """
   Error handler for OAuth 2.0 Authorization Server.
 
@@ -7,7 +7,7 @@ defmodule CPub.Web.OAuthServer.FallbackController do
 
   use CPub.Web, :controller
 
-  import CPub.Web.OAuthServer.Utils
+  import CPub.Web.Authorization.Utils
 
   @doc """
   Redirect connection to redirect_uri with error code and description

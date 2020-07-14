@@ -1,14 +1,14 @@
-defmodule CPub.Web.OAuthServer.TokenControllerTest do
+defmodule CPub.Web.Authorization.TokenControllerTest do
   use ExUnit.Case
   use CPub.Web.ConnCase
 
   alias CPub.User
   alias CPub.Repo
-  alias CPub.Web.OAuthServer.Authorization
-  alias CPub.Web.OAuthServer.Client
-  alias CPub.Web.OAuthServer.Token
+  alias CPub.Web.Authorization.Authorization
+  alias CPub.Web.Authorization.Client
+  alias CPub.Web.Authorization.Token
 
-  doctest CPub.Web.OAuthServer.TokenController
+  doctest CPub.Web.Authorization.TokenController
 
   setup do
     with {:ok, client} <-
