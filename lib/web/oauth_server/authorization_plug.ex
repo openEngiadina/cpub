@@ -4,8 +4,8 @@ defmodule CPub.Web.OAuthServer.AuthorizationPlug do
 
   Note that routes that require authorization still need to manually check if the authorization assigned in the connection by this plug is valid for the ressource being accessed.
   """
-  use CPub.Web, :controller
 
+  use Phoenix.Controller, namespace: CPub.Web
   import Plug.Conn
 
   alias CPub.Repo
@@ -26,9 +26,7 @@ defmodule CPub.Web.OAuthServer.AuthorizationPlug do
           _ ->
             # If token is invalid or expired then halt the connection and display error
             conn
-            |> put_status(:unauthorized)
-            |> text("access token invalid or expired")
-            |> halt()
+            |> unauthorized()
         end
 
       :no_token_found ->
@@ -37,8 +35,22 @@ defmodule CPub.Web.OAuthServer.AuthorizationPlug do
     end
   end
 
-  # Gets token from headers (code from Pleroma)
-  #
+  @doc """
+  Helper to halt an unauthorized request.
+
+  TODO Solid WebID-OIDC Authentication Spec recommends to provide among with HTTP
+  401 Unauthorized response code some human-readable HTML, containing either a
+  Select Provider form, or a meta-refresh redirect to a Select Provider page (https://github.com/solid/webid-oidc-spec/blob/master/example-workflow.md#1-initial-request).
+  """
+  @spec unauthorized(Plug.Conn.t()) :: Plug.Conn.t()
+  def unauthorized(%Plug.Conn{} = conn) do
+    conn
+    |> put_status(:unauthorized)
+    |> text("request is not authorized")
+    |> halt()
+  end
+
+  # Get token from headers (code from Pleroma)
 
   @realm_reg Regex.compile!("Bearer\:?\s+(.*)$", "i")
 

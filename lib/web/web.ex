@@ -23,7 +23,7 @@ defmodule CPub.Web do
 
       import Plug.Conn
       import CPub.Web.Gettext
-      import CPub.Web.EnsureAuthenticationPlug, only: [unauthorized: 1]
+      import CPub.Web.OAuthServer.AuthorizationPlug, only: [unauthorized: 1]
       alias CPub.Web.Router.Helpers, as: Routes
 
       alias CPub.Web.RDFView
