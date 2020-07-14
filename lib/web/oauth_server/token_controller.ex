@@ -66,6 +66,7 @@ defmodule CPub.Web.OAuthServer.TokenController do
           |> render(:show,
             data: %{
               access_token: token.access_token,
+              token_type: "bearer",
               expires_in: Token.valid_for(),
               refresh_token: authorization.refresh_token
             }
@@ -83,6 +84,7 @@ defmodule CPub.Web.OAuthServer.TokenController do
           |> render(:show,
             data: %{
               access_token: token.access_token,
+              token_type: "bearer",
               expires_in: Token.valid_for(),
               refresh_token: authorization.refresh_token
             }

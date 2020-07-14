@@ -4,8 +4,9 @@ defmodule CPub.Web.OAuthServer.AuthorizationControllerTest do
 
   alias CPub.User
   alias CPub.Web.Authentication.Session
-  alias CPub.Web.OAuthServer.Authorization
   alias CPub.Web.OAuthServer.Client
+  alias CPub.Web.OAuthServer.Authorization
+  alias CPub.Web.OAuthServer.Token
 
   doctest CPub.Web.OAuthServer.AuthorizationController
 
@@ -27,7 +28,7 @@ defmodule CPub.Web.OAuthServer.AuthorizationControllerTest do
     end
   end
 
-  describe "authorize/2" do
+  describe "authorize/2 with :code flow (authorization code)" do
     test "redirects to login if not authenticated", %{conn: conn, client: client} do
       authorization_params = %{
         "client_id" => client.client_id,
@@ -83,7 +84,7 @@ defmodule CPub.Web.OAuthServer.AuthorizationControllerTest do
              } = json_response(response, 400)
     end
 
-    test "redirect with a valid authroization code on accept", %{
+    test "redirect with a valid authorization code on accept", %{
       conn: conn,
       client: client,
       session: session
@@ -119,6 +120,114 @@ defmodule CPub.Web.OAuthServer.AuthorizationControllerTest do
       authorization_params = %{
         "client_id" => client.client_id,
         "response_type" => "code",
+        "state" => 42
+      }
+
+      response =
+        conn
+        |> put_session(:session_id, session.id)
+        |> post(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params), %{
+          "request_denied" => %{}
+        })
+
+      assert redirect_uri =
+               response
+               |> redirected_to() =~ "http://example.com/"
+    end
+  end
+
+  describe "authorize/2 with :token flow (implicit)" do
+    test "redirects to login if not authenticated", %{conn: conn, client: client} do
+      authorization_params = %{
+        "client_id" => client.client_id,
+        "response_type" => "token",
+        "state" => 42
+      }
+
+      response =
+        conn
+        |> get(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params))
+
+      assert redirected_to(response) ==
+               Routes.authentication__path(conn, :login,
+                 on_success:
+                   Routes.oauth_server_authorization_path(conn, :authorize, authorization_params)
+               )
+    end
+
+    test "display authorization request when authenticated", %{
+      conn: conn,
+      client: client,
+      session: session
+    } do
+      authorization_params = %{
+        "client_id" => client.client_id,
+        "response_type" => "token",
+        "state" => 42
+      }
+
+      response =
+        conn
+        |> put_session(:session_id, session.id)
+        |> get(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params))
+
+      assert html_response(response, 200) =~ "OAuth 2.0 Authorization"
+    end
+
+    test "return error when redirect_uri is invalid", %{conn: conn, client: client} do
+      authorization_params = %{
+        "client_id" => client.client_id,
+        "response_type" => "token",
+        "state" => 42,
+        "redirect_uri" => "http://example.com/wrong"
+      }
+
+      response =
+        conn
+        |> get(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params))
+
+      assert %{
+               "error" => "invalid_request",
+               "error_description" => "redirect_uri not valid or not allowed for client."
+             } = json_response(response, 400)
+    end
+
+    test "redirect with a valid access token on accept", %{
+      conn: conn,
+      client: client,
+      session: session
+    } do
+      authorization_params = %{
+        "client_id" => client.client_id,
+        "response_type" => "token",
+        "state" => 42
+      }
+
+      response =
+        conn
+        |> put_session(:session_id, session.id)
+        |> post(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params), %{
+          "request_accepted" => %{}
+        })
+
+      assert redirect_uri =
+               response
+               |> redirected_to()
+               |> URI.parse()
+
+      access_token = redirect_uri.query |> URI.decode_query() |> Access.get("access_token")
+
+      assert {:ok, token} = CPub.Repo.get_one_by(Token, %{access_token: access_token})
+    end
+
+    test "redirect with error on deny", %{
+      conn: conn,
+      client: client,
+      session: session
+    } do
+      authorization_params = %{
+        "client_id" => client.client_id,
+        "response_type" => "token",
         "state" => 42
       }
 
