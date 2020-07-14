@@ -1,14 +1,10 @@
 defmodule CPub.Web.Router do
   use CPub.Web, :router
 
-  alias CPub.Web.{
-    BasicAuthenticationPlug,
-    EnsureAuthenticationPlug,
-    OAuthAuthenticationPlug,
-    RDFParser
-  }
+  alias CPub.Web.RDFParser
 
   alias CPub.Web.Authentication
+  alias CPub.Web.OAuthServer
 
   pipeline :json_api do
     plug :accepts, ["json"]
@@ -27,28 +23,15 @@ defmodule CPub.Web.Router do
       pass: ["*/*"]
   end
 
-  pipeline :optionally_authenticated do
-    # This pipeline authenticates a user but does not fail.
-    # This is useful for endpoints that can be accessed by non-authenticated
-    # users and authenticated users. But authenticated users get a different
-    # response.
-    plug :fetch_session
-    plug OAuthAuthenticationPlug
-    plug BasicAuthenticationPlug
-  end
-
-  pipeline :authenticated do
-    # This pipeline requires connection to be authenticated.
-    # If not a 401 is returned and connection is halted.
-    plug :fetch_session
-    plug OAuthAuthenticationPlug
-    plug BasicAuthenticationPlug
-    plug EnsureAuthenticationPlug
-  end
-
+  # Authentication (only used to accept/deny an OAuth authorization)
   pipeline :session_authentication do
     plug :fetch_session
     plug Authentication.SessionPlug
+  end
+
+  # Authorization plug
+  pipeline :authorization do
+    plug OAuthServer.AuthorizationPlug
   end
 
   ## Authentication
@@ -128,16 +111,14 @@ defmodule CPub.Web.Router do
 
   scope "/users", CPub.Web do
     pipe_through :api
-    pipe_through :optionally_authenticated
+    pipe_through :authorization
 
     scope [] do
-      pipe_through :authenticated
       get "/id", UserController, :id
       get "/verify", UserController, :verify
     end
 
     resources "/", UserController, only: [:show] do
-      pipe_through :authenticated
       post "/outbox", UserController, :post_to_outbox, as: :outbox
       get "/outbox", UserController, :get_outbox, as: :outbox
       get "/inbox", UserController, :get_inbox, as: :inbox
