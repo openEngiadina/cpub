@@ -16,7 +16,8 @@ defmodule CPub.Web.OAuthServer.FallbackController do
         %Plug.Conn{} = conn,
         {:error, code, description}
       ) do
-    with {:ok, client} <- get_client(conn),
+    with %{oauth_redirect_on_error: true} <- conn.assigns,
+         {:ok, client} <- get_client(conn),
          {:ok, redirect_uri} <- get_redirect_uri(conn, client),
          {:ok, state} <- get_state(conn) do
       cb_uri =
@@ -34,10 +35,10 @@ defmodule CPub.Web.OAuthServer.FallbackController do
       conn
       |> redirect(external: cb_uri)
     else
-      {:error, _t, description} ->
+      _ ->
         conn
         |> put_status(:bad_request)
-        |> text(description)
+        |> json(%{error: code, error_description: description})
     end
   end
 end

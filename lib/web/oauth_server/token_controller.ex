@@ -19,12 +19,15 @@ defmodule CPub.Web.OAuthServer.TokenController do
       "authorization_code" ->
         :authorization_code
 
+      "refresh_token" ->
+        :refresh_token
+
       _ ->
         {:error, :unsupported_grant_type, "unsupported grant_type."}
     end
   end
 
-  def get_authorization(%Plug.Conn{} = conn, client) do
+  defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code, client: client}) do
     case Repo.get_one_by(Authorization, %{code: conn.params["code"]}) do
       {:ok, authorization} ->
         if authorization.client_id == client.id do
@@ -38,24 +41,53 @@ defmodule CPub.Web.OAuthServer.TokenController do
     end
   end
 
+  defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :refresh_token}) do
+    case Repo.get_one_by(Authorization, %{
+           refresh_token: conn.params["refresh_token"]
+         }) do
+      {:ok, authorization} ->
+        {:ok, authorization}
+
+      {:error, _} ->
+        {:error, :invalid_grant, "invalid refresh token"}
+    end
+  end
+
   def token(%Plug.Conn{} = conn, %{} = _params) do
-    with {:ok, client} <- get_client(conn),
-         {:ok, authorization} <- get_authorization(conn, client) do
-      case get_grant_type(conn) do
-        :authorization_code ->
-          with {:ok, token} <- Token.create(authorization) do
-            conn
-            |> put_status(:ok)
-            |> put_view(JSONView)
-            |> render(:show,
-              data: %{
-                access_token: token.access_token,
-                expires_in: Token.valid_for(),
-                refresh_token: authorization.refresh_token
-              }
-            )
-          end
-      end
+    case get_grant_type(conn) do
+      :authorization_code ->
+        with {:ok, client} <- get_client(conn),
+             {:ok, authorization} <-
+               get_authorization(conn, %{grant_type: :authorization_code, client: client}),
+             {:ok, token} <- Token.create(authorization) do
+          conn
+          |> put_status(:ok)
+          |> put_view(JSONView)
+          |> render(:show,
+            data: %{
+              access_token: token.access_token,
+              expires_in: Token.valid_for(),
+              refresh_token: authorization.refresh_token
+            }
+          )
+        end
+
+      :refresh_token ->
+        with {:ok, authorization} <-
+               get_authorization(conn, %{grant_type: :refresh_token}),
+             {:ok, token} <-
+               Token.refresh(authorization) do
+          conn
+          |> put_status(:ok)
+          |> put_view(JSONView)
+          |> render(:show,
+            data: %{
+              access_token: token.access_token,
+              expires_in: Token.valid_for(),
+              refresh_token: authorization.refresh_token
+            }
+          )
+        end
     end
   end
 end

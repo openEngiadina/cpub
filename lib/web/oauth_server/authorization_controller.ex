@@ -9,12 +9,16 @@ defmodule CPub.Web.OAuthServer.AuthorizationController do
   import CPub.Web.OAuthServer.Utils
 
   alias CPub.Repo
-
   alias CPub.Web.OAuthServer.Authorization
-  alias CPub.Web.OAuthServer.Client
   alias CPub.Web.OAuthServer.FallbackController
 
   plug :fetch_flash
+
+  defp set_oauth_redirect_on_error(%Plug.Conn{} = conn, _opts),
+    do: assign(conn, :oauth_redirect_on_error, true)
+
+  # allow `FallbackController` to redirect to redirect_uri with error
+  plug :set_oauth_redirect_on_error
 
   defp assign_response_type(%Plug.Conn{} = conn, _opts) do
     case Map.get(conn.params, "response_type") do
@@ -29,14 +33,6 @@ defmodule CPub.Web.OAuthServer.AuthorizationController do
       # "password" ->
       #   conn
       #   |> assign(:response_type, :password)
-
-      # "client_credentials" ->
-      #   conn
-      #   |> assign(:response_type, :client_credentials)
-      #
-      # "refresh_token" ->
-      #   conn
-      #   |> assign(:response_type, :refresh_token)
 
       _ ->
         conn
@@ -124,9 +120,7 @@ defmodule CPub.Web.OAuthServer.AuthorizationController do
   def authorize(
         %Plug.Conn{
           method: "POST",
-          assigns: %{
-            response_type: :code
-          }
+          assigns: %{response_type: :code}
         } = _conn,
         %{"request_denied" => _params}
       ) do
@@ -136,7 +130,7 @@ defmodule CPub.Web.OAuthServer.AuthorizationController do
   # If there is no session redirect user to login
   def authorize(
         %Plug.Conn{method: "GET"} = conn,
-        params
+        _params
       ) do
     # get and validate all required field so that user is not sent to login if request is invalid in first place
     with {:ok, client} <- get_client(conn),

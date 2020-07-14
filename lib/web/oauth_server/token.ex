@@ -49,10 +49,25 @@ defmodule CPub.Web.OAuthServer.Token do
           {:ok, token}
 
         _ ->
-          :error
+          {:error, :invalid_grant, "failed to create access token"}
       end
     else
-      :error
+      {:error, :invalid_grant, "access code expired or already used"}
+    end
+  end
+
+  @doc """
+  Creates a refreshed token for an `Authorization`.
+  """
+  def refresh(%Authorization{} = authorization) do
+    case %__MODULE__{}
+         |> changeset(%{authorization_id: authorization.id})
+         |> Repo.insert() do
+      {:ok, token} ->
+        {:ok, token}
+
+      _ ->
+        {:error, :invalid_grant, "failed to refresh token"}
     end
   end
 

@@ -41,9 +41,7 @@ defmodule CPub.Web.OAuthServer.Authorization do
   def changeset(%__MODULE__{} = authorization, attrs) do
     authorization
     |> cast(attrs, [:scope, :redirect_uri, :user_id, :client_id, :used])
-    |> put_change(:code, random_code())
-    |> put_change(:refresh_token, random_code())
-    |> validate_required([:code, :refresh_token, :scope, :redirect_uri, :user_id, :client_id])
+    |> validate_required([:scope, :redirect_uri, :user_id, :client_id])
     # TODO: validate that scope is in client.scopes
     |> assoc_constraint(:user)
     |> assoc_constraint(:client)
@@ -59,6 +57,8 @@ defmodule CPub.Web.OAuthServer.Authorization do
       scope: scope,
       redirect_uri: redirect_uri
     })
+    |> put_change(:code, random_code())
+    |> put_change(:refresh_token, random_code())
     |> Repo.insert()
   end
 

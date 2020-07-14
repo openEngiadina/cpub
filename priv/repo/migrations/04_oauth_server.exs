@@ -35,6 +35,7 @@ defmodule CPub.Repo.Migrations.CreateOAuthServer do
     end
 
     create(unique_index(:oauth_server_authorizations, [:code]))
+    create(unique_index(:oauth_server_authorizations, [:refresh_token]))
 
     # Create table for `Token`
     create table(:oauth_server_tokens, primary_key: false) do

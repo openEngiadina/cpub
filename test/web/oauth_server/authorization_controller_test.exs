@@ -77,8 +77,10 @@ defmodule CPub.Web.OAuthServer.AuthorizationControllerTest do
         conn
         |> get(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params))
 
-      assert text_response(response, 400) =~
-               "redirect_uri not valid or not allowed for client."
+      assert %{
+               "error" => "invalid_request",
+               "error_description" => "redirect_uri not valid or not allowed for client."
+             } = json_response(response, 400)
     end
 
     test "redirect with a valid authroization code on accept", %{

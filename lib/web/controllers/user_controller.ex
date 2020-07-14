@@ -7,7 +7,7 @@ defmodule CPub.Web.UserController do
   action_fallback CPub.Web.FallbackController
 
   @doc """
-  Show the `CPub.User`s profile.`
+  Show the `CPub.User`s profile.
   """
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(%Plug.Conn{} = conn, %{"id" => username}) do
