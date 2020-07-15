@@ -94,28 +94,28 @@ config :joken,
   ]
 
 # Configure external OAuth providers
-config :ueberauth, Ueberauth,
-  base_path: "/auth",
-  providers: [
-    # WebID-OIDC (Solid)
-    solid: {CPub.Web.OAuth.Strategy.WebIDOIDC, []},
-    # OpenID Connect
-    oidc: {CPub.Web.OAuth.Strategy.OIDC, []},
-    # OAuth2
-    cpub: {CPub.Web.OAuth.Strategy.CPub, []},
-    pleroma: {CPub.Web.OAuth.Strategy.Pleroma, []}
-    # github: {Ueberauth.Strategy.Github, [allow_private_emails: true]},
-    # gitlab: {Ueberauth.Strategy.Gitlab, [default_scope: "read_user"]},
-    # discord: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}
-  ]
+# config :ueberauth, Ueberauth,
+#   base_path: "/auth",
+#   providers: [
+#     # WebID-OIDC (Solid)
+#     solid: {CPub.Web.OAuth.Strategy.WebIDOIDC, []},
+#     # OpenID Connect
+#     oidc: {CPub.Web.OAuth.Strategy.OIDC, []},
+#     # OAuth2
+#     cpub: {CPub.Web.OAuth.Strategy.CPub, []},
+#     pleroma: {CPub.Web.OAuth.Strategy.Pleroma, []}
+#     # github: {Ueberauth.Strategy.Github, [allow_private_emails: true]},
+#     # gitlab: {Ueberauth.Strategy.Gitlab, [default_scope: "read_user"]},
+#     # discord: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}
+#   ]
 
-config :ueberauth, CPub.Web.OAuth.Strategy.OIDC.OAuth,
-  oidc_cpub: [
-    register_client_url: "/auth/apps",
-    authorize_url: "/auth/authorize",
-    token_url: "/auth/token",
-    userinfo_url: "/auth/userinfo"
-  ]
+# config :ueberauth, CPub.Web.OAuth.Strategy.OIDC.OAuth,
+#   oidc_cpub: [
+#     register_client_url: "/auth/apps",
+#     authorize_url: "/auth/authorize",
+#     token_url: "/auth/token",
+#     userinfo_url: "/auth/userinfo"
+#   ]
 
 # oidc_gitlab: [
 #   site: "https://gitlab.com",

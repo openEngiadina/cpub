@@ -6,6 +6,8 @@ defmodule CPub.Web.Router do
   alias CPub.Web.Authentication
   alias CPub.Web.Authorization
 
+  require Ueberauth
+
   pipeline :json_api do
     plug :accepts, ["json"]
 
@@ -23,6 +25,12 @@ defmodule CPub.Web.Router do
       pass: ["*/*"]
   end
 
+  pipeline :browser do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_flash)
+  end
+
   # Authentication (only used to accept/deny an OAuth authorization)
   pipeline :session_authentication do
     plug :fetch_session
@@ -36,12 +44,16 @@ defmodule CPub.Web.Router do
 
   ## Authentication
   scope "/auth", CPub.Web.Authentication, as: :authentication do
-    pipe_through :json_api
+    pipe_through :browser
     pipe_through :session_authentication
 
     # Authenticate user with a HTML form
-    get("/login", AuthenticationController, :login, as: "")
-    post("/login", AuthenticationController, :login, as: "")
+    # get("/login", AuthenticationController, :login, as: :login)
+
+    # Ueberauth routes
+    get("/:provider", AuthenticationController, :request)
+    get("/:provider/callback", AuthenticationController, :callback)
+    post("/:provider/callback", AuthenticationController, :callback)
 
     # TODO
     # post("/logout", AuthenticationController, :logout)

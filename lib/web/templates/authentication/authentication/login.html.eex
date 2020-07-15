@@ -6,7 +6,7 @@
 <% end %>
 
 <h2>CPub Login</h2>
-<%= form_for @conn, Routes.authentication__path(@conn, :login), [as: :login_form], fn f -> %>
+<%= form_for @conn, @callback_url, fn f -> %>
 
 <div class="input">
   <%= label f, :username, "Username" %>
@@ -18,5 +18,4 @@
 </div>
 <%= submit "Log In" %>
 
-<%= hidden_input f, :on_success, value: @on_success %>
 <% end %>
