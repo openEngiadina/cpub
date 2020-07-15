@@ -63,8 +63,8 @@ defmodule CPub.MixProject do
       {:gettext, "~> 0.11"},
 
       # Authorizaiton & Authentication
-      {:oauth2, "~> 0.8.2"},
       {:ueberauth, "~> 0.6.3"},
+      {:oauth2, "~> 2.0"},
       {:joken, "~> 2.2"},
       {:cachex, "~> 3.2"},
       {:jason, "~> 1.2"},

@@ -41,14 +41,20 @@ defmodule CPub.Web.Authentication.AuthenticationController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+    auth |> IO.inspect()
+
     case auth.strategy do
       Strategy.Local ->
         with {:ok, session} <- Session.create(auth.extra.raw_info.user) do
           conn
           |> put_session(:session_id, session.id)
-          |> IO.inspect()
           |> redirect(to: on_success(conn))
         end
+
+      Ueberauth.Strategy.Pleroma ->
+        conn
+        |> put_flash(:info, "Whoop Whoop!")
+        |> redirect(to: on_success(conn))
     end
   end
 

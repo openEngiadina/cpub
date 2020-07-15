@@ -16,8 +16,6 @@ defmodule CPub.Web.Authentication.Strategy.Local do
     username = conn.params["username"]
     password = conn.params["password"]
 
-    IO.inspect("in local callback!")
-
     case User.get_by_password(username, password) do
       {:ok, user} ->
         conn
