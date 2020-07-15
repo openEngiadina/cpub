@@ -23,7 +23,7 @@ defmodule CPub.Web.Authorization.Utils do
   end
 
   @doc """
-  Returns a valid redirect_uri for given connection and client.
+  Returns a valid redirect_uri for given connection and client/authorization.
   """
   def get_redirect_uri(%Plug.Conn{} = conn, %Client{} = client) do
     case Client.get_redirect_uri(client, conn.params) do
