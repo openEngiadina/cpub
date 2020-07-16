@@ -5,7 +5,7 @@
 <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
 <% end %>
 
-<h2>CPub Login</h2>
+<h2>Login</h2>
 <%= form_for @conn, @callback_url, fn f -> %>
 
 <div class="input">
@@ -13,6 +13,8 @@
   <%= text_input f, :username %>
 </div>
 <%= hidden_input f, :on_success, value: @on_success %>
-<%= submit "Log In" %>
+<%= submit "Log in" %>
 
 <% end %>
+
+<a href=<%= Routes.authentication_registration_path(@conn, :register) %>> Sign up </a>

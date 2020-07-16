@@ -23,10 +23,15 @@ defmodule CPub.Web.Authentication.RegistrationController do
     with {:ok, request_id} <-
            Token.verify(conn, "registration_request", request_token, max_age: 86_400),
          {:ok, request} <- Repo.get_one(RegistrationRequest, request_id) do
-      request |> IO.inspect()
-
       conn
       |> render_external_registration_form(request: request, request_token: request_token)
+    end
+  end
+
+  defp get_request(conn, request_token) do
+    with {:ok, request_id} <-
+           Token.verify(conn, "registration_request", request_token, max_age: 86400) do
+      Repo.get_one(RegistrationRequest, request_id)
     end
   end
 
@@ -34,12 +39,17 @@ defmodule CPub.Web.Authentication.RegistrationController do
         "request" => request_token,
         "username" => username
       }) do
-    with {:ok, request_id} <-
-           Token.verify(conn, "registration_request", request_token, max_age: 86400),
-         {:ok, request} <- Repo.get_one(RegistrationRequest, request_id),
-         {:ok, %{user: user}} <- Registration.create(username, request) do
-      conn
-      |> SessionController.create_session(user)
+    with {:ok, request} <- get_request(conn, request_token) do
+      case Registration.create(username, request) do
+        {:ok, %{user: user}} ->
+          conn
+          |> SessionController.create_session(user)
+
+        _ ->
+          conn
+          |> put_flash(:error, "Registration failed.")
+          |> render_external_registration_form(request: request, request_token: request_token)
+      end
     end
   end
 
@@ -50,6 +60,37 @@ defmodule CPub.Web.Authentication.RegistrationController do
         Routes.authentication_registration_path(conn, :register, request: request_token),
       registration_external_id: request.external_id,
       username: request.info["username"]
+    )
+  end
+
+  # Local registration
+
+  def register(%Plug.Conn{method: "GET"} = conn, _params) do
+    conn
+    |> render_local_registration_form(username: nil)
+  end
+
+  def register(%Plug.Conn{method: "POST"} = conn, %{
+        "username" => username,
+        "password" => password
+      }) do
+    case User.create(%{username: username, password: password}) do
+      {:ok, user} ->
+        conn
+        |> SessionController.create_session(user)
+
+      _ ->
+        conn
+        |> put_flash(:error, "Registration failed.")
+        |> render_local_registration_form(username: username)
+    end
+  end
+
+  defp render_local_registration_form(conn, username: username) do
+    conn
+    |> render("local_registration.html",
+      callback_url: Routes.authentication_registration_path(conn, :register),
+      username: username
     )
   end
 end
