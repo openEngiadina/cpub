@@ -57,7 +57,22 @@ defmodule CPub.Web.Authentication.SessionController do
     |> render_login()
   end
 
-  def login(%Plug.Conn{method: "POST"} = conn, %{"username" => username}) do
+  @doc """
+  Try and figure out if credential is a username, a Fediverse server or an other useable identifier and dispatch the proper provider.
+  """
+  def login(%Plug.Conn{method: "POST"} = conn, %{"credential" => credential}) do
+    uri = URI.parse(credential)
+
+    if uri.scheme == "https" do
+      conn
+      |> login(%{site: credential})
+    else
+      conn
+      |> login(%{username: credential})
+    end
+  end
+
+  def login(%Plug.Conn{method: "POST"} = conn, %{username: username}) do
     with {:ok, user} <- Repo.get_one_by(User, %{username: username}),
          user <- user |> Repo.preload(:registration) do
       case user.registration do
@@ -89,6 +104,16 @@ defmodule CPub.Web.Authentication.SessionController do
           to: Routes.authentication_provider_path(conn, :request, "local", %{username: username})
         )
     end
+  end
+
+  def login(%Plug.Conn{method: "POST"} = conn, %{site: site}) do
+    conn
+    |> redirect(
+      to:
+        Routes.authentication_provider_path(conn, :request, "fediverse", %{
+          site: site
+        })
+    )
   end
 
   def render_login(%Plug.Conn{} = conn) do

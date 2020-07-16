@@ -9,11 +9,13 @@
 <%= form_for @conn, @callback_url, fn f -> %>
 
 <div class="input">
-  <%= label f, :username, "Username" %>
-  <%= text_input f, :username %>
+  <%= label f, :credential, "Username or Fediverse instance" %>
+  <%= text_input f, :credential %>
 </div>
 <%= submit "Log in" %>
 
 <% end %>
 
-<a href=<%= Routes.authentication_registration_path(@conn, :register) %>> Sign up </a>
+<p> To sign up with your existing Fediverse account enter your instance address above. </p>
+
+<p> <a href=<%= Routes.authentication_registration_path(@conn, :register) %>> Local sign up</a> </p>

@@ -9,6 +9,6 @@
 Logged in as <%= @username %>.
 </p>
 
-<%= form_for @conn, @logout_url, fn f -> %>
+<%= form_for @conn, @logout_url, fn _ -> %>
 <%= submit "Log Out" %>
 <% end %>
