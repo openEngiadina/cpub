@@ -24,8 +24,7 @@ defmodule CPub.Web.Authentication.ProviderController do
     conn
     |> render("local.html",
       callback_url: Helpers.callback_path(conn),
-      username: conn.params["username"],
-      on_success: conn.params["on_success"]
+      username: conn.params["username"]
     )
   end
 
@@ -45,10 +44,11 @@ defmodule CPub.Web.Authentication.ProviderController do
 
       Ueberauth.Strategy.Pleroma ->
         # If user is already registered create a session an succeed
-        with {:ok, registration} <- Registration.get_from_auth(auth) do
-          conn
-          |> SessionController.create_session(registration.user)
-        else
+        case Registration.get_from_auth(auth) do
+          {:ok, registration} ->
+            conn
+            |> SessionController.create_session(registration.user)
+
           # if not create a registration requeset and redirect user to register form
           _ ->
             with {:ok, registration_request} <- RegistrationRequest.create(auth),

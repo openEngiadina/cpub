@@ -12,7 +12,6 @@
   <%= label f, :username, "Username" %>
   <%= text_input f, :username %>
 </div>
-<%= hidden_input f, :on_success, value: @on_success %>
 <%= submit "Log in" %>
 
 <% end %>

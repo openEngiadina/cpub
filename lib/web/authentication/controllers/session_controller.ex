@@ -12,9 +12,37 @@ defmodule CPub.Web.Authentication.SessionController do
 
   action_fallback CPub.Web.FallbackController
 
+  @doc """
+  Store a note in the session on where the user should be redirect when authentication succeeds.
+  """
+  defp store_authentication_cb(conn) do
+    if is_nil(get_session(conn, :authentication_cb)) do
+      conn
+      |> put_session(
+        :authentication_cb,
+        Map.get(conn.params, "on_success", Routes.authentication_session_path(conn, :show))
+      )
+    else
+      conn
+    end
+  end
+
+  @doc """
+  Redirect to authentication "on success" calback
+  """
+  defp authentication_success(conn) do
+    cb =
+      get_session(conn, :authentication_cb) ||
+        Map.get(conn.params, "on_success", Routes.authentication_session_path(conn, :show))
+
+    conn
+    |> delete_session(:authentication_cb)
+    |> redirect(to: cb)
+  end
+
   def login(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
     conn
-    |> redirect(to: on_success(conn))
+    |> authentication_success()
   end
 
   def login(%Plug.Conn{method: "GET"} = conn, %{"error" => error_msg}) do
@@ -25,41 +53,39 @@ defmodule CPub.Web.Authentication.SessionController do
 
   def login(%Plug.Conn{method: "GET"} = conn, _params) do
     conn
+    |> store_authentication_cb()
     |> render_login()
   end
 
-  def login(%Plug.Conn{method: "POST"} = conn, %{
-        "username" => username,
-        "on_success" => on_success
-      }) do
-    params =
-      conn.params
-      |> Map.take(["username", "on_success"])
-
+  def login(%Plug.Conn{method: "POST"} = conn, %{"username" => username}) do
     with {:ok, user} <- Repo.get_one_by(User, %{username: username}),
          user <- user |> Repo.preload(:registration) do
       case user.registration do
         %Registration{provider: provider} ->
           conn
-          |> redirect(to: Routes.authentication_provider_path(conn, :request, provider, params))
+          |> redirect(to: Routes.authentication_provider_path(conn, :request, provider))
 
         nil ->
           conn
-          |> redirect(to: Routes.authentication_provider_path(conn, :request, "local", params))
+          |> redirect(
+            to:
+              Routes.authentication_provider_path(conn, :request, "local", %{username: username})
+          )
       end
     else
       _ ->
         # if user does not exist still forward to local login
         conn
-        |> redirect(to: Routes.authentication_provider_path(conn, :request, "local", params))
+        |> redirect(
+          to: Routes.authentication_provider_path(conn, :request, "local", %{username: username})
+        )
     end
   end
 
   def render_login(%Plug.Conn{} = conn) do
     conn
     |> render("login.html",
-      callback_url: Routes.authentication_session_path(conn, :login),
-      on_success: on_success(conn)
+      callback_url: Routes.authentication_session_path(conn, :login)
     )
   end
 
@@ -81,12 +107,7 @@ defmodule CPub.Web.Authentication.SessionController do
   def logout(%Plug.Conn{} = conn, _params) do
     conn
     |> clear_session()
-    |> redirect(to: on_success(conn))
-  end
-
-  # Helper to figure out where user should be redirected on succesfull authentication
-  defp on_success(%Plug.Conn{} = conn) do
-    Map.get(conn.params, "on_success", Routes.authentication_session_path(conn, :show))
+    |> authentication_success()
   end
 
   @doc """
@@ -98,7 +119,7 @@ defmodule CPub.Web.Authentication.SessionController do
     with {:ok, session} <- Session.create(user) do
       conn
       |> put_session(:session_id, session.id)
-      |> redirect(to: on_success(conn))
+      |> authentication_success()
     end
   end
 end

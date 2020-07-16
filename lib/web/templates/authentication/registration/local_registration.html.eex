@@ -17,6 +17,6 @@
   <%= password_input f, :password %>
 </div>
 
-<%= submit "Log In" %>
+<%= submit "Sign up" %>
 
 <% end %>

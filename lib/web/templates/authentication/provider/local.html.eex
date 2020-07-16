@@ -17,7 +17,6 @@
   <%= password_input f, :password, autofocus: true %>
 </div>
 
-<%= hidden_input f, :on_success, value: @on_success %>
 <%= submit "Log In" %>
 
 <% end %>
