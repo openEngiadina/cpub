@@ -21,7 +21,7 @@ defmodule CPub.Web.Authentication.RegistrationController do
   """
   def register(%Plug.Conn{method: "GET"} = conn, %{"request" => request_token}) do
     with {:ok, request_id} <-
-           Token.verify(conn, "registration_request", request_token, max_age: 86400),
+           Token.verify(conn, "registration_request", request_token, max_age: 86_400),
          {:ok, request} <- Repo.get_one(RegistrationRequest, request_id) do
       request |> IO.inspect()
 

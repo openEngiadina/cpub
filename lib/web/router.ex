@@ -47,19 +47,20 @@ defmodule CPub.Web.Router do
     pipe_through :browser
     pipe_through :session_authentication
 
-    # Authenticate user with a HTML form
-    # get("/login", AuthenticationController, :login, as: :login)
-    # TODO
-    # post("/logout", AuthenticationController, :logout)
+    # Session
+    get("/login", SessionController, :login)
+    post("/login", SessionController, :login)
+    get("/session", SessionController, :show)
+    post("/logout", SessionController, :logout)
 
     # Registration
     get("/register", RegistrationController, :register)
     post("/register", RegistrationController, :register)
 
-    # Ueberauth routes
-    get("/:provider", AuthenticationController, :request)
-    get("/:provider/callback", AuthenticationController, :callback)
-    post("/:provider/callback", AuthenticationController, :callback)
+    # Ueberauth routes for authentication providers
+    get("/:provider", ProviderController, :request)
+    get("/:provider/callback", ProviderController, :callback)
+    post("/:provider/callback", ProviderController, :callback)
   end
 
   ## OAuth 2.0 server
@@ -76,8 +77,10 @@ defmodule CPub.Web.Router do
 
     # Token Endpoint
     post("/token", TokenController, :token)
+    # TODO post("/revoke", TokenController, :revoke)
   end
 
+  # TODO
   # scope "/auth", CPub.Web, as: :oauth do
   #   pipe_through :json_api
 
@@ -87,24 +90,6 @@ defmodule CPub.Web.Router do
 
   #     get("/userinfo", OIDCController, :user_info)
   #   end
-
-  #   get("/register", OAuthController, :registration_local)
-  #   post("/register", OAuthController, :register)
-
-  #   get("/authorize", OAuthController, :authorize)
-
-  #   post("/authorize", OAuthController, :create_authorization)
-  #   get("/login", OAuthController, :login)
-
-  #   post("/token", OAuthController, :exchange_token)
-  #   post("/revoke", OAuthController, :revoke_token)
-
-  #   ## OAuth client
-  #   get("/prepare_request", OAuthController, :prepare_request)
-  #   get "/:provider", OAuthController, :handle_request
-  #   get "/:provider/callback", OAuthController, :handle_callback
-  # end
-
   # scope "/", CPub.Web.OAuth do
   #   ## OpenID Connect server
 

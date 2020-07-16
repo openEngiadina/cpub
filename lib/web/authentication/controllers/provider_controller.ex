@@ -1,10 +1,8 @@
-defmodule CPub.Web.Authentication.AuthenticationController do
+defmodule CPub.Web.Authentication.ProviderController do
   @moduledoc """
-  Implements interactive user authentication.
+  Implements interactive user authentication by means of different providers.
 
   If authentication is successfull a `CPub.Web.Authentication.Session` will be stored in the `Plug.Session`.
-
-  Note that the session can only be used to issue an authorization via OAuth, no access to ressources is granted with a session.
   """
   use CPub.Web, :controller
 
@@ -22,34 +20,24 @@ defmodule CPub.Web.Authentication.AuthenticationController do
 
   plug Ueberauth, provider: [:local]
 
-  # TODO set to something nice
-  @default_on_success "/auth/local"
-
-  def on_success(%Plug.Conn{} = conn) do
-    Map.get(conn.params, "on_success", @default_on_success)
-  end
-
-  def request(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
+  def request(%Plug.Conn{} = conn, %{"provider" => "local"}) do
     conn
-    |> put_flash(:info, "Already authenticated.")
-    |> render_login()
+    |> render("local.html",
+      callback_url: Helpers.callback_path(conn),
+      username: conn.params["username"],
+      on_success: conn.params["on_success"]
+    )
   end
 
-  def request(%Plug.Conn{} = conn, _params) do
-    conn
-    |> render_login()
-  end
-
+  # go back to session login on failure
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
-    |> put_flash(:error, "Failed to authenticate.")
-    |> put_status(:unauthorized)
-    |> render_login()
+    |> redirect(
+      to: Routes.authentication_session_path(conn, :login, error: "Failed to authenticate.")
+    )
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-    auth |> IO.inspect()
-
     case auth.strategy do
       Strategy.Local ->
         conn
@@ -76,24 +64,5 @@ defmodule CPub.Web.Authentication.AuthenticationController do
             end
         end
     end
-  end
-
-  @doc """
-  Authenticate a user and set a session and redirect to `on_success`.
-  """
-
-  # def login(%Plug.Conn{assigns: %{session: %Session{}}} = conn, params) do
-  #   on_success = Map.get(params, "on_success", @default_on_success)
-
-  #   conn
-  #   |> redirect(to: on_success)
-  # end
-
-  defp render_login(%Plug.Conn{} = conn) do
-    conn
-    |> render("login.html",
-      callback_url: Helpers.callback_path(conn),
-      on_success: on_success(conn)
-    )
   end
 end
