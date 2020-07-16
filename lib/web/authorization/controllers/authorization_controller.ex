@@ -172,7 +172,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
       conn
       |> redirect(
         to:
-          Routes.authentication__path(conn, :login, %{
+          Routes.authentication_session_path(conn, :login, %{
             "on_success" =>
               Routes.oauth_server_authorization_path(conn, :authorize, conn.query_params)
           })

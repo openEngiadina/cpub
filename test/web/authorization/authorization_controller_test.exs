@@ -41,7 +41,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
         |> get(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params))
 
       assert redirected_to(response) ==
-               Routes.authentication__path(conn, :login,
+               Routes.authentication_session_path(conn, :login,
                  on_success:
                    Routes.oauth_server_authorization_path(conn, :authorize, authorization_params)
                )
@@ -149,7 +149,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
         |> get(Routes.oauth_server_authorization_path(conn, :authorize, authorization_params))
 
       assert redirected_to(response) ==
-               Routes.authentication__path(conn, :login,
+               Routes.authentication_session_path(conn, :login,
                  on_success:
                    Routes.oauth_server_authorization_path(conn, :authorize, authorization_params)
                )

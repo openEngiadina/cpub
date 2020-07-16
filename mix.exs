@@ -79,7 +79,7 @@ defmodule CPub.MixProject do
       # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.2"},
-      {:stream_data, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:stream_data, "~> 0.5", only: [:dev, :test]},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:excoveralls, "~> 0.13", only: :test},
