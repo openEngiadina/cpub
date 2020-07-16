@@ -8,6 +8,7 @@ defmodule CPub.Web.Authentication.AuthenticationController do
   """
   use CPub.Web, :controller
 
+  alias CPub.Web.Authentication.Registration
   alias CPub.Web.Authentication.Session
   alias CPub.Web.Authentication.Strategy
 
@@ -52,9 +53,17 @@ defmodule CPub.Web.Authentication.AuthenticationController do
         end
 
       Ueberauth.Strategy.Pleroma ->
-        conn
-        |> put_flash(:info, "Whoop Whoop!")
-        |> redirect(to: on_success(conn))
+        with {:ok, registration} <- Registration.get_from_auth(auth),
+             {:ok, session} <- Session.create(registration.user) do
+          conn
+          |> put_session(:session_id, session.id)
+          |> redirect(to: on_success(conn))
+        else
+          _ ->
+            conn
+            |> put_flash(:error, "You are not registered.")
+            |> render_login()
+        end
     end
   end
 

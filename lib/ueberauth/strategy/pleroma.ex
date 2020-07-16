@@ -7,7 +7,7 @@ defmodule Ueberauth.Strategy.Pleroma do
 
   use Ueberauth.Strategy
 
-  alias Ueberauth.Auth.{Credentials, Extra}
+  alias Ueberauth.Auth.{Credentials, Extra, Info}
 
   def handle_request!(%Plug.Conn{} = conn) do
     client =
@@ -53,14 +53,23 @@ defmodule Ueberauth.Strategy.Pleroma do
 
   # Fill in the Ueberauth.Auth struct
 
-  def uid(conn), do: conn.private.ueberauth_pleroma_account["username"]
+  def uid(conn), do: conn.private.ueberauth_pleroma_account["url"]
 
   def extra(conn) do
     %Extra{
       raw_info: %{
         account: conn.private.ueberauth_pleroma_account,
-        token: conn.private.ueberauth_pleroma_oauth_client.token
+        token: conn.private.ueberauth_pleroma_oauth_client.token,
+        site: Keyword.get(options(conn), :site)
       }
+    }
+  end
+
+  def info(conn) do
+    account = conn.private.ueberauth_pleroma_account
+
+    %Info{
+      nickname: account.username
     }
   end
 
