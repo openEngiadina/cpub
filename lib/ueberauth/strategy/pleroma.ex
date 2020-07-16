@@ -2,7 +2,7 @@ defmodule Ueberauth.Strategy.Pleroma do
   @moduledoc """
   An Ueberauth strategy for Pleroma/Mastodon compatible providers.
 
-  This Strategy requires a client_id and client_secret and is limited to a single Pleroma/Mastodon instance.
+  This Strategy requires a site, client_id and client_secret and is limited to a single Pleroma/Mastodon instance.
   """
 
   use Ueberauth.Strategy
@@ -45,9 +45,9 @@ defmodule Ueberauth.Strategy.Pleroma do
         |> put_private(:ueberauth_pleroma_oauth_client, client)
         |> verify_account(client)
 
-      {:err, _} ->
+      {:error, _} ->
         conn
-        |> set_errors!([error("OAuth2", "failed to get access token")])
+        |> set_errors!([error("pleroma", "failed to get access token")])
     end
   end
 
@@ -69,7 +69,7 @@ defmodule Ueberauth.Strategy.Pleroma do
     account = conn.private.ueberauth_pleroma_account
 
     %Info{
-      nickname: account.username
+      nickname: account["username"]
     }
   end
 

@@ -49,14 +49,17 @@ defmodule CPub.Web.Router do
 
     # Authenticate user with a HTML form
     # get("/login", AuthenticationController, :login, as: :login)
+    # TODO
+    # post("/logout", AuthenticationController, :logout)
+
+    # Registration
+    get("/register", RegistrationController, :register)
+    post("/register", RegistrationController, :register)
 
     # Ueberauth routes
     get("/:provider", AuthenticationController, :request)
     get("/:provider/callback", AuthenticationController, :callback)
     post("/:provider/callback", AuthenticationController, :callback)
-
-    # TODO
-    # post("/logout", AuthenticationController, :logout)
   end
 
   ## OAuth 2.0 server

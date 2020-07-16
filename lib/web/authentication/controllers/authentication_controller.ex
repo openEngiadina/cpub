@@ -9,10 +9,16 @@ defmodule CPub.Web.Authentication.AuthenticationController do
   use CPub.Web, :controller
 
   alias CPub.Web.Authentication.Registration
-  alias CPub.Web.Authentication.Session
+  alias CPub.Web.Authentication.RegistrationRequest
   alias CPub.Web.Authentication.Strategy
 
+  alias CPub.Web.Authentication.SessionController
+
   alias Ueberauth.Strategy.Helpers
+
+  alias Phoenix.Token
+
+  action_fallback CPub.Web.FallbackController
 
   plug Ueberauth, provider: [:local]
 
@@ -46,23 +52,28 @@ defmodule CPub.Web.Authentication.AuthenticationController do
 
     case auth.strategy do
       Strategy.Local ->
-        with {:ok, session} <- Session.create(auth.extra.raw_info.user) do
-          conn
-          |> put_session(:session_id, session.id)
-          |> redirect(to: on_success(conn))
-        end
+        conn
+        |> SessionController.create_session(auth.extra.raw_info.user)
 
       Ueberauth.Strategy.Pleroma ->
-        with {:ok, registration} <- Registration.get_from_auth(auth),
-             {:ok, session} <- Session.create(registration.user) do
+        # If user is already registered create a session an succeed
+        with {:ok, registration} <- Registration.get_from_auth(auth) do
           conn
-          |> put_session(:session_id, session.id)
-          |> redirect(to: on_success(conn))
+          |> SessionController.create_session(registration.user)
         else
+          # if not create a registration requeset and redirect user to register form
           _ ->
-            conn
-            |> put_flash(:error, "You are not registered.")
-            |> render_login()
+            with {:ok, registration_request} <- RegistrationRequest.create(auth),
+                 registration_token <-
+                   Token.sign(conn, "registration_request", registration_request.id) do
+              conn
+              |> redirect(
+                to:
+                  Routes.authentication_registration_path(conn, :register,
+                    request: registration_token
+                  )
+              )
+            end
         end
     end
   end
