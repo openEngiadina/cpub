@@ -15,7 +15,7 @@ defmodule Ueberauth.Strategy.Pleroma do
         site: Keyword.get(options(conn), :site),
         client_id: Keyword.get(options(conn), :client_id),
         redirect_uri: callback_url(conn),
-        params: client_params(conn)
+        params: Keyword.get(options(conn), :oauth_request_params)
       )
 
     conn
@@ -29,7 +29,7 @@ defmodule Ueberauth.Strategy.Pleroma do
         client_id: Keyword.get(options(conn), :client_id),
         client_secret: Keyword.get(options(conn), :client_secret),
         redirect_uri: callback_url(conn),
-        params: client_params(conn)
+        params: Keyword.get(options(conn), :oauth_request_params)
       )
 
     opts = [code: conn.params["code"]]
@@ -83,23 +83,6 @@ defmodule Ueberauth.Strategy.Pleroma do
       refresh_token: client.token.refresh_token,
       token_type: client.token.token_type
     }
-  end
-
-  # Helper that add optional state and scope
-  defp client_params(conn) do
-    client_params = %{}
-
-    client_params =
-      if conn.params["state"],
-        do: Map.put(client_params, :state, conn.params["state"]),
-        else: client_params
-
-    client_params =
-      if conn.params["scope"],
-        do: Map.put(client_params, :scope, conn.params["scope"]),
-        else: client_params
-
-    client_params
   end
 
   @verify_account_credentials_endpoint "/api/v1/accounts/verify_credentials"

@@ -28,6 +28,10 @@ defmodule CPub.Web.Authentication.ProviderController do
     )
   end
 
+  def request(%Plug.Conn{assigns: %{ueberauth_failure: _fails}}, %{"provider" => provider}) do
+    {:error, "Failed to run request for provider " <> provider}
+  end
+
   # go back to session login on failure
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
@@ -42,7 +46,7 @@ defmodule CPub.Web.Authentication.ProviderController do
         conn
         |> SessionController.create_session(auth.extra.raw_info.user)
 
-      Ueberauth.Strategy.Pleroma ->
+      Strategy.Fediverse ->
         # If user is already registered create a session an succeed
         case Registration.get_from_auth(auth) do
           {:ok, registration} ->

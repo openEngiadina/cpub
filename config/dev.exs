@@ -93,57 +93,5 @@ config :joken,
     """
   ]
 
-# Configure external OAuth providers
-# config :ueberauth, Ueberauth,
-#   base_path: "/auth",
-#   providers: [
-#     # WebID-OIDC (Solid)
-#     solid: {CPub.Web.OAuth.Strategy.WebIDOIDC, []},
-#     # OpenID Connect
-#     oidc: {CPub.Web.OAuth.Strategy.OIDC, []},
-#     # OAuth2
-#     cpub: {CPub.Web.OAuth.Strategy.CPub, []},
-#     pleroma: {CPub.Web.OAuth.Strategy.Pleroma, []}
-#     # github: {Ueberauth.Strategy.Github, [allow_private_emails: true]},
-#     # gitlab: {Ueberauth.Strategy.Gitlab, [default_scope: "read_user"]},
-#     # discord: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}
-#   ]
-
-# config :ueberauth, CPub.Web.OAuth.Strategy.OIDC.OAuth,
-#   oidc_cpub: [
-#     register_client_url: "/auth/apps",
-#     authorize_url: "/auth/authorize",
-#     token_url: "/auth/token",
-#     userinfo_url: "/auth/userinfo"
-#   ]
-
-# oidc_gitlab: [
-#   site: "https://gitlab.com",
-#   authorize_url: "https://gitlab.com/oauth/authorize",
-#   token_url: "https://gitlab.com/oauth/token",
-#   userinfo_url: "https://gitlab.com/oauth/userinfo",
-#   client_id: System.get_env("OIDC_GITLAB_CLIENT_ID"),
-#   client_secret: System.get_env("OIDC_GITLAB_CLIENT_SECRET")
-# ],
-# oidc_microsoft: [
-#   # site: "https://graph.microsoft.com",
-#   site: "https://login.microsoftonline.com",
-#   authorize_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
-#   token_url: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-#   # userinfo_endpoint: "/oidc/userinfo",
-#   userinfo_endpoint: "/common/openid/userinfo",
-#   client_id: System.get_env("OIDC_MICROSOFT_CLIENT_ID"),
-#   client_secret: System.get_env("OIDC_MICROSOFT_CLIENT_SECRET")
-# ]
-
-# config :ueberauth, Ueberauth.Strategy.Github.OAuth,
-#   client_id: System.get_env("GITHUB_CLIENT_ID"),
-#   client_secret: System.get_env("GITHUB_CLIENT_SECRET")
-
-# config :ueberauth, Ueberauth.Strategy.Gitlab.OAuth,
-#   client_id: System.get_env("GITLAB_CLIENT_ID"),
-#   client_secret: System.get_env("GITLAB_CLIENT_SECRET")
-
-# config :ueberauth, Ueberauth.Strategy.Discord.OAuth,
-#   client_id: System.get_env("DISCORD_CLIENT_ID"),
-#   client_secret: System.get_env("DISCORD_CLIENT_SECRET")
+# Enable OAuth2 debug
+config :oauth2, debug: true

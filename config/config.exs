@@ -57,24 +57,12 @@ config :rdf,
 config :ueberauth, Ueberauth,
   base_path: "/auth",
   providers: [
-    local: {CPub.Web.Authentication.Strategy.Local, [callback_methods: ["POST"]]}
+    local: {CPub.Web.Authentication.Strategy.Local, [callback_methods: ["POST"]]},
+    fediverse: {CPub.Web.Authentication.Strategy.Fediverse, []}
+    # oidc: {CPub.Web.Authentication.Strategy.OIDC, []}
   ]
 
-# config :cpub, :auth,
-#   consumer_strategies: auth_consumer_strategies,
-#   consumer_strategies_names: [
-#     solid: "Solid (WebID-OIDC)",
-#     oidc_cpub: "CPub (OIDC)",
-#     # oidc_gitlab: "GitLab (OIDC)",
-#     # oidc_microsoft: "Microsoft (OIDC)",
-#     cpub: "CPub",
-#     pleroma: "Pleroma / Mastodon"
-#     # github: "GitHub",
-#     # gitlab: "GitLab",
-#     # discord: "Discord"
-#   ],
-#   token_expires_in: 60 * 60,
-#   issue_new_refresh_token: true
+config :oauth2, debug: true
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code
