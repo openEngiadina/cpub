@@ -1,6 +1,8 @@
 defmodule Ueberauth.Strategy.OIDC do
   @doc """
   An Ueberauth strategy for identifying with services implementing [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html).
+
+  TODO: Currently this strategy make multiple requests to the OpenID provider every time it is invoked that could be cached (configuration and jwks keys). Implement a more efficient caching strategy.
   """
 
   use Ueberauth.Strategy
@@ -8,11 +10,13 @@ defmodule Ueberauth.Strategy.OIDC do
   alias Ueberauth.Auth.{Credentials, Extra}
 
   # helpers for accessing configuration
-  defp authorization_endpoint(conn), do: Keyword.get(options(conn), :authorization_endpoint)
-  defp token_endpoint(conn), do: Keyword.get(options(conn), :token_endpoint)
-  defp jwks_uri(conn), do: Keyword.get(options(conn), :jwks_uri)
+  defp issuer(conn), do: Keyword.get(options(conn), :issuer)
   defp client_id(conn), do: Keyword.get(options(conn), :client_id)
   defp client_secret(conn), do: Keyword.get(options(conn), :client_secret)
+
+  defp authorization_endpoint(config), do: config["authorization_endpoint"]
+  defp token_endpoint(config), do: config["token_endpoint"]
+  defp jwks_uri(config), do: config["jwks_uri"]
 
   # always add the openid scope
   defp scope(conn) do
@@ -30,10 +34,33 @@ defmodule Ueberauth.Strategy.OIDC do
     )
   end
 
-  defp oauth_client(conn) do
+  @openid_configuration_endpoint ".well-known/openid-configuration"
+
+  # Get configuration from OpenID configuration path
+  defp get_openid_config(conn) do
+    uri =
+      (issuer(conn) <> "/")
+      |> URI.merge(@openid_configuration_endpoint)
+      |> URI.to_string()
+
+    headers = [{"Content-Type", "application/json"}]
+
+    with {:ok, _, _, client_ref} <-
+           :hackney.request(:get, uri, headers, <<>>, []) |> IO.inspect(),
+         {:ok, body_binary} <- :hackney.body(client_ref),
+         {:ok, body} <- Jason.decode(body_binary) do
+      {:ok, body}
+      |> IO.inspect()
+    else
+      _ ->
+        {:error, "could not get OpenID configuration"}
+    end
+  end
+
+  defp oauth_client(conn, config) do
     [
-      authorize_url: authorization_endpoint(conn),
-      token_url: token_endpoint(conn),
+      authorize_url: authorization_endpoint(config),
+      token_url: token_endpoint(config),
       client_id: client_id(conn),
       client_secret: client_secret(conn),
       params: %{scope: scope(conn), state: state(conn)},
@@ -45,10 +72,11 @@ defmodule Ueberauth.Strategy.OIDC do
   end
 
   def handle_request!(%Plug.Conn{} = conn) do
-    client = oauth_client(conn)
-
-    conn
-    |> redirect!(OAuth2.Client.authorize_url!(client))
+    with {:ok, config} <- get_openid_config(conn),
+         client <- oauth_client(conn, config) do
+      conn
+      |> redirect!(OAuth2.Client.authorize_url!(client))
+    end
   end
 
   # the subject identifier from the id_token is guaranteed to be a locally unique identifier
@@ -57,6 +85,7 @@ defmodule Ueberauth.Strategy.OIDC do
   def extra(conn) do
     %Extra{
       raw_info: %{
+        issuer: issuer(conn),
         id_token: conn.private.ueberauth_oidc_id_token,
         token: conn.private.ueberauth_oidc_oauth_client.token
       }
@@ -76,14 +105,14 @@ defmodule Ueberauth.Strategy.OIDC do
   end
 
   def handle_callback!(%Plug.Conn{} = conn) do
-    client = oauth_client(conn)
-
-    with {:ok, state} <-
+    with {:ok, config} <- get_openid_config(conn),
+         client <- oauth_client(conn, config),
+         {:ok, state} <-
            Phoenix.Token.decrypt(conn, "Ueberauth.Strategy.OIDC", conn.params["state"],
              max_age: 600
            ),
          {:ok, client} <- OAuth2.Client.get_token(client, code: conn.params["code"]),
-         {:ok, id_token} <- verify_id_token(conn, client) do
+         {:ok, id_token} <- verify_id_token(conn, config, client) do
       conn
       |> put_private(:ueberauth_oidc_state, state)
       |> put_private(:ueberauth_oidc_oauth_client, client)
@@ -95,7 +124,7 @@ defmodule Ueberauth.Strategy.OIDC do
     end
   end
 
-  # parse a Joken.Signer from the keys at the jwks_uri endpoint
+  # parse a Joken.Signer from the keys at the jwks endpoint
   defp parse_signer(key) do
     {:ok, Joken.Signer.create(key["alg"], key)}
   rescue
@@ -104,10 +133,11 @@ defmodule Ueberauth.Strategy.OIDC do
   end
 
   # fetch keys from jwks_uri endpoint and return matching key as Jose.Signer
-  defp get_signer(conn, kid) do
+  defp get_signer(conn, config, kid) do
     headers = [{"Content-Type", "application/json"}]
 
-    with {:ok, _, _, client_ref} <- :hackney.request(:get, jwks_uri(conn), headers, <<>>, []),
+    with {:ok, _, _, client_ref} <-
+           :hackney.request(:get, jwks_uri(config), headers, <<>>, []),
          {:ok, body_binary} <- :hackney.body(client_ref),
          {:ok, body} <- Jason.decode(body_binary),
          keys <- body["keys"] do
@@ -122,10 +152,10 @@ defmodule Ueberauth.Strategy.OIDC do
   end
 
   # verify the id_token
-  defp verify_id_token(conn, client) do
+  defp verify_id_token(conn, config, client) do
     with jwt <- client.token.other_params["id_token"],
          {:ok, headers} <- Joken.peek_header(jwt),
-         {:ok, signer} <- get_signer(conn, headers["kid"]) do
+         {:ok, signer} <- get_signer(conn, config, headers["kid"]) do
       Joken.verify(jwt, signer)
     end
   end
