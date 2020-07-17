@@ -54,8 +54,8 @@ defmodule CPub.Web.Authentication.ProviderController do
         |> callback_external_provider(auth, site, username)
 
       Strategy.OIDC ->
-        # site is called issuer in OpenID lingo
-        site = auth.extra.raw_info.issuer
+        # site is called provider in OpenID lingo
+        site = auth.extra.raw_info.provider
         username = auth.extra.raw_info.id_token["preferred_username"] || auth.uid
 
         conn

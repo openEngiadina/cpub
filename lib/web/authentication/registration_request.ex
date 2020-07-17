@@ -13,7 +13,7 @@ defmodule CPub.Web.Authentication.RegistrationRequest do
 
   import Ecto.Changeset
 
-  alias CPub.{Repo, User}
+  alias CPub.Repo
   alias Ueberauth.Auth
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -54,7 +54,7 @@ defmodule CPub.Web.Authentication.RegistrationRequest do
   @doc """
   Create a registration request from information in an `Ueberauth.Auth`
   """
-  def create(%Ueberauth.Auth{} = auth, site, username) do
+  def create(%Auth{} = auth, site, username) do
     %__MODULE__{}
     |> changeset(%{
       provider: to_string(auth.provider),

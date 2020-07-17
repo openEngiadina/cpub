@@ -20,7 +20,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC do
 
     if is_nil(site) do
       conn
-      |> set_errors!(error("oidc", "no OpenID issuer provided"))
+      |> set_errors!(error("oidc", "no OpenID provider specified"))
     else
       # encode the site in the OAuth 2.0 state parameter
       state = Phoenix.Token.encrypt(conn, "ueberauth.oidc", site)
@@ -32,7 +32,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC do
             strategy_name(conn),
             {OIDC,
              [
-               issuer: site,
+               provider: site,
                client_id: client.client_id,
                client_secret: client.client_secret,
                extra_request_params: %{state: state}
@@ -63,7 +63,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC do
         strategy_name(conn),
         {OIDC,
          [
-           issuer: site,
+           provider: site,
            client_id: client.client_id,
            client_secret: client.client_secret
          ]}

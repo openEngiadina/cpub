@@ -1,6 +1,19 @@
 defmodule Ueberauth.Strategy.OIDC do
-  @doc """
+  @moduledoc """
   An Ueberauth strategy for identifying with services implementing [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html).
+
+  # Configuration
+
+  ````
+  {Ueberauth.Strategy.OIDC, [
+    provider: "https://your-favorite-openid-provider.com/",
+    client_id: "blups",
+    client_secret: "blupsblipsblabla"
+  ]}
+  ````
+
+  There is no need to specify the authorization, token and jwk endpoint. The strategy will automatically detect them from the [OpenID Provider Configuration Information](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig).
+
 
   TODO: Currently this strategy make multiple requests to the OpenID provider every time it is invoked that could be cached (configuration and jwks keys). Implement a more efficient caching strategy.
   """
@@ -10,7 +23,7 @@ defmodule Ueberauth.Strategy.OIDC do
   alias Ueberauth.Auth.{Credentials, Extra}
 
   # helpers for accessing configuration
-  defp issuer(conn), do: Keyword.get(options(conn), :issuer)
+  defp provider(conn), do: Keyword.get(options(conn), :provider)
   defp client_id(conn), do: Keyword.get(options(conn), :client_id)
   defp client_secret(conn), do: Keyword.get(options(conn), :client_secret)
   defp extra_request_params(conn), do: Keyword.get(options(conn), :extra_request_params, %{})
@@ -31,18 +44,17 @@ defmodule Ueberauth.Strategy.OIDC do
   # Get configuration from OpenID configuration path
   defp get_openid_config(conn) do
     uri =
-      (issuer(conn) <> "/")
+      (provider(conn) <> "/")
       |> URI.merge(@openid_configuration_endpoint)
       |> URI.to_string()
 
     headers = [{"Content-Type", "application/json"}]
 
     with {:ok, _, _, client_ref} <-
-           :hackney.request(:get, uri, headers, <<>>, []) |> IO.inspect(),
+           :hackney.request(:get, uri, headers, <<>>, []),
          {:ok, body_binary} <- :hackney.body(client_ref),
          {:ok, body} <- Jason.decode(body_binary) do
       {:ok, body}
-      |> IO.inspect()
     else
       _ ->
         {:error, "could not get OpenID configuration"}
@@ -77,7 +89,7 @@ defmodule Ueberauth.Strategy.OIDC do
   def extra(conn) do
     %Extra{
       raw_info: %{
-        issuer: issuer(conn),
+        provider: provider(conn),
         id_token: conn.private.ueberauth_oidc_id_token,
         token: conn.private.ueberauth_oidc_oauth_client.token
       }
