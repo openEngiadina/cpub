@@ -73,9 +73,8 @@ defmodule CPub.Web.Authentication.Registration do
   @doc """
   Get a registration from an `Uberauth.Auth`
   """
-  def get_from_auth(%Ueberauth.Auth{} = auth) do
+  def get_from_auth(%Ueberauth.Auth{} = auth, site) do
     provider = to_string(auth.provider)
-    site = auth.extra.raw_info.site
     external_id = auth.uid
 
     with {:ok, registration} <-

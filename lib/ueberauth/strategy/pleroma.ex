@@ -3,6 +3,8 @@ defmodule Ueberauth.Strategy.Pleroma do
   An Ueberauth strategy for Pleroma/Mastodon compatible providers.
 
   This Strategy requires a site, client_id and client_secret and is limited to a single Pleroma/Mastodon instance.
+
+  TODO: Notes on how to use/configure.
   """
 
   use Ueberauth.Strategy

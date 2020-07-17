@@ -11,8 +11,8 @@ defmodule CPub.Repo.Migrations.CreateAuthenticationRegistrations do
 
       add(:info, :map)
 
-      add(:access_token, :string)
-      add(:refresh_token, :string)
+      add(:access_token, :text)
+      add(:refresh_token, :text)
       add(:token_type, :string)
 
       timestamps()
@@ -27,8 +27,8 @@ defmodule CPub.Repo.Migrations.CreateAuthenticationRegistrations do
       add(:site, :string)
       add(:external_id, :string)
 
-      add(:access_token, :string)
-      add(:refresh_token, :string)
+      add(:access_token, :text)
+      add(:refresh_token, :text)
       add(:token_type, :string)
 
       timestamps()

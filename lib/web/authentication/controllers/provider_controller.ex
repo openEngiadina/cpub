@@ -47,25 +47,38 @@ defmodule CPub.Web.Authentication.ProviderController do
         |> SessionController.create_session(auth.extra.raw_info.user)
 
       Strategy.Fediverse ->
-        # If user is already registered create a session an succeed
-        case Registration.get_from_auth(auth) do
-          {:ok, registration} ->
-            conn
-            |> SessionController.create_session(registration.user)
+        site = auth.extra.raw_info.site
+        username = auth.exra.raw_info.account["username"] || auth.uid
 
-          # if not create a registration requeset and redirect user to register form
-          _ ->
-            with {:ok, registration_request} <- RegistrationRequest.create(auth),
-                 registration_token <-
-                   Token.sign(conn, "registration_request", registration_request.id) do
-              conn
-              |> redirect(
-                to:
-                  Routes.authentication_registration_path(conn, :register,
-                    request: registration_token
-                  )
-              )
-            end
+        conn
+        |> callback_external_provider(auth, site, username)
+
+      Ueberauth.Strategy.OIDC ->
+        site = "blups"
+        username = auth.extra.raw_info.id_token["preferred_username"] || auth.uid
+
+        conn
+        |> callback_external_provider(auth, site, username)
+    end
+  end
+
+  def callback_external_provider(conn, %Ueberauth.Auth{} = auth, site, username) do
+    # If user is already registered create a session an succeed
+    case Registration.get_from_auth(auth, site) do
+      {:ok, registration} ->
+        conn
+        |> SessionController.create_session(registration.user)
+
+      # if not create a registration requeset and redirect user to register form
+      _ ->
+        with {:ok, registration_request} <- RegistrationRequest.create(auth, site, username),
+             registration_token <-
+               Token.sign(conn, "registration_request", registration_request.id) do
+          conn
+          |> redirect(
+            to:
+              Routes.authentication_registration_path(conn, :register, request: registration_token)
+          )
         end
     end
   end

@@ -9,7 +9,7 @@ defmodule CPub.Repo.Migrations.CreateAuthenticationOAuthClientClients do
       add(:site, :string)
 
       add(:client_id, :string)
-      add(:client_secret, :string)
+      add(:client_secret, :text)
 
       timestamps()
     end

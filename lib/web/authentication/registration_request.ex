@@ -54,13 +54,13 @@ defmodule CPub.Web.Authentication.RegistrationRequest do
   @doc """
   Create a registration request from information in an `Ueberauth.Auth`
   """
-  def create(%Ueberauth.Auth{} = auth) do
+  def create(%Ueberauth.Auth{} = auth, site, username) do
     %__MODULE__{}
     |> changeset(%{
       provider: to_string(auth.provider),
-      site: auth.extra.raw_info.site,
+      site: site,
       external_id: auth.uid,
-      info: %{username: auth.info.nickname},
+      info: %{username: username},
       access_token: auth.credentials.token,
       refresh_token: auth.credentials.refresh_token,
       token_type: auth.credentials.token_type

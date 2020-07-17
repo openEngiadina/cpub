@@ -27,8 +27,7 @@ defmodule CPub.Web.Authentication.RegistrationController do
   Register a new user with a registration_request (external registration).
   """
   def register(%Plug.Conn{method: "GET"} = conn, %{"request" => request_token}) do
-    with {:ok, request_id} <- get_request(conn, request_token),
-         {:ok, request} <- Repo.get_one(RegistrationRequest, request_id) do
+    with {:ok, request} <- get_request(conn, request_token) do
       conn
       |> render_external_registration_form(request: request, request_token: request_token)
     end
