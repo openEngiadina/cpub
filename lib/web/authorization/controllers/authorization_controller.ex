@@ -57,7 +57,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
       |> render("authorize.html", %{
         client: client,
         oauth_params: %{
-          client_id: client.client_id,
+          client_id: client.id,
           response_type: response_type,
           redirect_uri: redirect_uri |> URI.to_string(),
           scope: scope,

@@ -41,7 +41,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
           grant_type: "authorization_code",
           code: authorization.code,
           redirect_uri: authorization.redirect_uri,
-          client_id: client.client_id
+          client_id: client.id
         })
 
       assert %{
@@ -67,7 +67,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
           code: authorization.code,
-          client_id: client.client_id
+          client_id: client.id
         })
 
       assert %{
@@ -81,7 +81,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
           code: authorization.code,
-          client_id: client.client_id
+          client_id: client.id
         })
 
       assert %{"error" => "invalid_grant"} = json_response(second_response, 400)

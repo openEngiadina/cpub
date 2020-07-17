@@ -11,13 +11,13 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
   doctest CPub.Web.Authorization.AuthorizationController
 
   setup do
-    with {:ok, client} =
-           Client.create(%{
-             client_name: "Test client",
-             redirect_uris: ["http://example.com/"],
-             scopes: ["test"]
-           }) do
-      {:ok, %{client: client}}
+    case Client.create(%{
+           client_name: "Test client",
+           redirect_uris: ["http://example.com/"],
+           scopes: ["test"]
+         }) do
+      {:ok, client} ->
+        {:ok, %{client: client}}
     end
   end
 
@@ -31,7 +31,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
   describe "authorize/2 with :code flow (authorization code)" do
     test "redirects to login if not authenticated", %{conn: conn, client: client} do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "code",
         "state" => 42
       }
@@ -53,7 +53,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
       session: session
     } do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "code",
         "state" => 42
       }
@@ -68,7 +68,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
     test "return error when redirect_uri is invalid", %{conn: conn, client: client} do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "code",
         "state" => 42,
         "redirect_uri" => "http://example.com/wrong"
@@ -90,7 +90,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
       session: session
     } do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "code",
         "state" => 42
       }
@@ -118,7 +118,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
       session: session
     } do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "code",
         "state" => 42
       }
@@ -139,7 +139,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
   describe "authorize/2 with :token flow (implicit)" do
     test "redirects to login if not authenticated", %{conn: conn, client: client} do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "token",
         "state" => 42
       }
@@ -161,7 +161,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
       session: session
     } do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "token",
         "state" => 42
       }
@@ -176,7 +176,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
     test "return error when redirect_uri is invalid", %{conn: conn, client: client} do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "token",
         "state" => 42,
         "redirect_uri" => "http://example.com/wrong"
@@ -198,7 +198,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
       session: session
     } do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "token",
         "state" => 42
       }
@@ -226,7 +226,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
       session: session
     } do
       authorization_params = %{
-        "client_id" => client.client_id,
+        "client_id" => client.id,
         "response_type" => "token",
         "state" => 42
       }

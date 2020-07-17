@@ -11,13 +11,10 @@ defmodule CPub.Repo.Migrations.CreateAuthorization do
       add(:redirect_uris, {:array, :string})
       add(:scopes, {:array, :string})
 
-      add(:client_id, :string)
       add(:client_secret, :string)
 
       timestamps()
     end
-
-    create(unique_index(:oauth_server_clients, [:client_id, :client_secret]))
 
     # Create table for `Authorization`
     create table(:oauth_server_authorizations, primary_key: false) do

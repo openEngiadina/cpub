@@ -44,7 +44,7 @@ defmodule CPub.Web.Authorization.ClientControllerTest do
                |> json_response(200)
 
       assert client_response["client_name"] == client.client_name
-      assert client_response["client_id"] == client.client_id
+      assert client_response["client_id"] == client.id
       assert client_response["client_secret"] == client.client_secret
       assert client_response["redirect_uris"] == client.redirect_uris
     end

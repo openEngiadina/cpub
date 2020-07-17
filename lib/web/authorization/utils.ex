@@ -13,7 +13,7 @@ defmodule CPub.Web.Authorization.Utils do
   Returns the `CPub.Web.Authorization.Client` associated with the connection.
   """
   def get_client(%Plug.Conn{} = conn) do
-    case Repo.get_one_by(Client, %{client_id: conn.params["client_id"]}) do
+    case Repo.get_one(Client, conn.params["client_id"]) do
       {:ok, client} ->
         {:ok, client}
 

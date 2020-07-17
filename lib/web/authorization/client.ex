@@ -14,7 +14,6 @@ defmodule CPub.Web.Authorization.Client do
     field :redirect_uris, {:array, :string}
     field :scopes, {:array, :string}
 
-    field :client_id, :string
     field :client_secret, :string
 
     timestamps()
@@ -28,12 +27,10 @@ defmodule CPub.Web.Authorization.Client do
   def changeset(%__MODULE__{} = client, attrs) do
     client
     |> cast(attrs, [:client_name, :redirect_uris, :scopes])
-    |> put_change(:client_id, random_id_token())
     |> put_change(:client_secret, random_id_token())
     |> validate_required([:client_name, :redirect_uris, :scopes])
     # TODO validate that scopes are valid
     |> unique_constraint(:id, name: "oauth_server_clients_pkey")
-    |> unique_constraint(:client_id, name: "oauth_server_clients_client_id_client_secret_index")
   end
 
   @doc """

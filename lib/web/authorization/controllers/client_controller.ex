@@ -27,7 +27,7 @@ defmodule CPub.Web.Authorization.ClientController do
       |> render(:show,
         data: %{
           client_name: client.client_name,
-          client_id: client.client_id,
+          client_id: client.id,
           client_secret: client.client_secret,
           redirect_uris: client.redirect_uris,
           scopes: client.scopes
@@ -44,7 +44,7 @@ defmodule CPub.Web.Authorization.ClientController do
       |> render(:show,
         data: %{
           client_name: client.client_name,
-          client_id: client.client_id,
+          client_id: client.id,
           client_secret: client.client_secret,
           redirect_uris: client.redirect_uris,
           scopes: client.scopes
