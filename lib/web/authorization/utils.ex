@@ -3,11 +3,9 @@ defmodule CPub.Web.Authorization.Utils do
   Helpers and utils for dealing with OAuth 2.0 Endpoint requests.
   """
 
-  import Plug.Conn
-
   alias CPub.Repo
-  alias CPub.Web.Authorization.Client
-  alias CPub.Web.Authorization.Authorization
+
+  alias CPub.Web.Authorization.{Authorization, Client}
 
   @doc """
   Returns the `CPub.Web.Authorization.Client` associated with the connection.

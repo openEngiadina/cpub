@@ -11,7 +11,6 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
 
   alias CPub.Web.Authentication.OAuthClient.Client
 
-  alias Ueberauth.Auth
   alias Ueberauth.Strategy.Pleroma
 
   # The Mastodon API for dynamically creating clients (see https://docs.joinmastodon.org/methods/apps/)
@@ -20,9 +19,7 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
   # TODO this should idenitfy the instance
   @default_client_name "CPub"
 
-  @doc """
-  Create a client by using the apps endpoint
-  """
+  # Create a client by using the apps endpoint
   defp create_client(conn, site) do
     url =
       URI.merge(site, @register_client_endpoint)
@@ -50,9 +47,7 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
     end
   end
 
-  @doc """
-  Get a suitable client for the site
-  """
+  # Get a suitable client for the site
   defp get_client(conn, site) do
     case Repo.get_one_by(Client, %{provider: to_string(strategy_name(conn)), site: site}) do
       {:ok, client} ->
@@ -73,20 +68,21 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
       # encode the site in the OAuth 2.0 state parameter
       state = Phoenix.Token.encrypt(conn, "ueberauth.fediverse", site)
 
-      with {:ok, client} <- get_client(conn, site) do
-        conn
-        |> Ueberauth.run_request(
-          strategy_name(conn),
-          {Pleroma,
-           [
-             site: site,
-             client_id: client.client_id,
-             client_secret: client.client_secret,
-             oauth_request_params: %{state: state}
-           ]}
-        )
-      else
-        err ->
+      case get_client(conn, site) do
+        {:ok, client} ->
+          conn
+          |> Ueberauth.run_request(
+            strategy_name(conn),
+            {Pleroma,
+             [
+               site: site,
+               client_id: client.client_id,
+               client_secret: client.client_secret,
+               oauth_request_params: %{state: state}
+             ]}
+          )
+
+        _ ->
           conn
           |> set_errors!(error("fediverse", "failed to create client"))
       end

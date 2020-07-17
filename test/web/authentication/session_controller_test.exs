@@ -3,14 +3,15 @@ defmodule CPub.Web.Authentication.SessionControllerTest do
   use CPub.Web.ConnCase
 
   alias CPub.User
-  alias CPub.Repo
+
   alias CPub.Web.Authentication
 
   doctest CPub.Web.Authentication.SessionController
 
   setup do
-    with {:ok, user} = User.create(%{username: "alice", password: "123"}) do
-      {:ok, %{user: user}}
+    case User.create(%{username: "alice", password: "123"}) do
+      {:ok, user} ->
+        {:ok, %{user: user}}
     end
   end
 

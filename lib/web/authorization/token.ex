@@ -18,7 +18,7 @@ defmodule CPub.Web.Authorization.Token do
     timestamps()
   end
 
-  defp random_token() do
+  defp random_token do
     :crypto.strong_rand_bytes(32)
     |> Base.encode32(padding: false)
   end
@@ -74,10 +74,8 @@ defmodule CPub.Web.Authorization.Token do
   @doc """
   Returns the numer of seconds the Token is valid for after creation.
   """
-  def valid_for() do
-    # 60 days
-    60 * 60 * 24 * 60
-  end
+  # 60 days
+  def valid_for, do: 60 * 60 * 24 * 60
 
   @doc """
   Returns true if the Token is expired and can no longer be used to access a ressource.

@@ -5,16 +5,13 @@ defmodule CPub.Web.Authentication.SessionController do
 
   use CPub.Web, :controller
 
-  alias CPub.Repo
-  alias CPub.User
-  alias CPub.Web.Authentication.Session
-  alias CPub.Web.Authentication.Registration
+  alias CPub.{Repo, User}
+
+  alias CPub.Web.Authentication.{Registration, Session}
 
   action_fallback CPub.Web.FallbackController
 
-  @doc """
-  Store a note in the session on where the user should be redirect when authentication succeeds.
-  """
+  # Store a note in the session on where the user should be redirect when authentication succeeds.
   defp store_authentication_cb(conn) do
     if is_nil(get_session(conn, :authentication_cb)) do
       conn
@@ -27,9 +24,7 @@ defmodule CPub.Web.Authentication.SessionController do
     end
   end
 
-  @doc """
-  Redirect to authentication "on success" calback
-  """
+  # Redirect to authentication "on success" calback
   defp authentication_success(conn) do
     cb =
       get_session(conn, :authentication_cb) ||
@@ -40,7 +35,7 @@ defmodule CPub.Web.Authentication.SessionController do
     |> redirect(to: cb)
   end
 
-  def login(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
+  def login(%Plug.Conn{assigns: %{session: _session}} = conn, _params) do
     conn
     |> authentication_success()
   end

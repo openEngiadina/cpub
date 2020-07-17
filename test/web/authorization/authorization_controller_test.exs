@@ -3,10 +3,10 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
   use CPub.Web.ConnCase
 
   alias CPub.User
+
+  alias CPub.Web.Authorization.{Authorization, Client, Token}
+
   alias CPub.Web.Authentication.Session
-  alias CPub.Web.Authorization.Client
-  alias CPub.Web.Authorization.Authorization
-  alias CPub.Web.Authorization.Token
 
   doctest CPub.Web.Authorization.AuthorizationController
 

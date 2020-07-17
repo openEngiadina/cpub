@@ -1,8 +1,6 @@
 defmodule CPub.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :cpub
 
-  alias CPub.Config
-
   socket "/socket", CPub.Web.UserSocket,
     websocket: true,
     longpoll: false

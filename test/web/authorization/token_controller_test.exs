@@ -2,11 +2,9 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
   use ExUnit.Case
   use CPub.Web.ConnCase
 
-  alias CPub.User
-  alias CPub.Repo
-  alias CPub.Web.Authorization.Authorization
-  alias CPub.Web.Authorization.Client
-  alias CPub.Web.Authorization.Token
+  alias CPub.{Repo, User}
+
+  alias CPub.Web.Authorization.{Authorization, Client, Token}
 
   doctest CPub.Web.Authorization.TokenController
 

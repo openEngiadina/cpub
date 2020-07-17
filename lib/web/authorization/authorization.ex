@@ -12,12 +12,11 @@ defmodule CPub.Web.Authorization.Authorization do
 
   import Ecto.Changeset
 
-  alias CPub.User
-  alias CPub.Repo
-  alias CPub.Web.Authorization.Client
-  alias CPub.Web.Authorization.Token
+  alias CPub.{Repo, User}
 
-  defp random_code() do
+  alias CPub.Web.Authorization.{Client, Token}
+
+  defp random_code do
     :crypto.strong_rand_bytes(32)
     |> Base.encode32(padding: false)
   end
@@ -73,9 +72,8 @@ defmodule CPub.Web.Authorization.Authorization do
   @doc """
   Returns the number of seconds the Authorization code is valid for after initial creation.
   """
-  def valid_for() do
-    3600
-  end
+  # one hour
+  def valid_for, do: 3600
 
   @doc """
   Returns true if the `Authorization` has expired (has been created more than 10 minutes ago).

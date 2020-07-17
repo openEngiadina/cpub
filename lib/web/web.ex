@@ -26,8 +26,8 @@ defmodule CPub.Web do
       import CPub.Web.Authorization.AuthorizationPlug, only: [unauthorized: 1]
       alias CPub.Web.Router.Helpers, as: Routes
 
-      alias CPub.Web.RDFView
       alias CPub.Web.JSONView
+      alias CPub.Web.RDFView
 
       alias CPub.Repo
 

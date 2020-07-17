@@ -16,22 +16,21 @@ defmodule CPub.Web.Authentication.RegistrationController do
 
   action_fallback CPub.Web.FallbackController
 
+  defp get_request(conn, request_token) do
+    with {:ok, request_id} <-
+           Token.verify(conn, "registration_request", request_token, max_age: 86_400) do
+      Repo.get_one(RegistrationRequest, request_id)
+    end
+  end
+
   @doc """
   Register a new user with a registration_request (external registration).
   """
   def register(%Plug.Conn{method: "GET"} = conn, %{"request" => request_token}) do
-    with {:ok, request_id} <-
-           Token.verify(conn, "registration_request", request_token, max_age: 86_400),
+    with {:ok, request_id} <- get_request(conn, request_token),
          {:ok, request} <- Repo.get_one(RegistrationRequest, request_id) do
       conn
       |> render_external_registration_form(request: request, request_token: request_token)
-    end
-  end
-
-  defp get_request(conn, request_token) do
-    with {:ok, request_id} <-
-           Token.verify(conn, "registration_request", request_token, max_age: 86400) do
-      Repo.get_one(RegistrationRequest, request_id)
     end
   end
 
@@ -51,16 +50,6 @@ defmodule CPub.Web.Authentication.RegistrationController do
           |> render_external_registration_form(request: request, request_token: request_token)
       end
     end
-  end
-
-  defp render_external_registration_form(conn, request: request, request_token: request_token) do
-    conn
-    |> render("external_registration.html",
-      callback_url:
-        Routes.authentication_registration_path(conn, :register, request: request_token),
-      registration_external_id: request.external_id,
-      username: request.info["username"]
-    )
   end
 
   # Local registration
@@ -84,6 +73,16 @@ defmodule CPub.Web.Authentication.RegistrationController do
         |> put_flash(:error, "Registration failed.")
         |> render_local_registration_form(username: username)
     end
+  end
+
+  defp render_external_registration_form(conn, request: request, request_token: request_token) do
+    conn
+    |> render("external_registration.html",
+      callback_url:
+        Routes.authentication_registration_path(conn, :register, request: request_token),
+      registration_external_id: request.external_id,
+      username: request.info["username"]
+    )
   end
 
   defp render_local_registration_form(conn, username: username) do

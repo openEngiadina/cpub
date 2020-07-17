@@ -19,7 +19,7 @@ defmodule CPub.Web.Authorization.Client do
     timestamps()
   end
 
-  defp random_id_token() do
+  defp random_id_token do
     :crypto.strong_rand_bytes(32)
     |> Base.encode32(padding: false)
   end
@@ -42,9 +42,7 @@ defmodule CPub.Web.Authorization.Client do
     |> Repo.insert()
   end
 
-  @doc """
-  Check if redirect uri is valid for client
-  """
+  # Check if redirect uri is valid for client
   defp redirect_uri_valid?(uri, %__MODULE__{} = client) do
     if uri in client.redirect_uris do
       {:ok, URI.parse(uri)}

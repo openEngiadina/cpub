@@ -16,8 +16,8 @@ defmodule CPub.User do
   alias CPub.Solid.WebID
 
   alias CPub.Web.Authorization.Authorization
-  alias CPub.Web.Authentication.Registration
-  alias CPub.Web.Authentication.Session
+
+  alias CPub.Web.Authentication.{Registration, Session}
 
   alias RDF.FragmentGraph
 
