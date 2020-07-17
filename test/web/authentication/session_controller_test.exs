@@ -32,9 +32,7 @@ defmodule CPub.Web.Authentication.SessionControllerTest do
         |> post(
           Routes.authentication_session_path(conn, :login),
           %{
-            "username" => user.username,
-            "password" => "123",
-            "on_success" => "/success"
+            "credential" => user.username
           }
         )
 
