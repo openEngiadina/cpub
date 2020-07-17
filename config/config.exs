@@ -58,11 +58,9 @@ config :ueberauth, Ueberauth,
   base_path: "/auth",
   providers: [
     local: {CPub.Web.Authentication.Strategy.Local, [callback_methods: ["POST"]]},
-    fediverse: {CPub.Web.Authentication.Strategy.Fediverse, []}
-    # oidc: {CPub.Web.Authentication.Strategy.OIDC, []}
+    fediverse: {CPub.Web.Authentication.Strategy.Fediverse, []},
+    oidc: {CPub.Web.Authentication.Strategy.OIDC, []}
   ]
-
-config :oauth2, debug: true
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code

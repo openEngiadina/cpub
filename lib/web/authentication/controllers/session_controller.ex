@@ -71,18 +71,14 @@ defmodule CPub.Web.Authentication.SessionController do
     with {:ok, user} <- Repo.get_one_by(User, %{username: username}),
          user <- user |> Repo.preload(:registration) do
       case user.registration do
-        %Registration{provider: "fediverse"} ->
+        %Registration{provider: provider} ->
           conn
           |> redirect(
             to:
-              Routes.authentication_provider_path(conn, :request, "fediverse", %{
+              Routes.authentication_provider_path(conn, :request, provider, %{
                 site: user.registration.site
               })
           )
-
-        %Registration{provider: provider} ->
-          conn
-          |> redirect(to: Routes.authentication_provider_path(conn, :request, provider))
 
         nil ->
           conn

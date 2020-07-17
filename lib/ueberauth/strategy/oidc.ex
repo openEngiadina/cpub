@@ -13,6 +13,7 @@ defmodule Ueberauth.Strategy.OIDC do
   defp issuer(conn), do: Keyword.get(options(conn), :issuer)
   defp client_id(conn), do: Keyword.get(options(conn), :client_id)
   defp client_secret(conn), do: Keyword.get(options(conn), :client_secret)
+  defp extra_request_params(conn), do: Keyword.get(options(conn), :extra_request_params, %{})
 
   defp authorization_endpoint(config), do: config["authorization_endpoint"]
   defp token_endpoint(config), do: config["token_endpoint"]
@@ -23,15 +24,6 @@ defmodule Ueberauth.Strategy.OIDC do
     (Keyword.get(options(conn), :scope, []) ++ ["openid"])
     |> MapSet.new()
     |> Enum.join(" ")
-  end
-
-  # add some state to the request
-  defp state(conn) do
-    conn
-    |> Phoenix.Token.encrypt(
-      "Ueberauth.Strategy.OIDC",
-      Keyword.get(options(conn), :state, %{})
-    )
   end
 
   @openid_configuration_endpoint ".well-known/openid-configuration"
@@ -63,7 +55,7 @@ defmodule Ueberauth.Strategy.OIDC do
       token_url: token_endpoint(config),
       client_id: client_id(conn),
       client_secret: client_secret(conn),
-      params: %{scope: scope(conn), state: state(conn)},
+      params: Map.merge(extra_request_params(conn), %{scope: scope(conn)}),
       redirect_uri: callback_url(conn),
       strategy: OAuth2.Strategy.AuthCode
     ]
@@ -107,14 +99,9 @@ defmodule Ueberauth.Strategy.OIDC do
   def handle_callback!(%Plug.Conn{} = conn) do
     with {:ok, config} <- get_openid_config(conn),
          client <- oauth_client(conn, config),
-         {:ok, state} <-
-           Phoenix.Token.decrypt(conn, "Ueberauth.Strategy.OIDC", conn.params["state"],
-             max_age: 600
-           ),
          {:ok, client} <- OAuth2.Client.get_token(client, code: conn.params["code"]),
          {:ok, id_token} <- verify_id_token(conn, config, client) do
       conn
-      |> put_private(:ueberauth_oidc_state, state)
       |> put_private(:ueberauth_oidc_oauth_client, client)
       |> put_private(:ueberauth_oidc_id_token, id_token)
     else

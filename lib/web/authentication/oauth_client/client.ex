@@ -12,7 +12,8 @@ defmodule CPub.Web.Authentication.OAuthClient.Client do
   schema "authentication_oauth_client_clients" do
     # external identity provider (pleroma or oidc)
     field :provider, :string
-    # the site of the identity provider
+
+    # the site of the identity provider (in OIDC lingo: issuer)
     field :site, :string
 
     field :client_id, :string
