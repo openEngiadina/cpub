@@ -29,7 +29,7 @@ defmodule CPub.Web.Authentication.OAuthClient.Client do
   def changeset(%__MODULE__{} = client, attrs) do
     client
     |> cast(attrs, [:provider, :site, :client_id, :client_secret, :display_name])
-    |> validate_required([:provider, :site, :client_id, :client_secret])
+    |> validate_required([:provider, :site, :client_id])
     |> unique_constraint(:id, name: :authentication_oauth_client_clients_pkey)
     |> unique_constraint(:provider_site,
       name: :authentication_oauth_client_clients_provider_site_index

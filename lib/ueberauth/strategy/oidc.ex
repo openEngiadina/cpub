@@ -69,7 +69,7 @@ defmodule Ueberauth.Strategy.OIDC do
       client_secret: client_secret(conn),
       params: Map.merge(extra_request_params(conn), %{scope: scope(conn)}),
       redirect_uri: callback_url(conn),
-      strategy: OAuth2.Strategy.AuthCode
+      strategy: OAuth2.Strategy.PublicAuthCode
     ]
     |> OAuth2.Client.new()
     |> OAuth2.Client.put_serializer("application/json", Jason)
@@ -117,7 +117,7 @@ defmodule Ueberauth.Strategy.OIDC do
       |> put_private(:ueberauth_oidc_oauth_client, client)
       |> put_private(:ueberauth_oidc_id_token, id_token)
     else
-      _ ->
+      err ->
         conn
         |> set_errors!([error("oidc", "could not get access token")])
     end
@@ -129,10 +129,11 @@ defmodule Ueberauth.Strategy.OIDC do
 
   # parse a Joken.Signer from the keys at the jwks endpoint
   defp parse_signer(key) do
-    {:ok, Joken.Signer.create(key["alg"], key)}
+    # the alg key is optional (!?!) default to RSA256 if none provided. This is not nice, but seems to be what other projects do as well (https://github.com/spring-projects/spring-security-oauth/issues/1097)
+    {:ok, Joken.Signer.create(key["alg"] || "RS256", key)}
   rescue
-    _ ->
-      {:error, "can not parse key from jwks_uri endpoint"}
+    err ->
+      {:error, err}
   end
 
   # fetch keys from jwks_uri endpoint and return matching key as Jose.Signer

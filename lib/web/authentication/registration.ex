@@ -41,7 +41,7 @@ defmodule CPub.Web.Authentication.Registration do
       :refresh_token,
       :token_type
     ])
-    |> validate_required([:user_id, :provider, :site, :external_id, :access_token, :token_type])
+    |> validate_required([:user_id, :provider, :site, :external_id])
     |> foreign_key_constraint(:user_id)
     |> unique_constraint(:id, name: :authentication_registration_pkey)
     # There can only be a single registration for an external identity (identified by provider, site and external_id)

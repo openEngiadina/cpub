@@ -47,7 +47,7 @@ defmodule CPub.Web.Authentication.RegistrationRequest do
       :token_type,
       :info
     ])
-    |> validate_required([:provider, :site, :external_id, :access_token, :token_type])
+    |> validate_required([:provider, :site, :external_id])
     |> unique_constraint(:id, name: :authentication_registration_pkey)
   end
 
