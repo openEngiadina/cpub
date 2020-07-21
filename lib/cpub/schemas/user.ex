@@ -116,20 +116,6 @@ defmodule CPub.User do
     |> Pbkdf2.check_pass(password, hash_key: :password)
   end
 
-  @spec get_cached_by_id(String.t() | RDF.IRI.t()) :: t | nil
-  def get_cached_by_id(id) do
-    key = "id:#{id}"
-
-    with {:ok, nil} <- Cachex.get(:user_cache, key),
-         user when not is_nil(user) <- Repo.get_one_by(__MODULE__, %{id: id}),
-         {:ok, true} <- Cachex.put(:user_cache, key, user) do
-      user
-    else
-      {:ok, user} -> user
-      nil -> nil
-    end
-  end
-
   @spec get_inbox_id(t) :: RDF.IRI.t()
   def get_inbox_id(%__MODULE__{} = user) do
     ID.merge_with_base_url("users/#{user.username}/inbox")
