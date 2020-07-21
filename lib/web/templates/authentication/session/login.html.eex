@@ -23,6 +23,3 @@
 <% end %>
   <a href=<%= Routes.authentication_registration_path(@conn, :register) %>>Sign up</a>
 </p>
-
-<p>
-</p>
