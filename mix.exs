@@ -66,9 +66,7 @@ defmodule CPub.MixProject do
       {:ueberauth, "~> 0.6.3"},
       {:oauth2, "~> 2.0"},
       {:joken, "~> 2.2"},
-      {:cachex, "~> 3.2"},
       {:jason, "~> 1.2"},
-      {:poison, "~> 4.0"},
 
       # RDF
       {:rdf, "~> 0.8"},
@@ -79,6 +77,8 @@ defmodule CPub.MixProject do
       # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.2"},
+
+      # dev & test
       {:stream_data, "~> 0.5", only: [:dev, :test]},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
