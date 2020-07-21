@@ -1,17 +1,18 @@
 defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
-  alias CPub.{ActivityPub, User}
+  alias CPub.{ActivityPub, Repo, User}
   alias RDF.{FragmentGraph, Graph, IRI}
 
   action_fallback CPub.Web.FallbackController
 
   @doc """
-  Show the `CPub.User`s profile.`
+  Show the `CPub.User`s profile.
   """
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(%Plug.Conn{} = conn, %{"id" => username}) do
-    with {:ok, user} <- User.get_by(%{username: username}) do
+    with {:ok, user} <- Repo.get_one_by(User, %{username: username}),
+         user <- user |> Repo.preload(:profile_object) do
       conn
       |> put_view(RDFView)
       |> render(:show,

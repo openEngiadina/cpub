@@ -37,6 +37,9 @@ defmodule CPub.Web.ConnCase do
       SQL.Sandbox.mode(CPub.Repo, {:shared, self()})
     end
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    {:ok,
+     conn:
+       Phoenix.ConnTest.build_conn()
+       |> Plug.Test.init_test_session(%{})}
   end
 end

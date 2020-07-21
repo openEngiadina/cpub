@@ -233,7 +233,7 @@
   <body>
       <div class="container">
           <h1><%= CPub.Config.instance[:name] %></h1>
-          <%= render @view_module, @view_template, assigns %>
+          <%= @inner_content %>
     </div>
   </body>
 </html>

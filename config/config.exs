@@ -17,7 +17,7 @@ config :cpub, CPub.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "tohOUv9KpQMbJJ4XMCUhibCzI/kt6yhXXwkeWYCHy+FfDx55PHnkoqAe11nOk6fq",
   render_errors: [view: CPub.Web.ErrorView, accepts: ~w(json)],
-  pubsub: [name: CPub.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub_server: CPub.PubSub
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -39,40 +39,28 @@ config :rdf,
   }
 
 # Configure external authentication providers (OAuth2, OIDC and Solid)
-auth_consumer_strategies =
-  System.get_env("AUTH_CONSUMER_STRATEGIES")
-  |> to_string()
-  |> String.split()
-  |> Enum.map(&hd(String.split(&1, ":")))
+# auth_consumer_strategies =
+#   System.get_env("AUTH_CONSUMER_STRATEGIES")
+#   |> to_string()
+#   |> String.split()
+#   |> Enum.map(&hd(String.split(&1, ":")))
 
-ueberauth_providers =
-  auth_consumer_strategies
-  |> Enum.filter(&(not (&1 in ["solid", "cpub", "pleroma"] || String.starts_with?(&1, "oidc"))))
-  |> Enum.map(fn strategy ->
-    strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
-    strategy_module = String.to_atom(strategy_module_name)
-    {String.to_atom(strategy), {strategy_module, []}}
-  end)
+# ueberauth_providers =
+#   auth_consumer_strategies
+#   |> Enum.filter(&(not (&1 in ["solid", "cpub", "pleroma"] || String.starts_with?(&1, "oidc"))))
+#   |> Enum.map(fn strategy ->
+#     strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
+#     strategy_module = String.to_atom(strategy_module_name)
+#     {String.to_atom(strategy), {strategy_module, []}}
+#   end)
 
 config :ueberauth, Ueberauth,
   base_path: "/auth",
-  providers: ueberauth_providers
-
-config :cpub, :auth,
-  consumer_strategies: auth_consumer_strategies,
-  consumer_strategies_names: [
-    solid: "Solid (WebID-OIDC)",
-    oidc_cpub: "CPub (OIDC)",
-    # oidc_gitlab: "GitLab (OIDC)",
-    # oidc_microsoft: "Microsoft (OIDC)",
-    cpub: "CPub",
-    pleroma: "Pleroma / Mastodon"
-    # github: "GitHub",
-    # gitlab: "GitLab",
-    # discord: "Discord"
-  ],
-  token_expires_in: 60 * 60,
-  issue_new_refresh_token: true
+  providers: [
+    local: {CPub.Web.Authentication.Strategy.Local, [callback_methods: ["POST"]]},
+    fediverse: {CPub.Web.Authentication.Strategy.Fediverse, []},
+    oidc: {CPub.Web.Authentication.Strategy.OIDC, []}
+  ]
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code

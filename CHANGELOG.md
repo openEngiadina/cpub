@@ -5,7 +5,8 @@
 ### Added
 
 - Accept data encoded as RDF/JSON
-
+- OAuth 2.0 server for authorization
+- Authentication via OpenID Connect and with existing Pleroma/Mastodon instances
 
 ## [0.1.0] - 2020-03-09
 

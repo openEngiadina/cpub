@@ -11,20 +11,15 @@ defmodule CPub.Application do
   @spec start(Application.start_type(), term) ::
           {:ok, pid} | {:ok, pid, Application.state()} | {:error, term}
   def start(_type, _args) do
-    children =
-      [
-        CPub.Repo,
-        CPub.Web.Endpoint
-      ] ++
-        cachex_children()
+    children = [
+      CPub.Repo,
+      CPub.Web.Endpoint
+      # Start the PubSub system
+      # {Phoenix.PubSub, name: CPub.PubSub},
+    ]
 
     opts = [strategy: :one_for_one, name: CPub.Supervisor]
-    {:ok, pid} = Supervisor.start_link(children, opts)
-
-    # Create a OAuth App for local authentication
-    _ = App.get_or_create_local_app()
-
-    {:ok, pid}
+    Supervisor.start_link(children, opts)
   end
 
   @spec config_change(keyword, keyword, [atom]) :: :ok
@@ -32,19 +27,5 @@ defmodule CPub.Application do
     Endpoint.config_change(changed, removed)
 
     :ok
-  end
-
-  @spec cachex_children :: [map]
-  defp cachex_children do
-    [cachex_spec(:user, default_ttl: 25_000, ttl_interval: 1000, limit: 2500)]
-  end
-
-  @spec cachex_spec(atom | String.t(), keyword) :: map
-  defp cachex_spec(name, opts) do
-    %{
-      id: :"cachex_#{name}",
-      start: {Cachex, :start_link, [:"#{name}_cache", opts]},
-      type: :worker
-    }
   end
 end

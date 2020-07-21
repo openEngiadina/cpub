@@ -15,12 +15,15 @@ defmodule CPub.User do
   alias CPub.NS.LDP
   alias CPub.Solid.WebID
 
+  alias CPub.Web.Authorization.Authorization
+
+  alias CPub.Web.Authentication.{Registration, Session}
+
   alias RDF.FragmentGraph
 
   @type t :: %__MODULE__{
           username: String.t() | nil,
           password: String.t() | nil,
-          provider: String.t() | nil,
           profile_object_id: RDF.IRI.t() | nil
         }
 
@@ -31,60 +34,53 @@ defmodule CPub.User do
 
     belongs_to :profile_object, Object, type: RDF.IRI.EctoType
 
-    # has_many :authorizations, Authorization
+    # OAuth 2.0 authorizations for user
+    has_many :authorizations, Authorization
 
-    # TODO: can the provider field be replaced for registrations?
-    # has_many :registrations, Registration
-    field :provider, :string
+    # Authenticated sessions
+    has_many :sessions, Session
+
+    # If user is created from an external identity
+    has_one :registration, Registration
 
     timestamps()
   end
 
-  @spec create_changeset(t, map) :: Ecto.Changeset.t()
-  defp create_changeset(%__MODULE__{} = user, attrs) do
+  @spec changeset(t, map) :: Ecto.Changeset.t()
+  def changeset(%__MODULE__{} = user, attrs) do
     user
     |> cast(attrs, [:username, :password])
-    |> put_assoc(:profile_object, attrs.profile_object)
-    |> validate_required([:username, :password])
-    |> put_change(:provider, "local")
-    |> unique_constraint(:username, name: "users_username_provider_index")
+    |> validate_required([:username])
+    |> validate_profile()
+    |> unique_constraint(:username, name: "users_username_index")
     |> unique_constraint(:id, name: "users_pkey")
     |> assoc_constraint(:profile_object)
   end
 
-  @spec create_from_provider_changeset(t, map) :: Ecto.Changeset.t()
-  defp create_from_provider_changeset(%__MODULE__{} = user, attrs) do
-    user
-    |> cast(attrs, [:username, :provider, :profile])
-    |> validate_required([:username, :provider, :profile])
-    |> unique_constraint(:username, name: "users_username_provider_index")
-    |> unique_constraint(:id, name: "users_pkey")
+  defp validate_profile(%Ecto.Changeset{} = changeset) do
+    if is_nil(get_field(changeset, :profile_object)) do
+      changeset
+      |> put_change(
+        :profile_object,
+        default_profile(%{username: get_field(changeset, :username)})
+        |> CPub.Object.new()
+      )
+    else
+      changeset
+    end
   end
 
   @spec create(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
-  def create(%{username: username, password: password} = attrs) do
-    profile_object = default_profile(attrs) |> Object.new()
-
+  def create(%{} = attrs) do
     %__MODULE__{}
-    |> create_changeset(%{username: username, password: password, profile_object: profile_object})
-    |> Repo.insert()
-  end
-
-  # TODO fix (profile -> profile_object)
-  @spec create_from_provider(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
-  def create_from_provider(%{username: username, provider: provider} = attrs) do
-    {id, default_profile} = default_profile(attrs, true)
-    profile = Map.get(attrs, :profile, default_profile)
-
-    %__MODULE__{id: id}
-    |> create_from_provider_changeset(%{username: username, provider: provider, profile: profile})
+    |> changeset(attrs)
     |> Repo.insert()
   end
 
   @doc """
   Returns an externally usable URL.
 
-  NOTE: Goal is to not rely on any base_url. How can an actor be addessed?
+  TODO: Goal is to not rely on any base_url. How can an actor be addessed?
   """
   @spec actor_url(t) :: RDF.IRI.t()
   def actor_url(%__MODULE__{username: username}) do
@@ -111,18 +107,8 @@ defmodule CPub.User do
   end
 
   @doc """
-  Get a single `CPub.User`.
-
-  Returns {:error, :not_found} if user is not found. Raises if more than one entry.
+  Get a single user by username and check the password
   """
-  @spec get_by(map) :: {:ok, t} | {:error, :not_found}
-  def get_by(attrs) do
-    case Repo.get_by(__MODULE__, attrs) |> Repo.preload(:profile_object) do
-      nil -> {:error, :not_found}
-      user -> {:ok, user}
-    end
-  end
-
   @spec get_by_password(String.t(), String.t()) :: {:ok, t} | {:error, String.t()}
   def get_by_password(username, password) do
     __MODULE__
@@ -135,7 +121,7 @@ defmodule CPub.User do
     key = "id:#{id}"
 
     with {:ok, nil} <- Cachex.get(:user_cache, key),
-         user when not is_nil(user) <- get_by(%{id: id}),
+         user when not is_nil(user) <- Repo.get_one_by(__MODULE__, %{id: id}),
          {:ok, true} <- Cachex.put(:user_cache, key, user) do
       user
     else

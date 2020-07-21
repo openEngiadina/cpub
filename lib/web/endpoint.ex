@@ -1,8 +1,6 @@
 defmodule CPub.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :cpub
 
-  alias CPub.Config
-
   socket "/socket", CPub.Web.UserSocket,
     websocket: true,
     longpoll: false
@@ -37,12 +35,17 @@ defmodule CPub.Web.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
+  # plug Plug.Session,
+  #   store: :cookie,
+  #   key: Config.cookie_name(),
+  #   signing_salt: Config.cookie_signing_salt(),
+  #   secure: Config.cookie_secure?(),
+  #   extra: Config.cookie_extra_attrs()
+
   plug Plug.Session,
     store: :cookie,
-    key: Config.cookie_name(),
-    signing_salt: Config.cookie_signing_salt(),
-    secure: Config.cookie_secure?(),
-    extra: Config.cookie_extra_attrs()
+    key: "_cpub_key",
+    signing_salt: "uME3vEPr"
 
   plug Corsica,
     origins: "*",

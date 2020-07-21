@@ -51,6 +51,7 @@ defmodule CPub.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # Phoenix, Web and Databse
       {:phoenix, "~> 1.5"},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0"},
@@ -59,20 +60,26 @@ defmodule CPub.MixProject do
       {:corsica, "~> 1.1"},
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
-      {:oauth2, "~> 0.8.2"},
-      {:ueberauth, "~> 0.5.0"},
-      {:joken, "~> 2.2"},
       {:gettext, "~> 0.11"},
-      {:cachex, "~> 3.2"},
+
+      # Authorizaiton & Authentication
+      {:ueberauth, "~> 0.6.3"},
+      {:oauth2, "~> 2.0"},
+      {:joken, "~> 2.2"},
       {:jason, "~> 1.2"},
-      {:poison, "~> 4.0"},
+
+      # RDF
       {:rdf, "~> 0.8"},
       {:sparql, "~> 0.3"},
       {:json_ld, "~> 0.3"},
-      {:stream_data, "~> 0.5"},
       {:elixir_uuid, "~> 1.2"},
+
+      # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.2"},
+
+      # dev & test
+      {:stream_data, "~> 0.5", only: [:dev, :test]},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:excoveralls, "~> 0.13", only: :test},

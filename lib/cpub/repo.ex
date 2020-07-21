@@ -19,4 +19,11 @@ defmodule CPub.Repo do
       resource -> {:ok, resource}
     end
   end
+
+  def get_one_by(queryable, clauses) do
+    case __MODULE__.get_by(queryable, clauses) do
+      nil -> {:error, :not_found}
+      resource -> {:ok, resource}
+    end
+  end
 end
