@@ -11,6 +11,8 @@ defmodule CPub.Repo.Migrations.CreateAuthenticationOAuthClientClients do
       add(:client_id, :string)
       add(:client_secret, :text)
 
+      add(:display_name, :string)
+
       timestamps()
     end
 

@@ -121,6 +121,10 @@ defmodule Ueberauth.Strategy.OIDC do
         conn
         |> set_errors!([error("oidc", "could not get access token")])
     end
+  rescue
+    _ ->
+      conn
+      |> set_errors!([error("oidc", "could not get access token")])
   end
 
   # parse a Joken.Signer from the keys at the jwks endpoint

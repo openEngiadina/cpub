@@ -5,6 +5,7 @@ defmodule CPub.Web.Authentication.OAuthClient.Client do
 
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   alias CPub.Repo
 
@@ -18,12 +19,16 @@ defmodule CPub.Web.Authentication.OAuthClient.Client do
 
     field :client_id, :string
     field :client_secret, :string
+
+    # name to display in Authentication UI.
+    field :display_name, :string
+
     timestamps()
   end
 
   def changeset(%__MODULE__{} = client, attrs) do
     client
-    |> cast(attrs, [:provider, :site, :client_id, :client_secret])
+    |> cast(attrs, [:provider, :site, :client_id, :client_secret, :display_name])
     |> validate_required([:provider, :site, :client_id, :client_secret])
     |> unique_constraint(:id, name: :authentication_oauth_client_clients_pkey)
     |> unique_constraint(:provider_site,
@@ -35,5 +40,13 @@ defmodule CPub.Web.Authentication.OAuthClient.Client do
     %__MODULE__{}
     |> changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Returns list of Clients with display name
+  """
+  def get_displayable do
+    from(c in __MODULE__, where: not is_nil(c.display_name))
+    |> Repo.all()
   end
 end

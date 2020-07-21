@@ -7,7 +7,7 @@ defmodule CPub.Web.Authentication.SessionController do
 
   alias CPub.{Repo, User}
 
-  alias CPub.Web.Authentication.{Registration, Session}
+  alias CPub.Web.Authentication.{OAuthClient, Registration, Session}
 
   action_fallback CPub.Web.FallbackController
 
@@ -110,7 +110,8 @@ defmodule CPub.Web.Authentication.SessionController do
   def render_login(%Plug.Conn{} = conn) do
     conn
     |> render("login.html",
-      callback_url: Routes.authentication_session_path(conn, :login)
+      callback_url: Routes.authentication_session_path(conn, :login),
+      clients: OAuthClient.Client.get_displayable()
     )
   end
 

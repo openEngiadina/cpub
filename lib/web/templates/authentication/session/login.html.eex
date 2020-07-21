@@ -16,6 +16,13 @@
 
 <% end %>
 
-<p> To sign up with your existing Fediverse account enter your instance address above. </p>
+<p>
+<%= for client <- @clients do %>
+    <a href=<%= Routes.authentication_provider_path(@conn, :request, client.provider, %{site: client.site})%>> <%= client.display_name %> </a>
+    -
+<% end %>
+  <a href=<%= Routes.authentication_registration_path(@conn, :register) %>>Sign up</a>
+</p>
 
-<p> <a href=<%= Routes.authentication_registration_path(@conn, :register) %>> Local sign up</a> </p>
+<p>
+</p>
