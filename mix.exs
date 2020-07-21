@@ -74,6 +74,9 @@ defmodule CPub.MixProject do
       {:json_ld, "~> 0.3"},
       {:elixir_uuid, "~> 1.2"},
 
+      # ERIS & content-addressing
+      {:blake2_elixir, "~> 0.8.1"},
+
       # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.2"},

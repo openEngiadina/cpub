@@ -460,7 +460,7 @@ defmodule RDF.FragmentGraph do
   end
 
   defp blake2b_hash_urn(binary) do
-    hash = :crypto.hash(:blake2b, binary)
+    hash = Blake2.Blake2b.hash(binary, <<>>, 32)
 
     ("urn:blake2b:" <> Base.encode32(hash, padding: false))
     |> RDF.IRI.new()
