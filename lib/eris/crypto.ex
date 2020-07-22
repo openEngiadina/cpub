@@ -17,8 +17,27 @@ defmodule ERIS.Crypto do
   def xor(data, key: key, nonce: nonce) do
     # First 32 bits of IV are the counter and the rest (96 bits) the nonce.
     # See https://www.openssl.org/docs/man1.1.1/man3/EVP_chacha20_poly1305.html
-    iv = <<0::32>> <> nonce
-    :crypto.crypto_one_time(:chacha20, key, iv, data, true)
+    Chacha20.crypt(data, key, nonce)
+  end
+
+  @doc """
+  Returns the 32bit Blake2b hash of `data`.
+  """
+  def hash(data), do: Blake2.Blake2b.hash(data, <<>>, 32)
+
+  @doc """
+  Derive the verificatoin key from the read_key.
+  """
+  def derive_verification_key(read_key) do
+    Blake2.Blake2b.hash(
+      <<>>,
+      read_key,
+      32,
+      # the subkey id needs to be little endian encoded
+      <<1::128-little>>,
+      # libsodium requires the context to be 8bytes, but BLAKE2B_PERSONALBYTES is 16. sodium pads it with 0s
+      "eris.key" <> <<0::64>>
+    )
   end
 
   @doc """

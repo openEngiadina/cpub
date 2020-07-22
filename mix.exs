@@ -76,6 +76,7 @@ defmodule CPub.MixProject do
 
       # ERIS & content-addressing
       {:blake2_elixir, "~> 0.8.1"},
+      {:chacha20, "~> 1.0"},
 
       # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
