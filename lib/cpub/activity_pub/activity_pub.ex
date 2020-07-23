@@ -89,7 +89,6 @@ defmodule CPub.ActivityPub do
         activity =
           RDF.FragmentGraph.new(activity_id)
           |> FragmentGraph.add(request.graph)
-          |> FragmentGraph.set_base_subject_to_hash()
 
         %{request | activity_object: activity}
 
@@ -124,10 +123,15 @@ defmodule CPub.ActivityPub do
         with object <-
                FragmentGraph.new(object_id)
                |> FragmentGraph.add(request.graph)
-               |> FragmentGraph.set_base_subject_to_hash(),
+               |> FragmentGraph.set_base_subject_to_hash(fn data ->
+                 data |> ERIS.read_capability() |> RDF.IRI.new()
+               end),
              new_activity_object <-
                activity_object
-               |> replace_object_in_fragment_graph(object_id, object.base_subject) do
+               |> replace_object_in_fragment_graph(object_id, object.base_subject)
+               |> FragmentGraph.set_base_subject_to_hash(fn data ->
+                 data |> ERIS.read_capability() |> RDF.IRI.new()
+               end) do
           %{
             request
             | activity_object: new_activity_object,

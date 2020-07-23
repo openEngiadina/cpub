@@ -112,12 +112,12 @@ defmodule Ueberauth.Strategy.OIDC do
     with {:ok, config} <- get_openid_config(conn),
          client <- oauth_client(conn, config),
          {:ok, client} <- OAuth2.Client.get_token(client, code: conn.params["code"]),
-         {:ok, id_token} <- verify_id_token(conn, config, client) do
+         {:ok, id_token} <- verify_id_token(config, client) do
       conn
       |> put_private(:ueberauth_oidc_oauth_client, client)
       |> put_private(:ueberauth_oidc_id_token, id_token)
     else
-      err ->
+      _ ->
         conn
         |> set_errors!([error("oidc", "could not get access token")])
     end
@@ -137,7 +137,7 @@ defmodule Ueberauth.Strategy.OIDC do
   end
 
   # fetch keys from jwks_uri endpoint and return matching key as Jose.Signer
-  defp get_signer(conn, config, kid) do
+  defp get_signer(config, kid) do
     headers = [{"Content-Type", "application/json"}]
 
     with {:ok, _, _, client_ref} <-
@@ -156,10 +156,10 @@ defmodule Ueberauth.Strategy.OIDC do
   end
 
   # verify the id_token
-  defp verify_id_token(conn, config, client) do
+  defp verify_id_token(config, client) do
     with jwt <- client.token.other_params["id_token"],
          {:ok, headers} <- Joken.peek_header(jwt),
-         {:ok, signer} <- get_signer(conn, config, headers["kid"]) do
+         {:ok, signer} <- get_signer(config, headers["kid"]) do
       Joken.verify(jwt, signer)
     end
   end

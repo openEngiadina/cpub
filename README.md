@@ -11,6 +11,11 @@ CPub is developed as part of the [openEngiadina](https://openengiadina.net/) pla
 
 ## Quick start
 
+Requirements:
+
+  - Erlang/OTP
+  - Elixir
+
 To start the CPub server:
 
   * Install dependencies with `mix deps.get`

@@ -6,7 +6,6 @@ defmodule CPub.Application do
   use Application
 
   alias CPub.Web.Endpoint
-  alias CPub.Web.OAuth.App
 
   @spec start(Application.start_type(), term) ::
           {:ok, pid} | {:ok, pid, Application.state()} | {:error, term}
