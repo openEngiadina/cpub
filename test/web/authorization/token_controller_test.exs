@@ -19,10 +19,9 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
          {:ok, user} <- User.create(%{username: "alice", password: "123"}),
          {:ok, authorization} <-
            Authorization.create(%{
-             client: client,
-             user: user,
-             scope: "test",
-             redirect_uri: "http://example.com/"
+             client_id: client.id,
+             user_id: user.id,
+             scope: "test"
            }) do
       {:ok, %{client: client, user: user, authorization: authorization}}
     end
@@ -39,7 +38,6 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
           code: authorization.code,
-          redirect_uri: authorization.redirect_uri,
           client_id: client.id
         })
 

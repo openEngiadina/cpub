@@ -84,10 +84,9 @@ defmodule CPub.Web.Authorization.AuthorizationController do
          {:ok, state} <- get_state(conn),
          {:ok, authorization} <-
            Authorization.create(%{
-             user: session.user,
-             client: client,
-             scope: scope,
-             redirect_uri: redirect_uri |> URI.to_string()
+             user_id: session.user.id,
+             client_id: client.id,
+             scope: scope
            }) do
       cb_uri =
         redirect_uri
@@ -120,10 +119,9 @@ defmodule CPub.Web.Authorization.AuthorizationController do
          {:ok, state} <- get_state(conn),
          {:ok, authorization} <-
            Authorization.create(%{
-             user: session.user,
-             client: client,
-             scope: scope,
-             redirect_uri: redirect_uri |> URI.to_string()
+             user_id: session.user.id,
+             client_id: client.id,
+             scope: scope
            }),
          {:ok, token} <- Token.create(authorization) do
       cb_uri =

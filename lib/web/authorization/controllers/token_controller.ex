@@ -92,10 +92,9 @@ defmodule CPub.Web.Authorization.TokenController do
                }),
              {:ok, authorization} <-
                Authorization.create(%{
-                 user: user,
-                 client: client,
-                 scope: scope,
-                 redirect_uri: redirect_uri
+                 user_id: user.id,
+                 client_id: client.id,
+                 scope: scope
                }),
              {:ok, token} <- Token.create(authorization) do
           conn

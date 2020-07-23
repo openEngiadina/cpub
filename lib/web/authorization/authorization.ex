@@ -26,9 +26,6 @@ defmodule CPub.Web.Authorization do
   schema "oauth_server_authorizations" do
     field :scope, :string
 
-    # TODO: is this needed?
-    field :redirect_uri, :string
-
     # TODO rename to :authorization_code
     field :code, :string
     # TODO rename to :code_used
@@ -45,8 +42,8 @@ defmodule CPub.Web.Authorization do
 
   def changeset(%__MODULE__{} = authorization, attrs) do
     authorization
-    |> cast(attrs, [:scope, :redirect_uri, :user_id, :client_id, :used])
-    |> validate_required([:scope, :redirect_uri, :user_id, :client_id])
+    |> cast(attrs, [:scope, :user_id, :client_id, :used])
+    |> validate_required([:scope, :user_id, :client_id])
     # TODO: validate that scope is in client.scopes
     |> assoc_constraint(:user)
     |> assoc_constraint(:client)
@@ -54,14 +51,9 @@ defmodule CPub.Web.Authorization do
     |> unique_constraint(:code, name: "oauth_server_authorizations_code_index")
   end
 
-  def create(%{user: user, client: client, scope: scope, redirect_uri: redirect_uri}) do
+  def create(attrs) do
     %__MODULE__{}
-    |> changeset(%{
-      user_id: user.id,
-      client_id: client.id,
-      scope: scope,
-      redirect_uri: redirect_uri
-    })
+    |> changeset(attrs)
     |> put_change(:code, random_code())
     |> put_change(:refresh_token, random_code())
     |> Repo.insert()

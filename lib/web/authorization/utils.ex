@@ -33,14 +33,6 @@ defmodule CPub.Web.Authorization.Utils do
     end
   end
 
-  def get_redirect_uri(%Plug.Conn{} = conn, %Authorization{} = authorization) do
-    if conn.params["redirect_uri"] == authorization.redirect_uri do
-      {:ok, authorization.redirect_uri |> URI.parse()}
-    else
-      {:error, :invalid_request, "redirect_uri not valid or not allowed for client."}
-    end
-  end
-
   @doc """
   Returns a valid scope for given connection and client
   """

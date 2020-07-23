@@ -22,7 +22,6 @@ defmodule CPub.Repo.Migrations.CreateAuthorization do
       add(:code, :string)
       add(:refresh_token, :string)
       add(:scope, :string)
-      add(:redirect_uri, :string)
       add(:used, :boolean)
 
       add(:user_id, references(:users, on_delete: :delete_all, type: :binary_id))
