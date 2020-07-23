@@ -110,7 +110,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
       code = redirect_uri.query |> URI.decode_query() |> Access.get("code")
 
-      assert {:ok, code} = CPub.Repo.get_one_by(Authorization, %{code: code})
+      assert {:ok, code} = CPub.Repo.get_one_by(Authorization, %{authorization_code: code})
     end
 
     test "redirect with error on deny", %{

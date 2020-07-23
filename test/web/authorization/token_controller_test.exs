@@ -37,7 +37,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         conn
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
-          code: authorization.code,
+          code: authorization.authorization_code,
           client_id: client.id
         })
 
@@ -63,7 +63,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         conn
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
-          code: authorization.code,
+          code: authorization.authorization_code,
           client_id: client.id
         })
 
@@ -77,7 +77,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         conn
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
-          code: authorization.code,
+          code: authorization.authorization_code,
           client_id: client.id
         })
 

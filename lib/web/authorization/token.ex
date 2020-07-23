@@ -37,7 +37,7 @@ defmodule CPub.Web.Authorization.Token do
   Creates a new (initial) token for an `Authorization`.
   """
   def create(%Authorization{} = authorization) do
-    if authorization.used or Authorization.expired?(authorization) do
+    if authorization.code_used or Authorization.expired?(authorization) do
       {:error, :invalid_grant, "access code expired or already used"}
     else
       case Multi.new()

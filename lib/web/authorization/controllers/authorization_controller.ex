@@ -93,7 +93,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
         |> Map.put(
           :query,
           URI.encode_query(%{
-            code: authorization.code,
+            code: authorization.authorization_code,
             state: state
           })
         )

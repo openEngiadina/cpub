@@ -19,10 +19,10 @@ defmodule CPub.Repo.Migrations.CreateAuthorization do
     # Create table for `Authorization`
     create table(:oauth_server_authorizations, primary_key: false) do
       add(:id, :binary_id, primary_key: true)
-      add(:code, :string)
+      add(:authorization_code, :string)
       add(:refresh_token, :string)
       add(:scope, :string)
-      add(:used, :boolean)
+      add(:code_used, :boolean)
 
       add(:user_id, references(:users, on_delete: :delete_all, type: :binary_id))
       add(:client_id, references(:oauth_server_clients, on_delete: :delete_all, type: :binary_id))
@@ -30,7 +30,7 @@ defmodule CPub.Repo.Migrations.CreateAuthorization do
       timestamps()
     end
 
-    create(unique_index(:oauth_server_authorizations, [:code]))
+    create(unique_index(:oauth_server_authorizations, [:authorization_code]))
     create(unique_index(:oauth_server_authorizations, [:refresh_token]))
 
     # Create table for `Token`

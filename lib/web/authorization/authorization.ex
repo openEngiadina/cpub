@@ -26,10 +26,8 @@ defmodule CPub.Web.Authorization do
   schema "oauth_server_authorizations" do
     field :scope, :string
 
-    # TODO rename to :authorization_code
-    field :code, :string
-    # TODO rename to :code_used
-    field :used, :boolean, default: false
+    field :authorization_code, :string
+    field :code_used, :boolean, default: false
     field :refresh_token, :string
 
     belongs_to :user, User, type: :binary_id
@@ -42,7 +40,7 @@ defmodule CPub.Web.Authorization do
 
   def changeset(%__MODULE__{} = authorization, attrs) do
     authorization
-    |> cast(attrs, [:scope, :user_id, :client_id, :used])
+    |> cast(attrs, [:scope, :user_id, :client_id, :code_used])
     |> validate_required([:scope, :user_id, :client_id])
     # TODO: validate that scope is in client.scopes
     |> assoc_constraint(:user)
@@ -54,7 +52,7 @@ defmodule CPub.Web.Authorization do
   def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> put_change(:code, random_code())
+    |> put_change(:authorization_code, random_code())
     |> put_change(:refresh_token, random_code())
     |> Repo.insert()
   end
@@ -64,7 +62,7 @@ defmodule CPub.Web.Authorization do
   """
   def use_changeset(%__MODULE__{} = authorization) do
     authorization
-    |> changeset(%{used: true})
+    |> changeset(%{code_used: true})
   end
 
   @doc """
