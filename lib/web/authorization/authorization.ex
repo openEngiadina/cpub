@@ -1,11 +1,12 @@
-defmodule CPub.Web.Authorization.Authorization do
+defmodule CPub.Web.Authorization do
   @moduledoc """
   An OAuth 2.0 Authorization.
 
   An `CPub.Web.Authorization.Authorization` includes a code that can be used to obtain a `CPub.Web.Authorization.Token`. The token can be used to access resources. The Authorization can only be used once and is valid for only 10 minutes after creation.
 
-  TODO The `CPub.Web.Authorization.Authorization` remains in the database and can be reused to refresh a token (see https://tools.ietf.org/html/rfc6749#section-6) until it is explicitly revoked (deleted). On deletion all `CPub.Web.Authorization.Token`s that were created based on the Authorization are revoked (deleted).
+  The `CPub.Web.Authorization.Authorization` remains in the database and can be reused to refresh a token (see https://tools.ietf.org/html/rfc6749#section-6) until it is explicitly revoked (deleted). On deletion all `CPub.Web.Authorization.Token`s that were created based on the Authorization are revoked (deleted).
 
+  Protected routes have a authorization assigned (see `CPub.Web.Authorization.AuthorizationPlug`).
   """
 
   use Ecto.Schema
@@ -23,11 +24,16 @@ defmodule CPub.Web.Authorization.Authorization do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "oauth_server_authorizations" do
-    field :code, :string
-    field :refresh_token, :string
     field :scope, :string
+
+    # TODO: is this needed?
     field :redirect_uri, :string
+
+    # TODO rename to :authorization_code
+    field :code, :string
+    # TODO rename to :code_used
     field :used, :boolean, default: false
+    field :refresh_token, :string
 
     belongs_to :user, User, type: :binary_id
     belongs_to :client, Client, type: :binary_id

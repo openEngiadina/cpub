@@ -15,7 +15,7 @@ defmodule CPub.User do
   alias CPub.NS.LDP
   alias CPub.Solid.WebID
 
-  alias CPub.Web.Authorization.Authorization
+  alias CPub.Web.Authorization
 
   alias CPub.Web.Authentication.{Registration, Session}
 

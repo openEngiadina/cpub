@@ -9,7 +9,7 @@ defmodule CPub.Web.Authorization.Token do
   alias Ecto.Multi
 
   alias CPub.Repo
-  alias CPub.Web.Authorization.Authorization
+  alias CPub.Web.Authorization
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "oauth_server_tokens" do

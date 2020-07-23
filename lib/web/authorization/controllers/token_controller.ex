@@ -11,7 +11,8 @@ defmodule CPub.Web.Authorization.TokenController do
 
   alias CPub.{Repo, User}
 
-  alias CPub.Web.Authorization.{Authorization, Client, Token}
+  alias CPub.Web.Authorization
+  alias CPub.Web.Authorization.{Client, Token}
 
   defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code, client: client}) do
     case Repo.get_one_by(Authorization, %{code: conn.params["code"]}) do

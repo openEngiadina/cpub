@@ -4,7 +4,8 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
 
   alias CPub.{Repo, User}
 
-  alias CPub.Web.Authorization.{Authorization, Client, Token}
+  alias CPub.Web.Authorization
+  alias CPub.Web.Authorization.{Client, Token}
 
   doctest CPub.Web.Authorization.TokenController
 

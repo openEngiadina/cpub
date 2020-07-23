@@ -9,7 +9,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
   import CPub.Web.Authorization.Utils
 
   alias CPub.Repo
-  alias CPub.Web.Authorization.Authorization
+  alias CPub.Web.Authorization
   alias CPub.Web.Authorization.Token
 
   plug :fetch_flash
