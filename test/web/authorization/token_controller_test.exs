@@ -4,7 +4,8 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
 
   alias CPub.{Repo, User}
 
-  alias CPub.Web.Authorization.{Authorization, Client, Token}
+  alias CPub.Web.Authorization
+  alias CPub.Web.Authorization.{Client, Token}
 
   doctest CPub.Web.Authorization.TokenController
 
@@ -13,15 +14,14 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
            Client.create(%{
              client_name: "Test client",
              redirect_uris: ["http://example.com/"],
-             scopes: ["test"]
+             scope: [:openid, :read, :write]
            }),
          {:ok, user} <- User.create(%{username: "alice", password: "123"}),
          {:ok, authorization} <-
            Authorization.create(%{
-             client: client,
-             user: user,
-             scope: "test",
-             redirect_uri: "http://example.com/"
+             client_id: client.id,
+             user_id: user.id,
+             scope: [:openid, :read, :write]
            }) do
       {:ok, %{client: client, user: user, authorization: authorization}}
     end
@@ -37,8 +37,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         conn
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
-          code: authorization.code,
-          redirect_uri: authorization.redirect_uri,
+          code: authorization.authorization_code,
           client_id: client.id
         })
 
@@ -64,7 +63,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         conn
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
-          code: authorization.code,
+          code: authorization.authorization_code,
           client_id: client.id
         })
 
@@ -78,7 +77,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         conn
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
-          code: authorization.code,
+          code: authorization.authorization_code,
           client_id: client.id
         })
 

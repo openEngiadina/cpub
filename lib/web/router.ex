@@ -113,11 +113,6 @@ defmodule CPub.Web.Router do
     pipe_through :api
     pipe_through :authorization
 
-    scope [] do
-      get "/id", UserController, :id
-      get "/verify", UserController, :verify
-    end
-
     resources "/", UserController, only: [:show] do
       post "/outbox", UserController, :post_to_outbox, as: :outbox
       get "/outbox", UserController, :get_outbox, as: :outbox

@@ -9,7 +9,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
   import CPub.Web.Authorization.Utils
 
   alias CPub.Repo
-  alias CPub.Web.Authorization.Authorization
+  alias CPub.Web.Authorization
   alias CPub.Web.Authorization.Token
 
   plug :fetch_flash
@@ -60,7 +60,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
           client_id: client.id,
           response_type: response_type,
           redirect_uri: redirect_uri |> URI.to_string(),
-          scope: scope,
+          scope: scope |> Enum.map(&to_string/1),
           state: state
         },
         user: session.user
@@ -84,17 +84,16 @@ defmodule CPub.Web.Authorization.AuthorizationController do
          {:ok, state} <- get_state(conn),
          {:ok, authorization} <-
            Authorization.create(%{
-             user: session.user,
-             client: client,
-             scope: scope,
-             redirect_uri: redirect_uri |> URI.to_string()
+             user_id: session.user.id,
+             client_id: client.id,
+             scope: scope
            }) do
       cb_uri =
         redirect_uri
         |> Map.put(
           :query,
           URI.encode_query(%{
-            code: authorization.code,
+            code: authorization.authorization_code,
             state: state
           })
         )
@@ -120,10 +119,9 @@ defmodule CPub.Web.Authorization.AuthorizationController do
          {:ok, state} <- get_state(conn),
          {:ok, authorization} <-
            Authorization.create(%{
-             user: session.user,
-             client: client,
-             scope: scope,
-             redirect_uri: redirect_uri |> URI.to_string()
+             user_id: session.user.id,
+             client_id: client.id,
+             scope: scope
            }),
          {:ok, token} <- Token.create(authorization) do
       cb_uri =
@@ -135,7 +133,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
             token_type: "bearer",
             expires_in: Token.valid_for(),
             # The authorization server MUST NOT issue a refresh token.
-            scope: scope,
+            scope: scope |> Enum.map_join(" ", &to_string/1),
             state: state
           })
         )

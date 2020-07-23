@@ -11,10 +11,11 @@ defmodule CPub.Web.Authorization.TokenController do
 
   alias CPub.{Repo, User}
 
-  alias CPub.Web.Authorization.{Authorization, Client, Token}
+  alias CPub.Web.Authorization
+  alias CPub.Web.Authorization.{Scope, Token}
 
   defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code, client: client}) do
-    case Repo.get_one_by(Authorization, %{code: conn.params["code"]}) do
+    case Repo.get_one_by(Authorization, %{authorization_code: conn.params["code"]}) do
       {:ok, authorization} ->
         if authorization.client_id == client.id do
           {:ok, authorization}
@@ -80,21 +81,11 @@ defmodule CPub.Web.Authorization.TokenController do
       "password" ->
         with {:ok, user} <-
                User.get_by_password(conn.params["username"], conn.params["password"]),
-             client_name <- "OAuth 2.0 Resource Owner Password Credentials Grant Client",
-             scope <- Map.get(conn.params, "scope", "default-scope-TODO"),
-             redirect_uri <- "dummy-redirect-uri",
-             {:ok, client} <-
-               Client.create(%{
-                 client_name: client_name,
-                 redirect_uris: [redirect_uri],
-                 scopes: [scope]
-               }),
+             scope <- Map.get(conn.params, "scope", Scope.default()),
              {:ok, authorization} <-
                Authorization.create(%{
-                 user: user,
-                 client: client,
-                 scope: scope,
-                 redirect_uri: redirect_uri
+                 user_id: user.id,
+                 scope: scope
                }),
              {:ok, token} <- Token.create(authorization) do
           conn
@@ -108,6 +99,9 @@ defmodule CPub.Web.Authorization.TokenController do
               refresh_token: authorization.refresh_token
             }
           )
+        else
+          _ ->
+            {:error, :invalid_grant, "unauthorized"}
         end
 
       _ ->

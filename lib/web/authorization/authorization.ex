@@ -1,11 +1,12 @@
-defmodule CPub.Web.Authorization.Authorization do
+defmodule CPub.Web.Authorization do
   @moduledoc """
   An OAuth 2.0 Authorization.
 
   An `CPub.Web.Authorization.Authorization` includes a code that can be used to obtain a `CPub.Web.Authorization.Token`. The token can be used to access resources. The Authorization can only be used once and is valid for only 10 minutes after creation.
 
-  TODO The `CPub.Web.Authorization.Authorization` remains in the database and can be reused to refresh a token (see https://tools.ietf.org/html/rfc6749#section-6) until it is explicitly revoked (deleted). On deletion all `CPub.Web.Authorization.Token`s that were created based on the Authorization are revoked (deleted).
+  The `CPub.Web.Authorization.Authorization` remains in the database and can be reused to refresh a token (see https://tools.ietf.org/html/rfc6749#section-6) until it is explicitly revoked (deleted). On deletion all `CPub.Web.Authorization.Token`s that were created based on the Authorization are revoked (deleted).
 
+  Protected routes have a authorization assigned (see `CPub.Web.Authorization.AuthorizationPlug`).
   """
 
   use Ecto.Schema
@@ -14,7 +15,7 @@ defmodule CPub.Web.Authorization.Authorization do
 
   alias CPub.{Repo, User}
 
-  alias CPub.Web.Authorization.{Client, Token}
+  alias CPub.Web.Authorization.{Client, Scope, Token}
 
   defp random_code do
     :crypto.strong_rand_bytes(32)
@@ -23,11 +24,11 @@ defmodule CPub.Web.Authorization.Authorization do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "oauth_server_authorizations" do
-    field :code, :string
+    field :scope, {:array, Scope}
+
+    field :authorization_code, :string
+    field :code_used, :boolean, default: false
     field :refresh_token, :string
-    field :scope, :string
-    field :redirect_uri, :string
-    field :used, :boolean, default: false
 
     belongs_to :user, User, type: :binary_id
     belongs_to :client, Client, type: :binary_id
@@ -39,8 +40,8 @@ defmodule CPub.Web.Authorization.Authorization do
 
   def changeset(%__MODULE__{} = authorization, attrs) do
     authorization
-    |> cast(attrs, [:scope, :redirect_uri, :user_id, :client_id, :used])
-    |> validate_required([:scope, :redirect_uri, :user_id, :client_id])
+    |> cast(attrs, [:scope, :user_id, :client_id, :code_used])
+    |> validate_required([:scope, :user_id])
     # TODO: validate that scope is in client.scopes
     |> assoc_constraint(:user)
     |> assoc_constraint(:client)
@@ -48,15 +49,10 @@ defmodule CPub.Web.Authorization.Authorization do
     |> unique_constraint(:code, name: "oauth_server_authorizations_code_index")
   end
 
-  def create(%{user: user, client: client, scope: scope, redirect_uri: redirect_uri}) do
+  def create(attrs) do
     %__MODULE__{}
-    |> changeset(%{
-      user_id: user.id,
-      client_id: client.id,
-      scope: scope,
-      redirect_uri: redirect_uri
-    })
-    |> put_change(:code, random_code())
+    |> changeset(attrs)
+    |> put_change(:authorization_code, random_code())
     |> put_change(:refresh_token, random_code())
     |> Repo.insert()
   end
@@ -66,7 +62,7 @@ defmodule CPub.Web.Authorization.Authorization do
   """
   def use_changeset(%__MODULE__{} = authorization) do
     authorization
-    |> changeset(%{used: true})
+    |> changeset(%{code_used: true})
   end
 
   @doc """

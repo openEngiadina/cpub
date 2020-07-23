@@ -4,7 +4,8 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
   alias CPub.User
 
-  alias CPub.Web.Authorization.{Authorization, Client, Token}
+  alias CPub.Web.Authorization
+  alias CPub.Web.Authorization.{Client, Token}
 
   alias CPub.Web.Authentication.Session
 
@@ -14,7 +15,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
     case Client.create(%{
            client_name: "Test client",
            redirect_uris: ["http://example.com/"],
-           scopes: ["test"]
+           scope: [:openid, :read, :write]
          }) do
       {:ok, client} ->
         {:ok, %{client: client}}
@@ -109,7 +110,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
       code = redirect_uri.query |> URI.decode_query() |> Access.get("code")
 
-      assert {:ok, code} = CPub.Repo.get_one_by(Authorization, %{code: code})
+      assert {:ok, code} = CPub.Repo.get_one_by(Authorization, %{authorization_code: code})
     end
 
     test "redirect with error on deny", %{

@@ -9,7 +9,7 @@ defmodule CPub.Web.Authorization.Token do
   alias Ecto.Multi
 
   alias CPub.Repo
-  alias CPub.Web.Authorization.Authorization
+  alias CPub.Web.Authorization
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "oauth_server_tokens" do
@@ -37,7 +37,7 @@ defmodule CPub.Web.Authorization.Token do
   Creates a new (initial) token for an `Authorization`.
   """
   def create(%Authorization{} = authorization) do
-    if authorization.used or Authorization.expired?(authorization) do
+    if authorization.code_used or Authorization.expired?(authorization) do
       {:error, :invalid_grant, "access code expired or already used"}
     else
       case Multi.new()

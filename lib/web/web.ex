@@ -23,7 +23,9 @@ defmodule CPub.Web do
 
       import Plug.Conn
       import CPub.Web.Gettext
-      import CPub.Web.Authorization.AuthorizationPlug, only: [unauthorized: 1]
+
+      import CPub.Web.Authorization.Scope, only: [scope_subset?: 2]
+
       alias CPub.Web.Router.Helpers, as: Routes
 
       alias CPub.Web.JSONView

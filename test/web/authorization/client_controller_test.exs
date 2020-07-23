@@ -13,13 +13,13 @@ defmodule CPub.Web.Authorization.ClientControllerTest do
         |> post(Routes.oauth_server_client_path(conn, :create), %{
           client_name: "Test Client",
           redirect_uris: ["http://example.com/"],
-          scopes: ["test"]
+          scope: ["openid", "read", "write"]
         })
 
       assert %{
                "client_name" => "Test Client",
                "redirect_uris" => ["http://example.com/"],
-               "scopes" => ["test"]
+               "scope" => ["openid", "read", "write"]
              } =
                response
                |> json_response(201)
@@ -32,7 +32,7 @@ defmodule CPub.Web.Authorization.ClientControllerTest do
                Client.create(%{
                  client_name: "Test Client",
                  redirect_uris: ["http://example.com"],
-                 scopes: ["test"]
+                 scope: [:openid, :read, :write]
                })
 
       response =

@@ -18,6 +18,11 @@ defmodule CPub.Web.ObjectController do
     Repo.get_one(Object, id)
   end
 
+  def get("urn:erisx:" <> cap) do
+    id = ("urn:erisx:" <> String.upcase(cap)) |> RDF.IRI.new()
+    Repo.get_one(Object, id)
+  end
+
   def get(_), do: {:error, :not_found}
 
   def show(%Plug.Conn{} = conn, _) do

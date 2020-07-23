@@ -18,7 +18,7 @@ defmodule CPub.Web.Authorization.ClientController do
   def create(%Plug.Conn{body_params: body} = conn, _params) do
     attrs =
       body
-      |> Map.take(["client_name", "redirect_uris", "scopes"])
+      |> Map.take(["client_name", "redirect_uris", "scope"])
 
     with {:ok, client} <- Client.create(attrs) do
       conn
@@ -30,7 +30,7 @@ defmodule CPub.Web.Authorization.ClientController do
           client_id: client.id,
           client_secret: client.client_secret,
           redirect_uris: client.redirect_uris,
-          scopes: client.scopes
+          scope: client.scope
         }
       )
     end
@@ -47,7 +47,7 @@ defmodule CPub.Web.Authorization.ClientController do
           client_id: client.id,
           client_secret: client.client_secret,
           redirect_uris: client.redirect_uris,
-          scopes: client.scopes
+          scope: client.scope
         }
       )
     end
