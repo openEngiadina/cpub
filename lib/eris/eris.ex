@@ -15,6 +15,20 @@ defmodule ERIS do
     def get(bs, ref)
   end
 
+  defmodule BlockStorage.Dummy do
+    @moduledoc "A dummy block storage that doesn't store anything. Useful for computing the ERIS capability."
+
+    defstruct []
+
+    def new, do: %__MODULE__{}
+
+    defimpl BlockStorage, for: __MODULE__ do
+      def put(dummy, data), do: {:ok, Crypto.hash(data), dummy}
+
+      def get(_dummy, _ref), do: {:error, "not found"}
+    end
+  end
+
   defimpl BlockStorage, for: Map do
     def put(map, data) do
       ref = Crypto.hash(data)
