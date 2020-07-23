@@ -14,14 +14,14 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
            Client.create(%{
              client_name: "Test client",
              redirect_uris: ["http://example.com/"],
-             scopes: ["test"]
+             scope: [:openid, :read, :write]
            }),
          {:ok, user} <- User.create(%{username: "alice", password: "123"}),
          {:ok, authorization} <-
            Authorization.create(%{
              client_id: client.id,
              user_id: user.id,
-             scope: "test"
+             scope: [:openid, :read, :write]
            }) do
       {:ok, %{client: client, user: user, authorization: authorization}}
     end

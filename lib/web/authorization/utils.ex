@@ -5,7 +5,7 @@ defmodule CPub.Web.Authorization.Utils do
 
   alias CPub.Repo
 
-  alias CPub.Web.Authorization.{Client}
+  alias CPub.Web.Authorization.{Client, Scope}
 
   @doc """
   Returns the `CPub.Web.Authorization.Client` associated with the connection.
@@ -37,9 +37,13 @@ defmodule CPub.Web.Authorization.Utils do
   Returns a valid scope for given connection and client
   """
   def get_scope(%Plug.Conn{} = conn, %Client{} = client) do
-    case Client.get_scope(client, conn.params) do
+    case Ecto.Type.cast({:array, Scope}, Access.get(conn.params, "scope", Scope.default())) do
       {:ok, scope} ->
-        {:ok, scope}
+        if MapSet.subset?(MapSet.new(scope), MapSet.new(client.scope)) do
+          {:ok, scope}
+        else
+          {:error, :invalid_request, "scope not valid or not allowed for client."}
+        end
 
       :error ->
         {:error, :invalid_request, "scope not valid or not allowed for client."}

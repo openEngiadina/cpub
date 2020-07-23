@@ -15,7 +15,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
     case Client.create(%{
            client_name: "Test client",
            redirect_uris: ["http://example.com/"],
-           scopes: ["test"]
+           scope: [:openid, :read, :write]
          }) do
       {:ok, client} ->
         {:ok, %{client: client}}

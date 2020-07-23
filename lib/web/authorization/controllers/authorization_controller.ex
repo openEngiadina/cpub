@@ -60,7 +60,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
           client_id: client.id,
           response_type: response_type,
           redirect_uri: redirect_uri |> URI.to_string(),
-          scope: scope,
+          scope: scope |> Enum.map(&to_string/1),
           state: state
         },
         user: session.user
@@ -133,7 +133,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
             token_type: "bearer",
             expires_in: Token.valid_for(),
             # The authorization server MUST NOT issue a refresh token.
-            scope: scope,
+            scope: scope |> Enum.map_join(" ", &to_string/1),
             state: state
           })
         )

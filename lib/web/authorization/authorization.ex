@@ -15,7 +15,7 @@ defmodule CPub.Web.Authorization do
 
   alias CPub.{Repo, User}
 
-  alias CPub.Web.Authorization.{Client, Token}
+  alias CPub.Web.Authorization.{Client, Scope, Token}
 
   defp random_code do
     :crypto.strong_rand_bytes(32)
@@ -24,7 +24,7 @@ defmodule CPub.Web.Authorization do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "oauth_server_authorizations" do
-    field :scope, :string
+    field :scope, {:array, Scope}
 
     field :authorization_code, :string
     field :code_used, :boolean, default: false

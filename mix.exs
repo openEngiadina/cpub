@@ -59,6 +59,7 @@ defmodule CPub.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:corsica, "~> 1.1"},
       {:ecto_sql, "~> 3.0"},
+      {:ecto_enum, "~> 1.4"},
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
 

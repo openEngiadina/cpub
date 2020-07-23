@@ -9,7 +9,7 @@ defmodule CPub.Repo.Migrations.CreateAuthorization do
       add(:client_name, :string)
       add(:website, :string)
       add(:redirect_uris, {:array, :string})
-      add(:scopes, {:array, :string})
+      add(:scope, {:array, :string})
 
       add(:client_secret, :string)
 
@@ -21,7 +21,7 @@ defmodule CPub.Repo.Migrations.CreateAuthorization do
       add(:id, :binary_id, primary_key: true)
       add(:authorization_code, :string)
       add(:refresh_token, :string)
-      add(:scope, :string)
+      add(:scope, {:array, :string})
       add(:code_used, :boolean)
 
       add(:user_id, references(:users, on_delete: :delete_all, type: :binary_id))

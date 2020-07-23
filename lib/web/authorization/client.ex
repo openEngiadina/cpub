@@ -8,11 +8,13 @@ defmodule CPub.Web.Authorization.Client do
 
   alias CPub.Repo
 
+  alias CPub.Web.Authorization.Scope
+
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "oauth_server_clients" do
     field :client_name, :string
     field :redirect_uris, {:array, :string}
-    field :scopes, {:array, :string}
+    field :scope, {:array, Scope}
 
     field :client_secret, :string
 
@@ -26,10 +28,9 @@ defmodule CPub.Web.Authorization.Client do
 
   def changeset(%__MODULE__{} = client, attrs) do
     client
-    |> cast(attrs, [:client_name, :redirect_uris, :scopes])
+    |> cast(attrs, [:client_name, :redirect_uris, :scope])
     |> put_change(:client_secret, random_id_token())
-    |> validate_required([:client_name, :redirect_uris, :scopes])
-    # TODO validate that scopes are valid
+    |> validate_required([:client_name, :redirect_uris, :scope])
     |> unique_constraint(:id, name: "oauth_server_clients_pkey")
   end
 
@@ -64,18 +65,10 @@ defmodule CPub.Web.Authorization.Client do
   end
 
   defp scope_valid?(scope, %__MODULE__{} = client) do
-    if scope in client.scopes do
+    if scope in client.scope do
       {:ok, scope}
     else
       :error
     end
-  end
-
-  @doc """
-  Returns a single valid scope.
-  """
-  def get_scope(%__MODULE__{} = client, %{} = params) do
-    Map.get(params, "scope", client.scopes |> List.first())
-    |> scope_valid?(client)
   end
 end

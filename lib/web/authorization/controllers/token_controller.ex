@@ -12,7 +12,7 @@ defmodule CPub.Web.Authorization.TokenController do
   alias CPub.{Repo, User}
 
   alias CPub.Web.Authorization
-  alias CPub.Web.Authorization.Token
+  alias CPub.Web.Authorization.{Scope, Token}
 
   defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code, client: client}) do
     case Repo.get_one_by(Authorization, %{authorization_code: conn.params["code"]}) do
@@ -81,7 +81,7 @@ defmodule CPub.Web.Authorization.TokenController do
       "password" ->
         with {:ok, user} <-
                User.get_by_password(conn.params["username"], conn.params["password"]),
-             scope <- Map.get(conn.params, "scope", "default-scope-TODO"),
+             scope <- Map.get(conn.params, "scope", Scope.default()),
              {:ok, authorization} <-
                Authorization.create(%{
                  user_id: user.id,
