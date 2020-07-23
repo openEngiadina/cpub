@@ -13,7 +13,7 @@ CPub is developed as part of the [openEngiadina](https://openengiadina.net/) pla
 
 Requirements:
 
-  - Erlang/OTP (> v)
+  - Erlang/OTP
   - Elixir
 
 To start the CPub server:

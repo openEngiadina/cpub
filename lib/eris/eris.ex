@@ -78,7 +78,7 @@ defmodule ERIS do
     end
   end
 
-  def put!(block_storage, data) do
+  def put(block_storage, data) do
     with padded <- Crypto.pad(data),
          read_key <- Crypto.hash(data),
          encrypted <- Crypto.xor(padded, key: read_key, nonce: <<0::96>>),
@@ -96,6 +96,16 @@ defmodule ERIS do
          root_reference: root_reference,
          key: read_key
        }, block_storage}
+    end
+  end
+
+  @doc """
+  Returns the URI read capability for some binary data without storing encoded blocks.
+  """
+  def read_capability(data) do
+    with {:ok, cap, _} <- put(BlockStorage.Dummy.new(), data) do
+      cap
+      |> Capability.to_string()
     end
   end
 

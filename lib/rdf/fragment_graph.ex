@@ -471,8 +471,18 @@ defmodule RDF.FragmentGraph do
   """
   @spec set_base_subject_to_hash(t) :: t
   def set_base_subject_to_hash(%__MODULE__{} = fg) do
+    set_base_subject_to_hash(fg, &blake2b_hash_urn/1)
+  end
+
+  @doc """
+  Set the base subject of `RDF.FragmentGraph` to the hash of the canonical representation of the `RDF.FragmentGraph`.
+
+  The hash function `hash_fn` takes a binary and must return an `RDF.IRI`.
+  """
+  def set_base_subject_to_hash(%__MODULE__{} = fg, hash_fn) do
     csexp_encoded = CSexp.encode(fg)
-    set_base_subject(fg, blake2b_hash_urn(csexp_encoded))
+
+    set_base_subject(fg, apply(hash_fn, [csexp_encoded]))
   end
 
   #########################
