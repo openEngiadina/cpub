@@ -41,6 +41,12 @@ defmodule CPub.Web.FallbackController do
     |> text("Bad request")
   end
 
+  def call(%Plug.Conn{} = conn, {:error, :unahtorized}) do
+    conn
+    |> put_status(:unauthorized)
+    |> text("Unauthorized")
+  end
+
   def call(%Plug.Conn{} = conn, {:error, "Invalid argument; Not a valid UUID: " <> _ = msg}) do
     conn
     |> put_status(400)

@@ -99,6 +99,9 @@ defmodule CPub.Web.Authorization.TokenController do
               refresh_token: authorization.refresh_token
             }
           )
+        else
+          _ ->
+            {:error, :invalid_grant, "unauthorized"}
         end
 
       _ ->

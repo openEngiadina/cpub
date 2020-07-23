@@ -16,38 +16,21 @@ defmodule CPub.Web.Authorization.AuthorizationPlug do
   def call(%Plug.Conn{} = conn, _opts) do
     case fetch_token_from_header(conn) do
       {:ok, access_token} ->
-        with {:ok, token} <-
-               Repo.get_one_by(Token, %{access_token: access_token})
-               |> Repo.preload(:authorization),
+        with {:ok, token} <- Repo.get_one_by(Token, %{access_token: access_token}),
+             token <- token |> Repo.preload(:authorization),
              false <- Token.expired?(token) do
           conn
           |> assign(:authorization, token.authorization)
         else
           _ ->
             # If token is invalid or expired then halt the connection and display error
-            conn
-            |> unauthorized()
+            {:error, :unauthorized}
         end
 
       :no_token_found ->
         # If there is no token, continue without assigning authorization
         conn
     end
-  end
-
-  @doc """
-  Helper to halt an unauthorized request.
-
-  TODO Solid WebID-OIDC Authentication Spec recommends to provide among with HTTP
-  401 Unauthorized response code some human-readable HTML, containing either a
-  Select Provider form, or a meta-refresh redirect to a Select Provider page (https://github.com/solid/webid-oidc-spec/blob/master/example-workflow.md#1-initial-request).
-  """
-  @spec unauthorized(Plug.Conn.t()) :: Plug.Conn.t()
-  def unauthorized(%Plug.Conn{} = conn) do
-    conn
-    |> put_status(:unauthorized)
-    |> text("request is not authorized")
-    |> halt()
   end
 
   # Get token from headers (code from Pleroma)

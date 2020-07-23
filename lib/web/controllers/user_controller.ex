@@ -6,6 +6,16 @@ defmodule CPub.Web.UserController do
 
   action_fallback CPub.Web.FallbackController
 
+  defp get_authorized_user(conn, scope: scope) do
+    if scope_subset?(scope, conn.assigns.authorization.scope) do
+      with authorization <- conn.assigns.authorization |> Repo.preload(:user) do
+        {:ok, authorization.user}
+      end
+    else
+      {:error, :unauthorized}
+    end
+  end
+
   @doc """
   Show the `CPub.User`s profile.
   """
@@ -24,53 +34,46 @@ defmodule CPub.Web.UserController do
     end
   end
 
-  @spec id(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def id(%Plug.Conn{assigns: %{user: %User{id: user_id} = user}} = conn, _params) do
-    profile = Graph.set_base_iri(user.profile, IRI.new!("#{user_id}/"))
-
-    conn
-    |> put_view(RDFView)
-    |> render(:show, data: profile)
-  end
-
-  @spec verify(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def verify(%Plug.Conn{assigns: %{user: %User{username: username}}} = conn, _params) do
-    json(conn, %{username: username})
-  end
-
   @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
   def post_to_outbox(%Plug.Conn{} = conn, %{graph: graph}) do
-    with user <- conn.assigns.user,
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
          {:ok, %{activity: activity}} <- ActivityPub.handle_activity(graph, user) do
       conn
-      |> put_resp_header("Location", IRI.to_string(activity.id))
+      |> put_resp_header(
+        "Location",
+        Routes.object_url(conn, :show, %{"iri" => IRI.to_string(activity.id)})
+      )
       |> send_resp(:created, "")
     end
   end
 
   @spec get_inbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def get_inbox(%Plug.Conn{assigns: %{id: user_id, user: %User{} = user}} = conn, _params) do
-    if User.get_inbox_id(user) == user_id do
-      data = User.get_inbox(user)
+  def get_inbox(%Plug.Conn{} = conn, %{"user_id" => username}) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]) do
+      if user.username == username do
+        data = User.get_inbox(user)
 
-      conn
-      |> put_view(RDFView)
-      |> render(:show, data: data)
-    else
-      unauthorized(conn)
+        conn
+        |> put_view(RDFView)
+        |> render(:show, data: data)
+      else
+        {:error, :unauthorized}
+      end
     end
   end
 
   @spec get_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def get_outbox(%Plug.Conn{assigns: %{id: user_id, user: %User{} = user}} = conn, _params) do
-    if User.get_outbox_id(user) == user_id do
-      data = User.get_outbox(user)
+  def get_outbox(%Plug.Conn{} = conn, %{"user_id" => username}) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]) do
+      if user.username == username do
+        data = User.get_outbox(user)
 
-      conn
-      |> put_view(RDFView)
-      |> render(:show, data: data)
-    else
-      unauthorized(conn)
+        conn
+        |> put_view(RDFView)
+        |> render(:show, data: data)
+      else
+        {:error, :unauthorized}
+      end
     end
   end
 end
