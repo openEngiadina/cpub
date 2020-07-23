@@ -41,7 +41,7 @@ defmodule CPub.Web.Authorization do
   def changeset(%__MODULE__{} = authorization, attrs) do
     authorization
     |> cast(attrs, [:scope, :user_id, :client_id, :code_used])
-    |> validate_required([:scope, :user_id, :client_id])
+    |> validate_required([:scope, :user_id])
     # TODO: validate that scope is in client.scopes
     |> assoc_constraint(:user)
     |> assoc_constraint(:client)

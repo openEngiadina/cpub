@@ -5,7 +5,7 @@ defmodule CPub.Web.Authorization.Utils do
 
   alias CPub.Repo
 
-  alias CPub.Web.Authorization.{Authorization, Client}
+  alias CPub.Web.Authorization.{Client}
 
   @doc """
   Returns the `CPub.Web.Authorization.Client` associated with the connection.
