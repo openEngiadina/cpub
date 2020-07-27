@@ -19,7 +19,7 @@ defmodule CPub.Web.ObjectControllerTest do
       |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Subthing)
       |> FragmentGraph.add_fragment_statement("abc", EX.something(), 42)
 
-    with {:ok, object} <- Object.new(fg) |> Object.create_changeset() |> Repo.insert() do
+    with {:ok, object} <- Object.new(fg) |> Object.changeset() |> Repo.insert() do
       {:ok, %{object: object}}
     end
   end

@@ -3,9 +3,8 @@ defmodule CPub.Repo.Migrations.CreateActivities do
 
   def change do
     create table(:activities, primary_key: false) do
-      add(:id, :string, primary_key: true)
+      add(:id, :binary_id, primary_key: true)
 
-      add(:type, :string)
       add(:actor, :string)
       add(:recipients, {:array, :string})
 

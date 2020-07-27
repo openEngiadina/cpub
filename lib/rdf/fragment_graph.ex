@@ -526,7 +526,9 @@ defmodule RDF.FragmentGraph do
 
     def merge(%RDF.FragmentGraph{} = fg, data) do
       fg
-      |> RDF.FragmentGraph.add(data)
+      |> statements()
+      |> RDF.Graph.new()
+      |> RDF.Graph.add(RDF.Data.statements(data))
     end
 
     def objects(%RDF.FragmentGraph{} = fg), do: RDF.FragmentGraph.objects(fg)

@@ -2,7 +2,7 @@ defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
   alias CPub.{ActivityPub, Repo, User}
-  alias RDF.{FragmentGraph, Graph, IRI}
+  alias RDF.{FragmentGraph, IRI}
 
   action_fallback CPub.Web.FallbackController
 
@@ -40,8 +40,8 @@ defmodule CPub.Web.UserController do
          {:ok, %{activity: activity}} <- ActivityPub.handle_activity(graph, user) do
       conn
       |> put_resp_header(
-        "Location",
-        Routes.object_url(conn, :show, %{"iri" => IRI.to_string(activity.id)})
+        "location",
+        Routes.object_url(conn, :show, %{"iri" => IRI.to_string(activity.activity_object_id)})
       )
       |> send_resp(:created, "")
     end

@@ -4,7 +4,9 @@ defmodule CPub.Public do
   """
   import Ecto.Query, only: [from: 2]
 
-  alias CPub.{Activity, Repo}
+  alias CPub.ActivityPub.Activity
+  alias CPub.Repo
+
   alias CPub.NS.ActivityStreams, as: AS
 
   @doc """
@@ -16,6 +18,6 @@ defmodule CPub.Public do
 
     from(a in Activity, where: ^public_collection in a.recipients)
     |> Repo.all()
-    |> Repo.preload(:object)
+    |> Repo.preload([:activity_object, :object])
   end
 end
