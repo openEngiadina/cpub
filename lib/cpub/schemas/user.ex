@@ -10,7 +10,8 @@ defmodule CPub.User do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
-  alias CPub.{Activity, Crypto, ID, Object, Repo}
+  alias CPub.ActivityPub.Activity
+  alias CPub.{ID, Object, Repo}
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
   alias CPub.Solid.WebID
@@ -84,13 +85,11 @@ defmodule CPub.User do
   """
   @spec actor_url(t) :: RDF.IRI.t()
   def actor_url(%__MODULE__{username: username}) do
-    ID.merge_with_base_url("users/#{username}/")
+    ID.merge_with_base_url("users/#{username}")
   end
 
-  @spec default_profile(map, boolean) :: FragmentGraph.t()
-  defp default_profile(%{username: username}, from_provider? \\ false) do
-    username = if from_provider?, do: "#{username}-#{Crypto.random_string(8)}", else: username
-
+  @spec default_profile(map) :: FragmentGraph.t()
+  defp default_profile(%{username: username}) do
     # TODO: get rid of base url in database
     inbox_id = ID.merge_with_base_url("users/#{username}/inbox")
     outbox_id = ID.merge_with_base_url("users/#{username}/outbox")
@@ -131,11 +130,11 @@ defmodule CPub.User do
   """
   @spec get_inbox(t) :: RDF.Graph.t()
   def get_inbox(%__MODULE__{} = user) do
-    inbox_query = from a in Activity, where: ^user.id in a.recipients
+    inbox_query = from a in Activity, where: ^actor_url(user) in a.recipients
 
     inbox_query
     |> Repo.all()
-    |> Repo.preload(:object)
+    |> Repo.preload([:activity_object, :object])
     |> Activity.as_container(get_inbox_id(user))
   end
 
@@ -144,11 +143,11 @@ defmodule CPub.User do
   """
   @spec get_outbox(t) :: RDF.Graph.t()
   def get_outbox(%__MODULE__{} = user) do
-    outbox_query = from a in Activity, where: ^user.id == a.actor
+    outbox_query = from a in Activity, where: ^actor_url(user) == a.actor
 
     outbox_query
     |> Repo.all()
-    |> Repo.preload(:object)
+    |> Repo.preload([:activity_object, :object])
     |> Activity.as_container(get_outbox_id(user))
   end
 

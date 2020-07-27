@@ -11,6 +11,8 @@ defmodule CPub.Object do
 
   import Ecto.Changeset
 
+  alias CPub.Repo
+
   @type t :: %__MODULE__{
           id: RDF.IRI.t() | nil,
           content: RDF.FragmentGraph.t() | nil
@@ -23,8 +25,8 @@ defmodule CPub.Object do
     timestamps()
   end
 
-  @spec create_changeset(t) :: Ecto.Changeset.t()
-  def create_changeset(%__MODULE__{} = object) do
+  @spec changeset(t) :: Ecto.Changeset.t()
+  def changeset(%__MODULE__{} = object) do
     object
     |> change
     |> validate_required([:id, :content])
@@ -34,6 +36,13 @@ defmodule CPub.Object do
   @spec new(RDF.FragmentGraph.t()) :: t
   def new(%RDF.FragmentGraph{base_subject: base_subject} = content) do
     %__MODULE__{id: base_subject, content: content}
+  end
+
+  def create(%RDF.FragmentGraph{} = fg) do
+    fg
+    |> new
+    |> changeset
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   @behaviour Access

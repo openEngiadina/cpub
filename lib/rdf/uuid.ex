@@ -14,6 +14,13 @@ defmodule RDF.UUID do
     |> RDF.IRI.new()
   end
 
+  def cast!(uuid) when is_binary(uuid) do
+    case cast(uuid) do
+      {:ok, out} -> out
+      _ -> raise {:error, :invalid_uuid}
+    end
+  end
+
   def cast(uuid) when is_binary(uuid) do
     with {:ok, uuid_info} <- UUID.info(uuid) do
       {:ok,
