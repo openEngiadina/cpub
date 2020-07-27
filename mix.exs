@@ -71,7 +71,6 @@ defmodule CPub.MixProject do
 
       # RDF
       {:rdf, "~> 0.8"},
-      {:sparql, "~> 0.3"},
       {:json_ld, "~> 0.3"},
       {:elixir_uuid, "~> 1.2"},
 

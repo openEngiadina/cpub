@@ -21,38 +21,6 @@ defmodule CPub.ActivityPub do
   alias RDF.FragmentGraph
 
   @activity_streams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
-  @doc """
-  The ActivityStreams 2.0 ontology
-  """
-  @spec activity_streams :: RDF.Graph.t()
-  def activity_streams, do: @activity_streams
-
-  @activity_types SPARQL.execute_query(
-                    @activity_streams,
-                    SPARQL.query("""
-                    select ?activity_type
-                    where {
-                      ?activity_type rdfs:subClassOf as:Activity .
-                    }
-                    """)
-                  ).results
-                  |> Enum.map(& &1["activity_type"])
-  @doc """
-  List of all ActivityStreams Activity types
-  """
-  @spec activity_types :: [RDF.IRI.t()]
-  def activity_types, do: @activity_types
-
-  @doc """
-  Finds IDs of Activitystreams Activities in some `RDF.Data`
-  """
-  def find_activities(data) do
-    [
-      {:activity_type?, RDFS.subClassOf(), AS.Activity},
-      {:activity_id?, RDF.type(), :activity_type?}
-    ]
-    |> RDF.Query.execute(RDF.Data.merge(data, @activity_streams))
-  end
 
   @doc """
   Creates an ActivityPub activity, computes side-effects and runs everything in a transaction.
