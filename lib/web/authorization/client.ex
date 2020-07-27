@@ -63,12 +63,4 @@ defmodule CPub.Web.Authorization.Client do
     Map.get(params, "redirect_uri", client.redirect_uris |> List.first())
     |> redirect_uri_valid?(client)
   end
-
-  defp scope_valid?(scope, %__MODULE__{} = client) do
-    if scope in client.scope do
-      {:ok, scope}
-    else
-      :error
-    end
-  end
 end

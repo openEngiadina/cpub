@@ -3,8 +3,6 @@ defmodule CPub.Web.Authorization.Scope do
 
   use EctoEnum, openid: "openid", read: "read", write: "write"
 
-  import Ecto.Changeset
-
   def default, do: [:openid, :read, :write]
 
   @doc """
