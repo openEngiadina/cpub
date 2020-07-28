@@ -27,6 +27,11 @@ defmodule CPub.Web.Router do
 
   pipeline :browser do
     plug(:accepts, ["html"])
+
+    plug Plug.Parsers,
+      parsers: [:urlencoded, :multipart],
+      pass: ["*/*"]
+
     plug(:fetch_session)
     plug(:fetch_flash)
   end
