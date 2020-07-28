@@ -10,7 +10,6 @@ defmodule CPub.Web.Authorization.AuthorizationController do
 
   alias CPub.Repo
   alias CPub.Web.Authorization
-  alias CPub.Web.Authorization.Token
 
   plug :fetch_flash
 
@@ -28,15 +27,12 @@ defmodule CPub.Web.Authorization.AuthorizationController do
       "code" ->
         authorize(:code, conn, params)
 
-      "token" ->
-        authorize(:token, conn, params)
-
       _ ->
         {:error, :unsupported_response_type, "grant type not supported."}
     end
   end
 
-  # For :code and :token flows display a interface where user is asked to accept or deny the authorization request.
+  # Display a interface where user is asked to accept or deny the authorization request.
   defp authorize(
          response_type,
          %Plug.Conn{
@@ -94,46 +90,6 @@ defmodule CPub.Web.Authorization.AuthorizationController do
           :query,
           URI.encode_query(%{
             code: authorization.authorization_code,
-            state: state
-          })
-        )
-        |> URI.to_string()
-
-      conn
-      |> redirect(external: cb_uri)
-    end
-  end
-
-  defp authorize(
-         :token,
-         %Plug.Conn{
-           method: "POST",
-           assigns: %{session: session}
-         } = conn,
-         %{"request_accepted" => _params}
-       ) do
-    with session <- session |> Repo.preload(:user),
-         {:ok, client} <- get_client(conn),
-         {:ok, redirect_uri} <- get_redirect_uri(conn, client),
-         {:ok, scope} <- get_scope(conn, client),
-         {:ok, state} <- get_state(conn),
-         {:ok, authorization} <-
-           Authorization.create(%{
-             user_id: session.user.id,
-             client_id: client.id,
-             scope: scope
-           }),
-         {:ok, token} <- Token.create(authorization) do
-      cb_uri =
-        redirect_uri
-        |> Map.put(
-          :query,
-          URI.encode_query(%{
-            access_token: token.access_token,
-            token_type: "bearer",
-            expires_in: Token.valid_for(),
-            # The authorization server MUST NOT issue a refresh token.
-            scope: scope |> Enum.map_join(" ", &to_string/1),
             state: state
           })
         )
