@@ -31,8 +31,8 @@ defmodule RDF.StreamData do
   @dialyzer {:nowarn_function, iri: 0}
   def iri do
     scheme = one_of([constant("http"), constant("https")])
-    host = string(:alphanumeric)
-    path = map(list_of(string(:alphanumeric)), &Enum.join(&1, "/"))
+    host = string(:alphanumeric, max_length: 50)
+    path = map(list_of(string(:alphanumeric, max_length: 20), max_length: 6), &Enum.join(&1, "/"))
 
     {scheme, host, path}
     |> tuple()
