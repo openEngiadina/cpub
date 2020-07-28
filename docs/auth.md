@@ -5,7 +5,6 @@ Certain requests to ressources on CPub need to be authorized. CPub uses the [The
 Following OAuth 2.0 flows are supported:
 
 - [Authorization code](https://tools.ietf.org/html/rfc6749#section-1.3.1)
-- [Implicit](https://tools.ietf.org/html/rfc6749#section-1.3.2)
 - [Resource Owner Password Credentials](https://tools.ietf.org/html/rfc6749#section-1.3.3)
 - [Refreshing an Access Token](https://tools.ietf.org/html/rfc6749#section-6)
 
