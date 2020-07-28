@@ -13,22 +13,18 @@ defmodule CPub.Web.Authentication.SessionController do
 
   # Store a note in the session on where the user should be redirect when authentication succeeds.
   defp store_authentication_cb(conn) do
-    if is_nil(get_session(conn, :authentication_cb)) do
-      conn
-      |> put_session(
-        :authentication_cb,
-        Map.get(conn.params, "on_success", Routes.authentication_session_path(conn, :show))
-      )
-    else
-      conn
-    end
+    cb =
+      conn.params["on_success"] ||
+        get_session(conn, :authentication_cb) ||
+        Routes.authentication_session_path(conn, :show)
+
+    conn
+    |> put_session(:authentication_cb, cb)
   end
 
   # Redirect to authentication "on success" calback
   defp authentication_success(conn) do
-    cb =
-      get_session(conn, :authentication_cb) ||
-        Map.get(conn.params, "on_success", Routes.authentication_session_path(conn, :show))
+    cb = get_session(conn, :authentication_cb) || Routes.authentication_session_path(conn, :show)
 
     conn
     |> delete_session(:authentication_cb)
@@ -37,6 +33,7 @@ defmodule CPub.Web.Authentication.SessionController do
 
   def login(%Plug.Conn{assigns: %{session: _session}} = conn, _params) do
     conn
+    |> store_authentication_cb()
     |> authentication_success()
   end
 
