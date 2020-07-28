@@ -13,6 +13,8 @@ defmodule CPub.Repo do
   end
 
   @spec get_one(Ecto.Queryable.t(), term) :: {:ok, Ecto.Schema.t()} | {:error, :not_found}
+  def get_one(queryable, nil), do: {:error, :not_found}
+
   def get_one(queryable, id) do
     case __MODULE__.get(queryable, id) do
       nil -> {:error, :not_found}
