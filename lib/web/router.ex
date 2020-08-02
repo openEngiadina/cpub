@@ -83,6 +83,9 @@ defmodule CPub.Web.Router do
     # Token Endpoint
     post("/token", TokenController, :token)
     # TODO post("/revoke", TokenController, :revoke)
+
+    # OpenID Connect UserInfo endpoint
+    get("/userinfo", UserInfoController, :userinfo)
   end
 
   # TODO
