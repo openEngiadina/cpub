@@ -44,6 +44,8 @@ defmodule CPub.Web.Authorization.TokenController do
     case Map.get(conn.params, "grant_type") do
       "authorization_code" ->
         with {:ok, client} <- get_client(conn),
+             # TODO make sure client is authenticated
+             # TODO ensure redirect_uri is set
              {:ok, authorization} <-
                get_authorization(conn, %{grant_type: :authorization_code, client: client}),
              {:ok, token} <- Token.create(authorization) do
