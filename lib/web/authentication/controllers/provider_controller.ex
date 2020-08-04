@@ -48,7 +48,7 @@ defmodule CPub.Web.Authentication.ProviderController do
 
       Strategy.Fediverse ->
         site = auth.extra.raw_info.site
-        username = auth.exra.raw_info.account["username"] || auth.uid
+        username = auth.extra.raw_info.account["username"] || auth.uid
 
         conn
         |> callback_external_provider(auth, site, username)
