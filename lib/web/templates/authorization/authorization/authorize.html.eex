@@ -7,7 +7,15 @@
 
 <h2>OAuth 2.0 Authorization</h2>
 
-<%= @client.client_name %> wants authorization of scope  <%= @oauth_params.scope %> for user <%= @user.username %>.
+<p>
+You are logged in as <%= @user.username %>.
+</p>
+
+<%= @client.client_name %> requests access to your account for following scopes:
+
+<p>
+    <%= for scope <- @oauth_params.scope do %> <%= scope %> <% end %>
+</p>
 
 <%= form_for @conn, Routes.oauth_server_authorization_path(@conn, :authorize, @oauth_params), [as: "request_accepted"], fn f -> %>
 
