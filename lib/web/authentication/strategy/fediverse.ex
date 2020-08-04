@@ -30,8 +30,7 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
     body =
       Jason.encode!(%{
         client_name: @default_client_name,
-        # TODO: I can't get this to work with read:accounts
-        scopes: "read",
+        scopes: "read:accounts",
         redirect_uris: callback_url(conn)
       })
 
@@ -78,7 +77,7 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
                site: site,
                client_id: client.client_id,
                client_secret: client.client_secret,
-               oauth_request_params: %{state: state}
+               oauth_request_params: %{state: state, scope: "read:accounts"}
              ]}
           )
 
