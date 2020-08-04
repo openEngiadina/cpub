@@ -42,7 +42,7 @@ Local users can be sign up with a username and password at the endpoint: `/auth/
 
 Users can authenticate with any [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html) provider.
 
-An OAuth 2.0 client must be registered for CPub at the provider. The redirect uri used by CPub is `/auth/oidc/callback`.
+An OAuth 2.0 client must be registered for CPub at the provider. The redirect uri used by CPub is `/auth/oidc/callback`. The only scope required is `openid`.
 
 The client id and client secret (if provider requires) must be configured in CPub from the Elixir shell:
 
@@ -64,7 +64,7 @@ Where the fields are:
 - `client_secret`: OAuth 2.0 client secret (optional). If defined it will be used when fetching the access/id token from the provider.
 - `display_name`: Name of the provider to display on login page (optional). If present the provider will be shown on the login page.
 
-OpenID Connect has been tested with [Keycloak](https://www.keycloak.org/) and [Azure Active Directory B2C](https://docs.microsoft.com/en-us/azure/active-directory-b2c/openid-connect).
+OpenID Connect has been tested with [Keycloak](https://www.keycloak.org/), [Gitlab](https://gitlab.com/) and [Azure Active Directory B2C](https://docs.microsoft.com/en-us/azure/active-directory-b2c/openid-connect).
 
 TODO Implement a nice UI from which this can be setup.
 
