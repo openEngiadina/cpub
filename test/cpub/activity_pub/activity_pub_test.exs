@@ -2,6 +2,7 @@ defmodule CPub.ActivityPubTest do
   use ExUnit.Case
   use ExUnitProperties
   use CPub.DataCase
+  use CPub.RDFCase
 
   alias RDF.{Description, Graph}
 
@@ -39,5 +40,27 @@ defmodule CPub.ActivityPubTest do
       # TODO: check that activity was placed in user outbox
       # TODO: add recipients and check for proper delivery
     end
+  end
+
+  test "like something" do
+    # Create a user
+    {:ok, user} = CPub.User.create(%{username: "alice", password: "123"})
+
+    data =
+      Graph.new()
+      |> Graph.add(
+        Description.new(RDF.UUID.generate())
+        |> Description.add(RDF.type(), AS.Like)
+        |> Description.add(AS.object(), EX.foo())
+      )
+
+    assert {:ok, request} = CPub.ActivityPub.handle_activity(data, user)
+
+    activity =
+      request.activity
+      |> CPub.Repo.preload([:activity_object, :object])
+
+    assert CPub.Repo.get(CPub.ActivityPub.Activity, request.activity.id)
+    assert CPub.Repo.get(CPub.Object, activity.activity_object_id)
   end
 end

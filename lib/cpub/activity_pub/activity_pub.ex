@@ -99,30 +99,34 @@ defmodule CPub.ActivityPub do
 
   @spec extract_object(Request.t()) :: Request.t()
   defp extract_object(%Request{} = request) do
-    case request.assigns.activity[:base_subject][AS.object()] do
-      [object_id] ->
-        with object <-
-               FragmentGraph.new(object_id)
-               |> FragmentGraph.add(request.graph)
-               |> FragmentGraph.set_base_subject_to_hash(fn data ->
-                 data |> ERIS.read_capability() |> RDF.IRI.new()
-               end),
-             new_activity <-
-               request.assigns.activity
-               |> replace_object_in_fragment_graph(object_id, object.base_subject)
-               |> FragmentGraph.set_base_subject_to_hash(fn data ->
-                 data |> ERIS.read_capability() |> RDF.IRI.new()
-               end) do
+    if RDF.iri(AS.Create) in request.assigns.activity[:base_subject][RDF.type()] do
+      case request.assigns.activity[:base_subject][AS.object()] do
+        [object_id] ->
+          with object <-
+                 FragmentGraph.new(object_id)
+                 |> FragmentGraph.add(request.graph)
+                 |> FragmentGraph.set_base_subject_to_hash(fn data ->
+                   data |> ERIS.read_capability() |> RDF.IRI.new()
+                 end),
+               new_activity <-
+                 request.assigns.activity
+                 |> replace_object_in_fragment_graph(object_id, object.base_subject)
+                 |> FragmentGraph.set_base_subject_to_hash(fn data ->
+                   data |> ERIS.read_capability() |> RDF.IRI.new()
+                 end) do
+            request
+            |> Request.assign(:activity, new_activity)
+            |> Request.assign(:object, object)
+          end
+
+        [] ->
           request
-          |> Request.assign(:activity, new_activity)
-          |> Request.assign(:object, object)
-        end
 
-      [] ->
-        request
-
-      _ ->
-        Request.error(request, :extract_object, "multiple objects in graph")
+        _ ->
+          Request.error(request, :extract_object, "multiple objects in graph")
+      end
+    else
+      request
     end
   end
 
@@ -201,7 +205,7 @@ defmodule CPub.ActivityPub do
   end
 
   @spec insert_activity(Request.t()) :: Request.t()
-  defp insert_activity(%Request{} = request) do
+  defp insert_activity(%Request{assigns: %{object: object}} = request) do
     request
     |> Request.insert(
       :activity,
@@ -210,6 +214,18 @@ defmodule CPub.ActivityPub do
         recipients: request.assigns.recipients,
         activity_object_id: request.assigns.activity.base_subject,
         object_id: request.assigns.object.base_subject
+      })
+    )
+  end
+
+  defp insert_activity(%Request{} = request) do
+    request
+    |> Request.insert(
+      :activity,
+      Activity.changeset(%Activity{}, %{
+        actor: User.actor_url(request.user),
+        recipients: request.assigns.recipients,
+        activity_object_id: request.assigns.activity.base_subject
       })
     )
   end
