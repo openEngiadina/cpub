@@ -4,13 +4,15 @@ defmodule CPub.MixProject do
   def project do
     [
       app: :cpub,
-      version: "0.1.0",
+      version: "0.2.0-dev",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps(),
+      dialyzer: dialyzer(),
+      deps: deps() ++ oauth_deps(),
+      test_coverage: [tool: ExCoveralls],
 
       # Docs
       name: "CPub",
@@ -49,37 +51,80 @@ defmodule CPub.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.3"},
-      {:phoenix_pubsub, "~> 1.1"},
+      # Phoenix, Web and Databse
+      {:phoenix, "~> 1.5"},
+      {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0"},
+      {:phoenix_html, "~> 2.14"},
+      {:plug_cowboy, "~> 2.0"},
+      {:corsica, "~> 1.1"},
       {:ecto_sql, "~> 3.0"},
+      {:ecto_enum, "~> 1.4"},
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
-      {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"},
-      {:rdf, "~> 0.7.0"},
-      {:sparql, "~> 0.3.4"},
-      {:stream_data, "~> 0.4.3"},
-      {:json_ld, "~> 0.3.0"},
+
+      # Authorizaiton & Authentication
+      {:ueberauth, "~> 0.6.3"},
+      {:oauth2, "~> 2.0"},
+      {:joken, "~> 2.2"},
+      {:jason, "~> 1.2"},
+
+      # RDF
+      {:rdf, "~> 0.8"},
+      {:json_ld, "~> 0.3"},
+      {:elixir_uuid, "~> 1.2"},
+
+      # ERIS & content-addressing
+      {:blake2_elixir, "~> 0.8.1"},
+      {:chacha20, "~> 1.0"},
+
+      # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
-      {:pbkdf2_elixir, "~> 1.0.2"},
-      {:cors_plug, "~> 2.0"},
+      {:pbkdf2_elixir, "~> 1.2"},
+
+      # dev & test
+      {:stream_data, "~> 0.5", only: [:dev, :test]},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.13", only: :test},
+      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  # Specifies OAuth dependencies.
+  defp oauth_deps do
+    System.get_env("AUTH_CONSUMER_STRATEGIES")
+    |> to_string()
+    |> String.split()
+    |> Enum.filter(&public_oauth_provider?/1)
+    |> Enum.map(fn strategy_entry ->
+      case String.split(strategy_entry, ":") do
+        [_strategy, dependency] -> dependency
+        [strategy] -> "ueberauth_#{strategy}"
+      end
+    end)
+    |> Enum.map(&{String.to_atom(&1), ">= 0.0.0"})
+  end
+
+  defp public_oauth_provider?(provider) do
+    not (provider in ["solid", "cpub", "pleroma"] || String.starts_with?(provider, "oidc"))
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix],
+      ignore_warnings: ".dialyzer_ignore",
+      flags: [:unmatched_returns, :error_handling, :race_conditions]
     ]
   end
 
   # Aliases are shortcuts or tasks specific to the current project.
-  # For example, to create, migrate and run the seeds file at once:
-  #
-  #     $ mix ecto.setup
-  #
-  # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      doctor: ["deps.get", "format", "credo --strict", "dialyzer"]
     ]
   end
 end

@@ -24,23 +24,28 @@ defmodule CPub.Web.Endpoint do
   plug Plug.RequestId
   plug Plug.Logger
 
-  plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
-    pass: ["*/*"],
-    json_decoder: Phoenix.json_library()
-
   plug Plug.MethodOverride
   plug Plug.Head
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
+  # plug Plug.Session,
+  #   store: :cookie,
+  #   key: Config.cookie_name(),
+  #   signing_salt: Config.cookie_signing_salt(),
+  #   secure: Config.cookie_secure?(),
+  #   extra: Config.cookie_extra_attrs()
+
   plug Plug.Session,
     store: :cookie,
     key: "_cpub_key",
     signing_salt: "uME3vEPr"
 
-  plug CORSPlug
+  plug Corsica,
+    origins: "*",
+    allow_headers: :all,
+    expose_headers: ~w(Location)
 
   plug CPub.Web.Router
 end

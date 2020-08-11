@@ -11,13 +11,21 @@ CPub is developed as part of the [openEngiadina](https://openengiadina.net/) pla
 
 ## Quick start
 
+Requirements:
+
+  - Erlang/OTP
+  - Elixir
+
 To start the CPub server:
 
   * Install dependencies with `mix deps.get`
   * Create and migrate your database with `mix ecto.setup`
-  * Start Phoenix endpoint with `mix phx.server`
+  * Start CPub with an Elixir shell `iex -S mix phx.server`
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+This will start a shell where you can interact with CPub as well as start the
+HTTP server at [`localhost:4000`](http://localhost:4000/public).
+
+See the [example](docs/example.org) on how to create a user and some data.
 
 ## Documentation
 

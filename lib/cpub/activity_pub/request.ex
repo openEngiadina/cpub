@@ -1,50 +1,76 @@
 defmodule CPub.ActivityPub.Request do
   @moduledoc """
-  Helpers to define a pipeline for handling an activity.
-
-  Inspired by Plug.
+  A `Plug` like pipeliner for handling ActivityPub requests.
   """
 
-  alias CPub.ActivityPub.Request
   alias CPub.{Repo, User}
 
   alias Ecto.Multi
 
-  defstruct [:multi, :id, :object_id, :activity, :data, :user]
+  @type t :: %__MODULE__{
+          multi: Multi.t() | nil,
+          graph: RDF.Graph.t() | nil,
+          user: User.t() | nil,
+          assigns: map()
+        }
 
-  def new(%RDF.IRI{} = id, %RDF.Graph{} = data, %User{} = user) do
-    %Request{
-      multi: Multi.new(),
-      id: id,
-      activity: data[id],
-      object_id: CPub.ID.generate(type: :object),
-      data: data,
-      user: user
-    }
+  @type operation ::
+          Ecto.Changeset.t()
+          | Ecto.Schema.t()
+          | (Ecto.Changeset.t() | Ecto.Schema.t() -> Ecto.Schema.t())
+
+  @type commit_result ::
+          {:ok, any}
+          | {:error, any}
+          | {:error, Ecto.Multi.name(), any, %{required(Ecto.Multi.name()) => any}}
+
+  defstruct [:multi, :graph, :user, :assigns]
+
+  @doc """
+  Create a new request pipeline.
+  """
+  @spec new(RDF.Graph.t(), User.t()) :: t
+  def new(%RDF.Graph{} = graph, %User{} = user) do
+    %__MODULE__{multi: Multi.new(), graph: graph, user: user, assigns: %{}}
   end
 
   @doc """
   Helper to run Multi.insert on a request
   """
-  def insert(request, name, changeset_or_struct_or_fun, opts \\ []) do
-    %{request | multi: Multi.insert(request.multi, name, changeset_or_struct_or_fun, opts)}
+  @spec insert(t, any, operation, keyword) :: t
+  def insert(request, name, operation, opts \\ []) do
+    %{request | multi: Multi.insert(request.multi, name, operation, opts)}
   end
 
   @doc """
   Helper to run Multi.update on a request
   """
-  def update(request, name, changeset_or_struct_or_fun, opts \\ []) do
-    %{request | multi: Multi.update(request.multi, name, changeset_or_struct_or_fun, opts)}
+  @spec update(t, any, operation, keyword) :: t
+  def update(request, name, operation, opts \\ []) do
+    %{request | multi: Multi.update(request.multi, name, operation, opts)}
   end
 
   @doc """
   Cause the request to fail with error.
   """
+  @spec error(t, any, any) :: t
   def error(request, name, error) do
     %{request | multi: Multi.error(request.multi, name, error)}
   end
 
-  def commit(%Request{} = request) do
+  @doc """
+  Commit the result
+  """
+  @spec commit(t) :: commit_result
+  def commit(%__MODULE__{} = request) do
     Repo.transaction(request.multi)
+  end
+
+  @doc """
+  Assign a temporary value.
+  """
+  @spec assign(t, any, any) :: t
+  def assign(request, key, value) do
+    %{request | assigns: request.assigns |> Map.put(key, value)}
   end
 end

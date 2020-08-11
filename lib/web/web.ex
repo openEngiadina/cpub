@@ -23,17 +23,26 @@ defmodule CPub.Web do
 
       import Plug.Conn
       import CPub.Web.Gettext
-      import CPub.Web.Authentication.Required, only: [unauthorized: 1]
+
+      import CPub.Web.Authorization.Scope, only: [scope_subset?: 2]
+
       alias CPub.Web.Router.Helpers, as: Routes
 
+      alias CPub.Web.JSONView
       alias CPub.Web.RDFView
+
+      alias CPub.Repo
+
+      plug :set_put_layout
+
+      defp set_put_layout(conn, _), do: put_layout(conn, "app.html")
     end
   end
 
   def view do
     quote do
       use Phoenix.View,
-        root: "lib/cpub_web/templates",
+        root: "lib/web/templates",
         namespace: CPub.Web
 
       # Import convenience functions from controllers

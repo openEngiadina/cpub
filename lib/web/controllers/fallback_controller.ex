@@ -4,31 +4,63 @@ defmodule CPub.Web.FallbackController do
 
   See `Phoenix.Controller.action_fallback/1` for more details.
   """
+
   use CPub.Web, :controller
 
-  def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
+  alias CPub.Web.ChangesetView
+
+  @type error_tuple ::
+          {:error, Ecto.Changeset.t() | String.Chars.t() | atom}
+          | {:error, any, Ecto.Changeset.t(), any}
+
+  @spec call(Plug.Conn.t(), error_tuple) :: Plug.Conn.t()
+  def call(%Plug.Conn{} = conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(CPub.Web.ChangesetView)
+    |> put_view(ChangesetView)
     |> render("error.json", changeset: changeset)
   end
 
   # Handles error response from an Repo.transaction
-  def call(conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
+  def call(%Plug.Conn{} = conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(CPub.Web.ChangesetView)
+    |> put_view(ChangesetView)
     |> render("error.json", changeset: changeset)
   end
 
-  def call(conn, {:error, :not_found}) do
+  def call(%Plug.Conn{} = conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> put_view(CPub.Web.ErrorView)
-    |> render(:"404")
+    |> text("Not found")
   end
 
-  def call(conn, {:error, msg}) do
+  def call(%Plug.Conn{} = conn, {:error, :bad_request}) do
+    conn
+    |> put_status(:bad_request)
+    |> text("Bad request")
+  end
+
+  def call(%Plug.Conn{} = conn, {:error, :unahtorized}) do
+    conn
+    |> put_status(:unauthorized)
+    |> text("Unauthorized")
+  end
+
+  def call(%Plug.Conn{} = conn, {:error, "Invalid argument; Not a valid UUID: " <> _ = msg}) do
+    conn
+    |> put_status(400)
+    |> text(msg)
+  end
+
+  def call(%Plug.Conn{} = conn, {:error, msg}) do
+    conn
+    |> put_status(500)
+    |> text(msg)
+  end
+
+  # This catches Ecto.Multi errors
+  def call(%Plug.Conn{} = conn, {:error, _, msg, _}) do
     conn
     |> put_status(500)
     |> text(msg)

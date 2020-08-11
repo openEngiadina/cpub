@@ -1,0 +1,25 @@
+<%= if get_flash(@conn, :info) do %>
+<p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+<% end %>
+<%= if get_flash(@conn, :error) do %>
+<p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+<% end %>
+
+<h2>Login</h2>
+<%= form_for @conn, @callback_url, fn f -> %>
+
+<div class="input">
+  <%= label f, :credential, "Username or Fediverse instance" %>
+  <%= text_input f, :credential %>
+</div>
+<%= submit "Log in" %>
+
+<% end %>
+
+<p>
+<%= for client <- @clients do %>
+    <a href=<%= Routes.authentication_provider_path(@conn, :request, client.provider, %{site: client.site})%>> <%= client.display_name %> </a>
+    -
+<% end %>
+  <a href=<%= Routes.authentication_registration_path(@conn, :register) %>>Sign up</a>
+</p>

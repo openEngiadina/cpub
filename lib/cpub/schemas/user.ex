@@ -2,6 +2,7 @@ defmodule CPub.User do
   @moduledoc """
   Schema for CPub user.
   """
+
   @behaviour Access
 
   use Ecto.Schema
@@ -9,104 +10,153 @@ defmodule CPub.User do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
+  alias CPub.ActivityPub.Activity
+  alias CPub.{ID, Object, Repo}
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
-  alias CPub.{Repo, User}
+  alias CPub.Solid.WebID
 
-  @primary_key {:id, CPub.ID, autogenerate: true}
-  @foreign_key_type CPub.ID
+  alias CPub.Web.Authorization
+
+  alias CPub.Web.Authentication.{Registration, Session}
+
+  alias RDF.FragmentGraph
+
+  @type t :: %__MODULE__{
+          username: String.t() | nil,
+          password: String.t() | nil,
+          profile_object_id: RDF.IRI.t() | nil
+        }
+
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "users" do
     field :username, :string
     field :password, Comeonin.Ecto.Password
 
-    field :profile, RDF.Description.EctoType
+    belongs_to :profile_object, Object, type: RDF.IRI.EctoType
 
-    # has_many :authorizations, Authorization
+    # OAuth 2.0 authorizations for user
+    has_many :authorizations, Authorization
+
+    # Authenticated sessions
+    has_many :sessions, Session
+
+    # If user is created from an external identity
+    has_one :registration, Registration
 
     timestamps()
   end
 
-  def changeset(%User{} = user, attrs \\ %{}) do
+  @spec changeset(t, map) :: Ecto.Changeset.t()
+  def changeset(%__MODULE__{} = user, attrs) do
     user
-    |> cast(attrs, [:username, :password, :profile])
-    |> validate_required([:username, :password, :profile])
+    |> cast(attrs, [:username, :password])
+    |> validate_required([:username])
+    |> validate_profile()
     |> unique_constraint(:username, name: "users_username_index")
     |> unique_constraint(:id, name: "users_pkey")
+    |> assoc_constraint(:profile_object)
   end
 
-  def create_user(opts \\ []) do
-    username = Keyword.get(opts, :username)
-    password = Keyword.get(opts, :password)
+  defp validate_profile(%Ecto.Changeset{} = changeset) do
+    if is_nil(get_field(changeset, :profile_object)) do
+      changeset
+      |> put_change(
+        :profile_object,
+        default_profile(%{username: get_field(changeset, :username)})
+        |> CPub.Object.new()
+      )
+    else
+      changeset
+    end
+  end
 
-    # set the ID to "/users/<username>"
-    id = CPub.ID.merge_with_base_url("users/#{username}")
-    inbox_id = CPub.ID.merge_with_base_url("users/#{username}/inbox")
-    outbox_id = CPub.ID.merge_with_base_url("users/#{username}/outbox")
-
-    default_profile =
-      RDF.Description.new(id)
-      |> RDF.Description.add(RDF.type(), AS.Person)
-      |> RDF.Description.add(LDP.inbox(), inbox_id)
-      |> RDF.Description.add(AS.outbox(), outbox_id)
-
-    profile = Keyword.get(opts, :profile, default_profile)
-
-    %User{id: id}
-    |> changeset(%{username: username, password: password, profile: profile})
+  @spec create(map) :: {:ok, t} | {:error, Ecto.Changeset.t()}
+  def create(%{} = attrs) do
+    %__MODULE__{}
+    |> changeset(attrs)
     |> Repo.insert()
   end
 
-  def verify_user(username, password) do
-    User
+  @doc """
+  Returns an externally usable URL.
+
+  TODO: Goal is to not rely on any base_url. How can an actor be addessed?
+  """
+  @spec actor_url(t) :: RDF.IRI.t()
+  def actor_url(%__MODULE__{username: username}) do
+    ID.merge_with_base_url("users/#{username}")
+  end
+
+  @spec default_profile(map) :: FragmentGraph.t()
+  defp default_profile(%{username: username}) do
+    # TODO: get rid of base url in database
+    inbox_id = ID.merge_with_base_url("users/#{username}/inbox")
+    outbox_id = ID.merge_with_base_url("users/#{username}/outbox")
+
+    default_profile =
+      FragmentGraph.new(RDF.UUID.generate())
+      |> FragmentGraph.add(RDF.type(), AS.Person)
+      |> FragmentGraph.add(LDP.inbox(), inbox_id)
+      |> FragmentGraph.add(AS.outbox(), outbox_id)
+      |> FragmentGraph.add(AS.preferredUsername(), username)
+      |> WebID.Profile.create()
+
+    default_profile
+  end
+
+  @doc """
+  Get a single user by username and check the password
+  """
+  @spec get_by_password(String.t(), String.t()) :: {:ok, t} | {:error, String.t()}
+  def get_by_password(username, password) do
+    __MODULE__
     |> Repo.get_by(username: username)
     |> Pbkdf2.check_pass(password, hash_key: :password)
   end
 
-  def get_user(username) do
-    Repo.get_by(User, username: username)
+  @spec get_inbox_id(t) :: RDF.IRI.t()
+  def get_inbox_id(%__MODULE__{} = user) do
+    ID.merge_with_base_url("users/#{user.username}/inbox")
   end
 
-  def get_inbox_id(user) do
-    CPub.ID.merge_with_base_url("users/#{user.username}/inbox")
-  end
-
-  def get_outbox_id(user) do
-    CPub.ID.merge_with_base_url("users/#{user.username}/outbox")
+  @spec get_outbox_id(t) :: RDF.IRI.t()
+  def get_outbox_id(%__MODULE__{} = user) do
+    ID.merge_with_base_url("users/#{user.username}/outbox")
   end
 
   @doc """
   Returns a list of activities that are in the users inbox.
   """
-  def get_inbox(user) do
-    inbox_query =
-      from a in CPub.Activity,
-        where: ^user.id in a.recipients
+  @spec get_inbox(t) :: RDF.Graph.t()
+  def get_inbox(%__MODULE__{} = user) do
+    inbox_query = from a in Activity, where: ^actor_url(user) in a.recipients
 
     inbox_query
     |> Repo.all()
-    |> Repo.preload(:object)
-    |> CPub.Activity.as_container(get_inbox_id(user))
+    |> Repo.preload([:activity_object, :object])
+    |> Activity.as_container(get_inbox_id(user))
   end
 
   @doc """
   Returns activities that have been performed by user.
   """
-  def get_outbox(user) do
-    outbox_query =
-      from a in CPub.Activity,
-        where: ^user.id == a.actor
+  @spec get_outbox(t) :: RDF.Graph.t()
+  def get_outbox(%__MODULE__{} = user) do
+    outbox_query = from a in Activity, where: ^actor_url(user) == a.actor
 
     outbox_query
     |> Repo.all()
-    |> Repo.preload(:object)
-    |> CPub.Activity.as_container(get_outbox_id(user))
+    |> Repo.preload([:activity_object, :object])
+    |> Activity.as_container(get_outbox_id(user))
   end
 
   @doc """
   See `RDF.Description.fetch`.
   """
   @impl Access
-  def fetch(%User{profile: profile}, key) do
+  @spec fetch(t, atom) :: {:ok, any} | :error
+  def fetch(%__MODULE__{profile_object: profile}, key) do
     Access.fetch(profile, key)
   end
 
@@ -114,9 +164,10 @@ defmodule CPub.User do
   See `RDF.Description.get_and_update`
   """
   @impl Access
-  def get_and_update(%User{} = user, key, fun) do
-    with {get_value, new_profile} <- Access.get_and_update(user.profile, key, fun) do
-      {get_value, %{user | profile: new_profile}}
+  @spec get_and_update(t, atom, fun) :: {any, t}
+  def get_and_update(%__MODULE__{} = user, key, fun) do
+    with {get_value, new_profile} <- Access.get_and_update(user.profile_object, key, fun) do
+      {get_value, %{user | profile_object: new_profile}}
     end
   end
 
@@ -124,13 +175,11 @@ defmodule CPub.User do
   See `RDF.Description.pop`.
   """
   @impl Access
-  def pop(%User{} = user, key) do
-    case Access.pop(user.profile, key) do
-      {nil, _} ->
-        {nil, user}
-
-      {value, new_profile} ->
-        {value, %{user | profile: new_profile}}
+  @spec pop(t, atom) :: {any | nil, t}
+  def pop(%__MODULE__{} = user, key) do
+    case Access.pop(user.profile_object, key) do
+      {nil, _} -> {nil, user}
+      {value, new_profile} -> {value, %{user | profile_object: new_profile}}
     end
   end
 end

@@ -3,78 +3,153 @@ defmodule CPub.ActivityPub do
   ActivityPub context
   """
 
-  alias CPub.{Activity, Object, Repo, User}
-  alias CPub.ActivityPub.Request
+  # NOTE/TODO: This requires some major cleanup.
+  # After a couple of weeks of not hacking on this following becomes clear:
+  # - manually generating ids and shuffling them about is a hassle
+  # - a nice query language would be immensly helpful
+  #
+  # possible solutions:
+  # - content-addressable storage for no worries about ids
+  # - datalog as a query language
+
+  alias CPub.{Object, User}
+  alias CPub.ActivityPub.{Activity, Request}
+
   alias CPub.NS.ActivityStreams, as: AS
+  alias RDF.NS.RDFS
 
-  @activitystreams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
-  @doc """
-  The ActivityStreams 2.0 ontology
-  """
-  def activitystreams, do: @activitystreams
+  alias RDF.FragmentGraph
 
-  @doc """
-  Gets an actor.
-  """
-  def get_actor!(id), do: Repo.get!(Actor, id)
-
-  @activity_types SPARQL.execute_query(
-                    @activitystreams,
-                    SPARQL.query("""
-                    select ?activity_type
-                    where {
-                      ?activity_type rdfs:subClassOf as:Activity .
-                    }
-                    """)
-                  ).results
-                  |> Enum.map(& &1["activity_type"])
-  @doc """
-  List of all ActivityStreams Activity types
-  """
-  def activity_types, do: @activity_types
+  @activity_streams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
 
   @doc """
   Creates an ActivityPub activity, computes side-effects and runs everything in a transaction.
   """
-  def handle_activity(%RDF.IRI{} = activity_id, %RDF.Graph{} = data, %User{} = user) do
+  @spec handle_activity(RDF.Graph.t(), User.t()) :: Request.commit_result()
+  def handle_activity(%RDF.Graph{} = graph, %User{} = user) do
     # create a new pipeline
-    Request.new(activity_id, data, user)
+    Request.new(graph, user)
 
-    # Ensure the actor is set correctly
+    # extract activity from the data as Fragment Graph
+    |> extract_activity
+
+    # ensure the actor is set correctly
     |> ensure_correct_actor
 
-    # Set the object id to a newly created id
-    |> set_object_id
+    # extract object from the data as Fragment Graph
+    |> extract_object
 
-    # insert activity object
-    |> insert_activity
+    # bcc and bto are not supported
+    |> ensure_no_bcc
 
-    # insert the object (if a Create activity)
-    |> create_object
+    # extract the recipients
+    |> extract_recipients()
 
-    # |> handle_add
+    # insert the object
+    |> insert_object()
 
-    # |> deliver_local
+    # insert the activity object
+    |> insert_activity_object()
 
-    # |> place_in_outbox
+    # insert activity
+    |> insert_activity()
 
     # commit the request
     |> Request.commit()
   end
 
+  @spec extract_activity(Request.t()) :: Request.t()
+  defp extract_activity(%Request{} = request) do
+    case [
+           {:activity_type?, RDFS.subClassOf(), AS.Activity},
+           {:activity_id?, RDF.type(), :activity_type?}
+         ]
+         |> RDF.Query.execute(RDF.Data.merge(request.graph, @activity_streams)) do
+      {:ok, [%{activity_id: activity_id}]} ->
+        activity =
+          RDF.FragmentGraph.new(activity_id)
+          |> FragmentGraph.add(request.graph)
+
+        request
+        |> Request.assign(:activity, activity)
+
+      _ ->
+        Request.error(
+          request,
+          :extract_activity,
+          "can not find ActivityStreams activity in RDF graph"
+        )
+    end
+  end
+
+  # TODO: this should be an utility function in RDF.FragmentGraph. Maybe even a
+  # general way of mapping over `RDF.Data` structures efficiently.
+  defp replace_object_in_fragment_graph(fg, from, to) do
+    FragmentGraph.new(fg.base_subject)
+    |> FragmentGraph.add(
+      RDF.Data.statements(fg)
+      |> Enum.map(fn {s, p, o} ->
+        case o do
+          ^from -> {s, p, to}
+          _ -> {s, p, o}
+        end
+      end)
+    )
+  end
+
+  @spec extract_object(Request.t()) :: Request.t()
+  defp extract_object(%Request{} = request) do
+    if RDF.iri(AS.Create) in request.assigns.activity[:base_subject][RDF.type()] do
+      case request.assigns.activity[:base_subject][AS.object()] do
+        [object_id] ->
+          with object <-
+                 FragmentGraph.new(object_id)
+                 |> FragmentGraph.add(request.graph)
+                 |> FragmentGraph.set_base_subject_to_hash(fn data ->
+                   data |> ERIS.read_capability() |> RDF.IRI.new()
+                 end),
+               new_activity <-
+                 request.assigns.activity
+                 |> replace_object_in_fragment_graph(object_id, object.base_subject)
+                 |> FragmentGraph.set_base_subject_to_hash(fn data ->
+                   data |> ERIS.read_capability() |> RDF.IRI.new()
+                 end) do
+            request
+            |> Request.assign(:activity, new_activity)
+            |> Request.assign(:object, object)
+          end
+
+        [] ->
+          request
+
+        _ ->
+          Request.error(request, :extract_object, "multiple objects in graph")
+      end
+    else
+      request
+    end
+  end
+
+  @spec ensure_correct_actor(Request.t()) :: Request.t()
   defp ensure_correct_actor(%Request{} = request) do
-    case request.activity[AS.actor()] do
+    case request.assigns.activity[:base_subject][AS.actor()] do
       nil ->
-        # set actor
-        %{request | activity: RDF.Description.add(request.activity, AS.actor(), request.user.id)}
+        request
+        |> Request.assign(
+          :activity,
+          request.assigns.activity
+          |> RDF.FragmentGraph.add(AS.actor(), User.actor_url(request.user))
+        )
 
       [actor_in_activity] ->
-        if actor_in_activity != request.user.id do
+        if actor_in_activity != User.actor_url(request.user) do
           Request.error(
             request,
             :ensure_correct_actor,
             "actor set in activity does not match user"
           )
+        else
+          request
         end
 
       _ ->
@@ -82,49 +157,76 @@ defmodule CPub.ActivityPub do
     end
   end
 
+  defp ensure_no_bcc(%Request{} = request) do
+    cond do
+      request.assigns.activity[:base_subject][AS.bcc()] ->
+        Request.error(request, :ensure_no_bcc, "bcc is not supported")
+
+      request.assigns.activity[:base_subject][AS.bto()] ->
+        Request.error(request, :ensure_no_bcc, "bto is not supported")
+
+      true ->
+        request
+    end
+  end
+
+  defp get_all(container, keys, default) do
+    Enum.map(keys, &Access.get(container, &1, default))
+  end
+
+  defp extract_recipients(%Request{} = request) do
+    recipients =
+      request.assigns.activity[:base_subject]
+      |> get_all([AS.to(), AS.bto(), AS.cc(), AS.bcc(), AS.audience()], [])
+      |> Enum.concat()
+
+    request
+    |> Request.assign(:recipients, recipients)
+  end
+
+  defp insert_object(%Request{} = request) do
+    if RDF.iri(AS.Create) in request.assigns.activity[:base_subject][RDF.type()] do
+      request
+      |> Request.insert(:object, request.assigns.object |> Object.new() |> Object.changeset(),
+        on_conflict: :nothing
+      )
+    else
+      request
+    end
+  end
+
+  defp insert_activity_object(%Request{} = request) do
+    request
+    |> Request.insert(
+      :activity_object,
+      request.assigns.activity |> Object.new() |> Object.changeset(),
+      on_conflict: :nothing
+    )
+  end
+
+  @spec insert_activity(Request.t()) :: Request.t()
+  defp insert_activity(%Request{assigns: %{object: object}} = request) do
+    request
+    |> Request.insert(
+      :activity,
+      Activity.changeset(%Activity{}, %{
+        actor: User.actor_url(request.user),
+        recipients: request.assigns.recipients,
+        activity_object_id: request.assigns.activity.base_subject,
+        object_id: request.assigns.object.base_subject
+      })
+    )
+  end
+
   defp insert_activity(%Request{} = request) do
-    activity =
-      request.activity
-      |> Activity.new()
-      |> Activity.changeset()
-
-    Request.insert(request, :activity, activity)
-  end
-
-  defp set_object_id(%Request{} = request) do
-    if RDF.iri(AS.Create) in request.activity[RDF.type()] do
-      activity =
-        request.activity
-        |> RDF.Description.delete_predicates(AS.object())
-        |> RDF.Description.add(AS.object(), request.object_id)
-
-      %{request | activity: activity}
-    else
-      # don't do anything if not a Create activity
-      request
-    end
-  end
-
-  # Creates an object if it is a Create activity
-  defp create_object(request) do
-    if RDF.iri(AS.Create) in request.activity[RDF.type()] do
-      case request.data[request.id][AS.object()] do
-        [original_object_id] ->
-          object =
-            Object.new(
-              id: request.object_id,
-              data: %{request.data[original_object_id] | subject: request.object_id},
-              activity_id: request.id
-            )
-
-          # replace subject
-          Request.insert(request, request.object_id, Object.changeset(object))
-
-        _ ->
-          Request.error(request, :create_object, "could not find object")
-      end
-    else
-      request
-    end
+    request
+    |> Request.insert(
+      :activity,
+      Activity.changeset(%Activity{}, %{
+        actor: User.actor_url(request.user),
+        recipients: request.assigns.recipients,
+        activity_object_id: request.assigns.activity.base_subject
+      })
+    )
   end
 end

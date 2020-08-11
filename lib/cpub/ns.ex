@@ -6,7 +6,7 @@ defmodule CPub.NS do
   use RDF.Vocabulary.Namespace
 
   defvocab(ActivityStreams,
-    base_iri: "http://www.w3.org/ns/activitystreams#",
+    base_iri: "https://www.w3.org/ns/activitystreams#",
     file: "activitystreams2.ttl"
   )
 
@@ -25,5 +25,15 @@ defmodule CPub.NS do
   defvocab(ACL,
     base_iri: "http://www.w3.org/ns/auth/acl#",
     file: "acl.ttl"
+  )
+
+  defvocab(FOAF,
+    base_iri: "http://xmlns.com/foaf/0.1/",
+    file: "foaf.ttl"
+  )
+
+  defvocab(SOLID,
+    base_iri: "http://www.w3.org/ns/solid/terms#",
+    file: "solid.ttl"
   )
 end
