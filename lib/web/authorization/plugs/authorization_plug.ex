@@ -24,7 +24,10 @@ defmodule CPub.Web.Authorization.AuthorizationPlug do
         else
           _ ->
             # If token is invalid or expired then halt the connection and display error
-            {:error, :unauthorized}
+            conn
+            |> put_status(:unauthorized)
+            |> text("Unauthorized")
+            |> halt
         end
 
       :no_token_found ->
