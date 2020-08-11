@@ -4,7 +4,7 @@ defmodule CPub.MixProject do
   def project do
     [
       app: :cpub,
-      version: "0.2.0-dev",
+      version: "0.3.0-dev",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
