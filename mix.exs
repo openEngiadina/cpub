@@ -83,7 +83,7 @@ defmodule CPub.MixProject do
       {:pbkdf2_elixir, "~> 1.2"},
 
       # dev & test
-      {:stream_data, "~> 0.5", only: [:dev, :test]},
+      {:stream_data, "~> 0.5"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:excoveralls, "~> 0.13", only: :test},
