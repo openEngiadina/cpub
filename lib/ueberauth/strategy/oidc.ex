@@ -80,6 +80,10 @@ defmodule Ueberauth.Strategy.OIDC do
          client <- oauth_client(conn, config) do
       conn
       |> redirect!(OAuth2.Client.authorize_url!(client))
+    else
+      {:error, err} ->
+        conn
+        |> set_errors!([error("oidc", err)])
     end
   end
 
