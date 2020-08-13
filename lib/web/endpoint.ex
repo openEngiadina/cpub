@@ -5,6 +5,10 @@ defmodule CPub.Web.Endpoint do
     websocket: true,
     longpoll: false
 
+  # Enforce SSL and set the request_url based on X-Forward-* headers.
+  # This requires these headers to be setup in the proxy (see docs/deployment.md)
+  plug Plug.SSL, rewrite_on: [:x_forwarded_proto, :x_forwarded_host, :x_forwarded_port]
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phx.digest
