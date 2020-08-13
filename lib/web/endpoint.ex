@@ -6,8 +6,12 @@ defmodule CPub.Web.Endpoint do
     longpoll: false
 
   # Enforce SSL and set the request_url based on X-Forward-* headers.
-  # This requires these headers to be setup in the proxy (see docs/deployment.md)
-  plug Plug.SSL, rewrite_on: [:x_forwarded_proto, :x_forwarded_host, :x_forwarded_port]
+  # This requires the X-Forwarded-* headers to be set by the proxy (see docs/deployment.md)
+  unless Mix.env() === :dev or Mix.env() === :test do
+    plug Plug.SSL,
+      rewrite_on: [:x_forwarded_proto, :x_forwarded_host, :x_forwarded_port],
+      exclude: {__MODULE__, :excluded_host?, []}
+  end
 
   # Serve at "/" the static files from "priv/static" directory.
   #
