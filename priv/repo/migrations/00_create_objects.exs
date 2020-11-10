@@ -4,7 +4,7 @@ defmodule CPub.Repo.Migrations.CreateObjects do
   def change do
     create table(:objects, primary_key: false) do
       add(:id, :string, primary_key: true)
-      add(:content, :map)
+      add(:content, :binary)
       timestamps()
     end
   end
