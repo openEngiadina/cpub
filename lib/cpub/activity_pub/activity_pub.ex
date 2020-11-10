@@ -106,13 +106,13 @@ defmodule CPub.ActivityPub do
                  FragmentGraph.new(object_id)
                  |> FragmentGraph.add(request.graph)
                  |> FragmentGraph.set_base_subject_to_hash(fn data ->
-                   data |> ERIS.read_capability() |> RDF.IRI.new()
+                   data |> ERIS.encode_urn() |> RDF.IRI.new()
                  end),
                new_activity <-
                  request.assigns.activity
                  |> replace_object_in_fragment_graph(object_id, object.base_subject)
                  |> FragmentGraph.set_base_subject_to_hash(fn data ->
-                   data |> ERIS.read_capability() |> RDF.IRI.new()
+                   data |> ERIS.encode_urn() |> RDF.IRI.new()
                  end) do
             request
             |> Request.assign(:activity, new_activity)

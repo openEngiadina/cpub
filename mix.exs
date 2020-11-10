@@ -75,8 +75,9 @@ defmodule CPub.MixProject do
       {:elixir_uuid, "~> 1.2"},
 
       # ERIS & content-addressing
-      {:blake2_elixir, "~> 0.8.1"},
-      {:chacha20, "~> 1.0"},
+      {:eris, git: "https://gitlab.com/openengiadina/elixir-eris", branch: "main"},
+      # for some reason transitive dependencies are not automatically fetched (probably because manually fetching from git)
+      {:monocypher, git: "https://gitlab.com/openengiadina/erlang-monocypher", branch: "main"},
 
       # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
