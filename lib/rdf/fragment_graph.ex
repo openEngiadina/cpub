@@ -451,6 +451,10 @@ defmodule RDF.FragmentGraph do
     delete(fg, RDF.Data.statements(data))
   end
 
+  #########################
+  # Content-addressing
+  #########################
+
   @doc """
   Set the base subject of `RDF.FragmentGraph`.
   """
@@ -459,34 +463,24 @@ defmodule RDF.FragmentGraph do
     %{fg | base_subject: new_base_subject |> IRI.new!()}
   end
 
-  defp blake2b_hash_urn(binary) do
-    hash = Blake2.Blake2b.hash(binary, <<>>, 32)
-
-    ("urn:blake2b:" <> Base.encode32(hash, padding: false))
-    |> RDF.IRI.new()
-  end
-
   @doc """
-  Set the base subject of `RDF.FragmentGraph` to the Blake2b hash of the canonical representation of the `RDF.FragmentGraph`.
+  Finalize the `RDF.FragmentGraph` by setting the base subject to the ERIS URN
+  of the content.
+
+  TODO: This binds the `RDF.FragmentGraph` implementation to `ERIS`. Maybe this
+  can be separated in a nice way?
   """
-  @spec set_base_subject_to_hash(t) :: t
-  def set_base_subject_to_hash(%__MODULE__{} = fg) do
-    set_base_subject_to_hash(fg, &blake2b_hash_urn/1)
-  end
-
-  @doc """
-  Set the base subject of `RDF.FragmentGraph` to the hash of the canonical representation of the `RDF.FragmentGraph`.
-
-  The hash function `hash_fn` takes a binary and must return an `RDF.IRI`.
-  """
-  def set_base_subject_to_hash(%__MODULE__{} = fg, hash_fn) do
-    csexp_encoded = CSexp.encode(fg)
-
-    set_base_subject(fg, apply(hash_fn, [csexp_encoded]))
+  def finalize(%__MODULE__{} = fg) do
+    with csexp <- CSexp.encode(fg),
+         urn <- ERIS.encode_urn(csexp) do
+      fg
+      |> set_base_subject(urn)
+    end
   end
 
   #########################
   # Implement the `RDF.Data` protocol.
+  #########################
 
   defimpl RDF.Data, for: RDF.FragmentGraph do
     def delete(%RDF.FragmentGraph{} = fg, statements),

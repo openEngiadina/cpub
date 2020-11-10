@@ -1,19 +1,17 @@
-defmodule RDF.FragmentGraph.JSONTest do
+defmodule RDF.FragmentGraph.CSexpTest do
   use ExUnit.Case
   use ExUnitProperties
 
   alias RDF.FragmentGraph
 
-  doctest RDF.FragmentGraph.JSON
+  doctest RDF.FragmentGraph.CSexp
 
   property "encode -> decode" do
     check all(fragment_graph <- RDF.StreamData.fragment_graph()) do
       assert fragment_graph ==
                fragment_graph
-               |> FragmentGraph.JSON.from_rdf!()
-               |> Jason.encode!()
-               |> Jason.decode!()
-               |> FragmentGraph.JSON.to_rdf!()
+               |> FragmentGraph.CSexp.encode()
+               |> FragmentGraph.CSexp.decode(fragment_graph.base_subject)
     end
   end
 end

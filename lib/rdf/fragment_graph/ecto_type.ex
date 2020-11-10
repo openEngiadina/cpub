@@ -2,9 +2,7 @@ defmodule RDF.FragmentGraph.EctoType do
   @moduledoc """
   Implements the `Ecto.Type` behaviour for `RDF.FragmentGraph`.
 
-  Serialization is based on `RDF.FragmentGraph.JSON`.
-
-  TODO This is wrong as it encodes using JSON. It should use the specified CSexp encoding.
+  Stores Fragment Graph as Canonical S-Expression (see `RDF.FragmentGraph.CSexp`).
   """
 
   use Ecto.Type
@@ -22,14 +20,11 @@ defmodule RDF.FragmentGraph.EctoType do
 
   @spec dump(FragmentGraph.t()) :: {:ok, map} | :error
   def dump(%FragmentGraph{} = data) do
-    with {:ok, json} <- FragmentGraph.JSON.from_rdf(data) do
-      Jason.encode(json)
-    end
+    {:ok, FragmentGraph.CSexp.encode(data)}
   end
 
   @spec load(map) :: {:ok, FragmentGraph.t()} | :error
   def load(data) do
-    Jason.decode!(data)
-    |> FragmentGraph.JSON.to_rdf()
+    {:ok, FragmentGraph.CSexp.decode(data)}
   end
 end

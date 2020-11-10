@@ -72,4 +72,43 @@ defmodule RDF.FragmentGraph.CSexp do
       end)
     end)
   end
+
+  defp decode_term(term) do
+    case term do
+      ["f", id] ->
+        FragmentGraph.FragmentReference.new(id)
+
+      ["l", value, datatype] ->
+        RDF.Literal.new(value, datatype: datatype)
+
+      ["l", value, datatype, language] ->
+        RDF.Literal.new(value, datatype: datatype, language: language)
+
+      iri when is_binary(iri) ->
+        RDF.IRI.new(iri)
+    end
+  end
+
+  defp decode_and_add_statement(statement, fg) do
+    case statement do
+      ["s", p, o] ->
+        fg
+        |> FragmentGraph.add(decode_term(p), decode_term(o))
+
+      ["fs", f, p, o] ->
+        fg
+        |> FragmentGraph.add_fragment_statement(f, decode_term(p), decode_term(o))
+    end
+  end
+
+  @doc """
+  Decode a `RDF.FragmentGraph` from a binary CSexp.
+  """
+  def decode(binary, base_subject \\ RDF.IRI.new("urn:dummy")) do
+    case CSexp.decode(binary) do
+      {:ok, ["rdf" | statements]} ->
+        statements
+        |> Enum.reduce(FragmentGraph.new(base_subject), &decode_and_add_statement/2)
+    end
+  end
 end

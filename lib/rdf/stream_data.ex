@@ -86,21 +86,35 @@ defmodule RDF.StreamData do
     |> map(&Graph.new/1)
   end
 
+  defp add_statements_to_fg(fg, statements) do
+    statements
+    |> Enum.reduce(fg, fn {p, o}, fg ->
+      FragmentGraph.add(fg, p, o)
+    end)
+  end
+
+  defp add_fragment_statements_to_fg(fg, fragment_statements) do
+    fragment_statements
+    |> Enum.reduce(fg, fn {fid, p, o}, fg ->
+      FragmentGraph.add_fragment_statement(fg, fid, p, o)
+    end)
+  end
+
   @spec fragment_graph :: StreamData.t(FragmentGraph.t())
   @dialyzer {:nowarn_function, fragment_graph: 0}
   def fragment_graph do
-    base_subject = iri()
-    fg_objects = one_of([iri(), literal()]) |> list_of(min_length: 1) |> map(&MapSet.new/1)
-    statements = map_of(iri(), fg_objects)
-    fragment_statements = map_of(string(:alphanumeric), statements)
+    fragment_identifier = string(:alphanumeric, min_length: 1)
+    predicate = iri()
+    object = one_of([iri(), literal()])
+    statements = {predicate, object} |> list_of
+    fragment_statements = {fragment_identifier, predicate, object} |> list_of
 
-    {base_subject, statements, fragment_statements}
-    |> map(fn {base_subject, statements, fragment_statements} ->
-      %FragmentGraph{
-        base_subject: base_subject,
-        statements: statements,
-        fragment_statements: fragment_statements
-      }
+    {statements, fragment_statements}
+    |> map(fn {statements, fragment_statements} ->
+      FragmentGraph.new("urn:dummy")
+      |> add_statements_to_fg(statements)
+      |> add_fragment_statements_to_fg(fragment_statements)
+      |> FragmentGraph.finalize()
     end)
   end
 end
