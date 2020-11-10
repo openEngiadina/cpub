@@ -6,7 +6,7 @@ Some notes on how to deploy a CPub instance.
 
 Currently it is required to use use a reverse proxy such as Nginx when exposing CPub to a network.
 
-The `X-Forwarded-*` headers need to be set so that CPub knowns from where requests come.
+The `X-Forwarded-*` headers need to be set so that CPub can know from where requests come.
 
 To redirect all traffic to CPub:
 
