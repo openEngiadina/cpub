@@ -38,22 +38,7 @@ config :rdf,
     foaf: "http://xmlns.com/foaf/0.1/"
   }
 
-# Configure external authentication providers (OAuth2, OIDC and Solid)
-# auth_consumer_strategies =
-#   System.get_env("AUTH_CONSUMER_STRATEGIES")
-#   |> to_string()
-#   |> String.split()
-#   |> Enum.map(&hd(String.split(&1, ":")))
-
-# ueberauth_providers =
-#   auth_consumer_strategies
-#   |> Enum.filter(&(not (&1 in ["solid", "cpub", "pleroma"] || String.starts_with?(&1, "oidc"))))
-#   |> Enum.map(fn strategy ->
-#     strategy_module_name = "Elixir.Ueberauth.Strategy.#{String.capitalize(strategy)}"
-#     strategy_module = String.to_atom(strategy_module_name)
-#     {String.to_atom(strategy), {strategy_module, []}}
-#   end)
-
+# Authentication providers
 config :ueberauth, Ueberauth,
   base_path: "/auth",
   providers: [
@@ -61,6 +46,9 @@ config :ueberauth, Ueberauth,
     fediverse: {CPub.Web.Authentication.Strategy.Fediverse, []},
     oidc: {CPub.Web.Authentication.Strategy.OIDC, []}
   ]
+
+# Database (mnesia) directory
+config :mnesia, dir: System.get_env("CPUB_DATABASE_DIR") || 'cpub.db.#{Mix.env()}'
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code

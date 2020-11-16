@@ -54,14 +54,19 @@ defmodule CPub.MixProject do
       # Phoenix, Web and Databse
       {:phoenix, "~> 1.5"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.14"},
       {:plug_cowboy, "~> 2.0"},
       {:corsica, "~> 1.1"},
+      {:gettext, "~> 0.11"},
+
+      # Mnesia wrapper
+      {:memento, "~> 0.3.1"},
+
+      # Ecto
+      {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.0"},
       {:ecto_enum, "~> 1.4"},
       {:postgrex, ">= 0.0.0"},
-      {:gettext, "~> 0.11"},
 
       # Authorizaiton & Authentication
       {:ueberauth, "~> 0.6.3"},

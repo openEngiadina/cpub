@@ -12,7 +12,9 @@ defmodule CPub.Application do
   def start(_type, _args) do
     children = [
       CPub.Repo,
-      CPub.Web.Endpoint
+      CPub.Web.Endpoint,
+      CPub.Database
+
       # Start the PubSub system
       # {Phoenix.PubSub, name: CPub.PubSub},
     ]
