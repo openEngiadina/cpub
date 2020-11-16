@@ -10,14 +10,13 @@ defmodule CPub.Web.ObjectControllerTest do
   doctest CPub.Web.ObjectController
 
   setup do
-    id = RDF.UUID.generate()
-
     fg =
-      FragmentGraph.new(id)
+      FragmentGraph.new("urn:dummy")
       |> FragmentGraph.add(RDF.type(), EX.Something)
       |> FragmentGraph.add(EX.content(), "Hellow")
       |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Subthing)
       |> FragmentGraph.add_fragment_statement("abc", EX.something(), 42)
+      |> FragmentGraph.finalize()
 
     with {:ok, object} <- Object.new(fg) |> Object.changeset() |> Repo.insert() do
       {:ok, %{object: object}}

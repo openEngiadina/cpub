@@ -25,6 +25,8 @@ defmodule RDF.FragmentGraph.EctoType do
 
   @spec load(map) :: {:ok, FragmentGraph.t()} | :error
   def load(data) do
-    {:ok, FragmentGraph.CSexp.decode(data)}
+    with eris_urn <- ERIS.encode_urn(data) |> RDF.IRI.new() do
+      {:ok, FragmentGraph.CSexp.decode(data, eris_urn)}
+    end
   end
 end

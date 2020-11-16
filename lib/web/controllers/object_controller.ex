@@ -7,19 +7,8 @@ defmodule CPub.Web.ObjectController do
 
   def get(nil), do: {:error, :bad_request}
 
-  def get("urn:uuid:" <> uuid) do
-    with {:ok, id} <- RDF.UUID.cast(uuid) do
-      Repo.get_one(Object, id)
-    end
-  end
-
-  def get("urn:blake2b:" <> hash) do
-    id = ("urn:blake2b:" <> String.upcase(hash)) |> RDF.IRI.new()
-    Repo.get_one(Object, id)
-  end
-
-  def get("urn:erisx:" <> cap) do
-    id = ("urn:erisx:" <> String.upcase(cap)) |> RDF.IRI.new()
+  def get("urn:erisx2:" <> _ = urn) do
+    id = urn |> RDF.IRI.new()
     Repo.get_one(Object, id)
   end
 

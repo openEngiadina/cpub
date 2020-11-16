@@ -105,15 +105,11 @@ defmodule CPub.ActivityPub do
           with object <-
                  FragmentGraph.new(object_id)
                  |> FragmentGraph.add(request.graph)
-                 |> FragmentGraph.set_base_subject_to_hash(fn data ->
-                   data |> ERIS.encode_urn() |> RDF.IRI.new()
-                 end),
+                 |> FragmentGraph.finalize(),
                new_activity <-
                  request.assigns.activity
                  |> replace_object_in_fragment_graph(object_id, object.base_subject)
-                 |> FragmentGraph.set_base_subject_to_hash(fn data ->
-                   data |> ERIS.encode_urn() |> RDF.IRI.new()
-                 end) do
+                 |> FragmentGraph.finalize() do
             request
             |> Request.assign(:activity, new_activity)
             |> Request.assign(:object, object)

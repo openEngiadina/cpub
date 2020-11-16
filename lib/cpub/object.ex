@@ -34,8 +34,15 @@ defmodule CPub.Object do
   end
 
   @spec new(RDF.FragmentGraph.t()) :: t
-  def new(%RDF.FragmentGraph{base_subject: base_subject} = content) do
-    %__MODULE__{id: base_subject, content: content}
+  def new(%RDF.FragmentGraph{} = content) do
+    %__MODULE__{
+      id:
+        content
+        |> RDF.FragmentGraph.CSexp.encode()
+        |> ERIS.encode_urn()
+        |> RDF.IRI.new(),
+      content: content
+    }
   end
 
   def create(%RDF.FragmentGraph{} = fg) do

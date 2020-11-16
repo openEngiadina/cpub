@@ -22,6 +22,7 @@ defmodule CPub.ObjectTest do
         |> RDF.FragmentGraph.add(RDF.type(), EX.Bar)
         |> RDF.FragmentGraph.add(EX.foobar(), EX.BlaBla)
         |> RDF.FragmentGraph.add_fragment_statement("blups", RDF.type(), EX.Blups)
+        |> RDF.FragmentGraph.finalize()
 
       assert {:ok, object1} = fg |> Object.create()
       assert {:ok, object2} = fg |> Object.create()
