@@ -48,7 +48,7 @@ config :ueberauth, Ueberauth,
   ]
 
 # Database (mnesia) directory
-config :mnesia, dir: System.get_env("CPUB_DATABASE_DIR") || 'cpub.db.#{Mix.env()}'
+config :mnesia, dir: System.get_env("CPUB_DATABASE_DIR") || 'db/cpub.#{Mix.env()}'
 
 # Password hashing function
 # Use Pbkdf2 because it does not require any C code

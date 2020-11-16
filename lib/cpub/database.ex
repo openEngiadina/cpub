@@ -21,10 +21,15 @@ defmodule CPub.Database do
   def run(_arg) do
     Logger.info("Initializing mnesia database.")
 
-    # mnesia needs to be stopped before schema can be created
-    with :ok <- Memento.stop(),
+    # Create the DB directory
+    with :ok = File.mkdir_p!(Application.get_env(:mnesia, :dir)),
+         # mnesia needs to be stopped before schema can be created
+         :ok <- Memento.stop(),
+         # Ensure the schema is created.
          :ok <- create_schema(),
+         # Restart mnesia.
          :ok <- Memento.start(),
+         # Ensure tables are created.
          :ok <- create_tables() do
       :ok
     else
