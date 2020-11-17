@@ -8,12 +8,12 @@ defmodule CPub.UserTest do
 
   describe "create/1" do
     test "creates a new user" do
-      assert {:ok, user} = User.create(%{username: "alice", password: "123"})
+      assert {:ok, user} = User.create("alice")
     end
 
     test "disallows username reuse" do
-      assert {:ok, user} = User.create(%{username: "alice", password: "123"})
-      assert {:error, _} = User.create(%{username: "alice", password: "123"})
+      assert {:ok, user} = User.create("alice")
+      assert {:error, _} = User.create("alice")
     end
   end
 end

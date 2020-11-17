@@ -70,7 +70,8 @@ defmodule CPub.DB do
   # Helper to create tables
   defp create_tables() do
     with :ok <- ensure_disc_only_table_exists(CPub.ERIS.Block),
-         :ok <- ensure_disc_only_table_exists(CPub.User) do
+         :ok <- ensure_disc_only_table_exists(CPub.User),
+         :ok <- ensure_disc_only_table_exists(CPub.User.Registration) do
       :ok
     end
   end
@@ -117,7 +118,10 @@ defmodule CPub.DB do
   WARNING: Use with extreme caution as this will drop all data!
   """
   def reset() do
-    Logger.warn("Resetting database.")
+    unless Mix.env() == :test do
+      Logger.warn("Resetting database.")
+    end
+
     :mnesia.stop()
     :mnesia.delete_schema(nodes())
     :mnesia.start()

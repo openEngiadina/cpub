@@ -11,7 +11,7 @@ defmodule CPub.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       dialyzer: dialyzer(),
-      deps: deps() ++ oauth_deps(),
+      deps: deps(),
       test_coverage: [tool: ExCoveralls],
 
       # Docs
@@ -87,6 +87,8 @@ defmodule CPub.MixProject do
       # User passwords
       {:comeonin_ecto_password, "~> 3.0.0"},
       {:pbkdf2_elixir, "~> 1.2"},
+      # TODO: replace argon2_elixir with argon2i from :monocypher
+      {:argon2_elixir, "~> 2.3"},
 
       # dev & test
       {:stream_data, "~> 0.5"},
@@ -95,25 +97,6 @@ defmodule CPub.MixProject do
       {:excoveralls, "~> 0.13", only: :test},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
     ]
-  end
-
-  # Specifies OAuth dependencies.
-  defp oauth_deps do
-    System.get_env("AUTH_CONSUMER_STRATEGIES")
-    |> to_string()
-    |> String.split()
-    |> Enum.filter(&public_oauth_provider?/1)
-    |> Enum.map(fn strategy_entry ->
-      case String.split(strategy_entry, ":") do
-        [_strategy, dependency] -> dependency
-        [strategy] -> "ueberauth_#{strategy}"
-      end
-    end)
-    |> Enum.map(&{String.to_atom(&1), ">= 0.0.0"})
-  end
-
-  defp public_oauth_provider?(provider) do
-    not (provider in ["solid", "cpub", "pleroma"] || String.starts_with?(provider, "oidc"))
   end
 
   defp dialyzer do

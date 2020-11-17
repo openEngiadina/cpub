@@ -18,23 +18,14 @@ defmodule CPub.DataCase do
 
   using do
     quote do
-      alias CPub.Repo
+      alias CPub.DB
 
-      import Ecto
-      import Ecto.Changeset
-      import Ecto.Query
       import CPub.DataCase
     end
   end
 
   setup tags do
-    :ok = SQL.Sandbox.checkout(CPub.Repo)
-
-    unless tags[:async] do
-      SQL.Sandbox.mode(CPub.Repo, {:shared, self()})
-    end
-
-    :ok
+    CPub.DB.reset()
   end
 
   @doc """

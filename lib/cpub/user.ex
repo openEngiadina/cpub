@@ -10,7 +10,7 @@ defmodule CPub.User do
   alias Memento.{Transaction, Query}
 
   use Memento.Table,
-    attributes: [:id, :username, :profile, :registration],
+    attributes: [:id, :username, :profile],
     index: [:username],
     type: :set
 
@@ -43,23 +43,37 @@ defmodule CPub.User do
     end)
   end
 
+  defp load_profile(%__MODULE__{} = user) do
+    with {:ok, profile} <- ERIS.get_rdf(user.profile) |> IO.inspect() do
+      %{user | profile: profile}
+    else
+      error ->
+        DB.abort(error)
+    end
+  end
+
+  defp load_profile([user]), do: load_profile(user)
+  defp load_profile(nil), do: DB.abort(:not_found)
+  defp load_profile([]), do: DB.abort(:not_found)
+
   @doc """
   Get a single user by username.
   """
   def get(username) do
     DB.transaction(fn ->
-      case Query.select(__MODULE__, {:==, :username, username}) do
-        [] ->
-          DB.abort(:not_found)
+      Query.select(__MODULE__, {:==, :username, username})
+      |> IO.inspect()
+      |> load_profile
+    end)
+  end
 
-        [user] ->
-          with {:ok, profile} <- ERIS.get_rdf(user.profile) |> IO.inspect() do
-            %{user | profile: profile}
-          else
-            error ->
-              DB.abort(error)
-          end
-      end
+  @doc """
+  Get a single user by id.
+  """
+  def get_by_id(id) do
+    DB.transaction(fn ->
+      Query.read(__MODULE__, id)
+      |> load_profile
     end)
   end
 end
