@@ -25,50 +25,61 @@ defmodule CPub.ERIS do
       %Transaction{}
     end
 
-    # TODO: do this in a single transaction
     defimpl ERIS.BlockStorage, for: __MODULE__ do
       def put(transaction, data) do
         ref = ERIS.Crypto.blake2b(data)
-
-        with {:ok, _} <-
-               Memento.transaction(fn ->
-                 Memento.Query.write(%Block{ref: ref, data: data})
-               end) do
-          {:ok, transaction}
-        end
+        Memento.Query.write(%Block{ref: ref, data: data})
+        {:ok, transaction}
       end
 
       def get(_, ref) do
-        Memento.transaction(fn ->
-          case Memento.Query.read(Block, ref) do
-            nil ->
-              {:error, :not_found}
+        case Memento.Query.read(Block, ref) do
+          nil ->
+            {:error, :not_found}
 
-            %Block{data: data} ->
-              data
-          end
-        end)
+          %Block{data: data} ->
+            {:ok, data}
+        end
       end
+    end
+  end
+
+  # Helper to wrap function in a mnesia transaction (if not already in a transaction)
+  defp wrap_in_transaction(function) do
+    if Memento.Transaction.inside?() do
+      {:ok, apply(function, [])}
+    else
+      Memento.transaction(function)
     end
   end
 
   @doc """
   Encode some data using ERIS and persist block to database.any()
   """
-  def put(data) do
-    transaction = Transaction.new()
+  def put(%RDF.FragmentGraph{} = fg) do
+    fg
+    |> RDF.FragmentGraph.CSexp.encode()
+    |> put()
+  end
 
-    with {read_capability, _} <- ERIS.encode(data, transaction) do
-      {:ok, read_capability}
-    end
+  def put(data) when is_binary(data) do
+    wrap_in_transaction(fn ->
+      transaction = Transaction.new()
+
+      with {read_capability, _} <- ERIS.encode(data, transaction) do
+        read_capability
+      end
+    end)
   end
 
   @doc """
   Decode ERIS encoded content given a read capability.
   """
   def decode(read_capability) do
-    transaction = Transaction.new()
+    wrap_in_transaction(fn ->
+      transaction = Transaction.new()
 
-    ERIS.decode(read_capability, transaction)
+      ERIS.decode(read_capability, transaction)
+    end)
   end
 end
