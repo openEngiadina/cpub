@@ -76,4 +76,11 @@ defmodule CPub.User do
       |> load_profile
     end)
   end
+
+  @doc """
+  Get the user profile
+  """
+  def get_profile(%__MODULE__{} = user) do
+    user.profile
+  end
 end

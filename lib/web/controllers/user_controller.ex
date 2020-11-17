@@ -1,7 +1,7 @@
 defmodule CPub.Web.UserController do
   use CPub.Web, :controller
 
-  alias CPub.{ActivityPub, Repo, User}
+  alias CPub.{ActivityPub, User}
   alias RDF.{FragmentGraph, IRI}
 
   action_fallback CPub.Web.FallbackController
@@ -21,14 +21,14 @@ defmodule CPub.Web.UserController do
   """
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(%Plug.Conn{} = conn, %{"id" => username}) do
-    with {:ok, user} <- Repo.get_one_by(User, %{username: username}),
-         user <- user |> Repo.preload(:profile_object) do
+    with {:ok, user} <- User.get(username) do
       conn
       |> put_view(RDFView)
       |> render(:show,
         data:
-          user.profile_object.content
-          # Replace the UUID of the profile object with the request URL
+          user
+          |> User.get_profile()
+          # Replace the base subject of the profile object with the request URL
           |> FragmentGraph.set_base_subject(request_url(conn))
       )
     end

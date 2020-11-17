@@ -17,7 +17,7 @@ defmodule CPub.Web.UserControllerTest do
   doctest CPub.Web.UserController
 
   setup do
-    with {:ok, user} <- User.create(%{username: "alice", password: "123"}),
+    with {:ok, user} <- User.create("alice"),
          {:ok, authorization} <-
            Authorization.create(%{user_id: user.id, scope: [:read, :write]}),
          {:ok, token} <- Token.create(authorization) do
