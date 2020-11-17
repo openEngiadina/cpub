@@ -3,6 +3,8 @@ defmodule CPub.ERIS do
   ERIS bindings to mnesia database.
   """
 
+  alias CPub.Database
+
   defmodule Block do
     @moduledoc """
     An encrypted block.
@@ -35,21 +37,12 @@ defmodule CPub.ERIS do
       def get(_, ref) do
         case Memento.Query.read(Block, ref) do
           nil ->
-            {:error, :not_found}
+            {:error, :eris_block_not_found}
 
           %Block{data: data} ->
             {:ok, data}
         end
       end
-    end
-  end
-
-  # Helper to wrap function in a mnesia transaction (if not already in a transaction)
-  defp wrap_in_transaction(function) do
-    if Memento.Transaction.inside?() do
-      {:ok, apply(function, [])}
-    else
-      Memento.transaction(function)
     end
   end
 
@@ -63,7 +56,7 @@ defmodule CPub.ERIS do
   end
 
   def put(data) when is_binary(data) do
-    wrap_in_transaction(fn ->
+    Database.transaction(fn ->
       transaction = Transaction.new()
 
       with {read_capability, _} <- ERIS.encode(data, transaction) do
@@ -75,11 +68,23 @@ defmodule CPub.ERIS do
   @doc """
   Decode ERIS encoded content given a read capability.
   """
-  def decode(read_capability) do
-    wrap_in_transaction(fn ->
+  def get(read_capability) do
+    Database.transaction(fn ->
       transaction = Transaction.new()
 
       ERIS.decode(read_capability, transaction)
+    end)
+  end
+
+  def get_rdf(read_capability) do
+    Database.transaction(fn ->
+      transaction = Transaction.new()
+
+      with {:ok, data} <- ERIS.decode(read_capability, transaction) do
+        data |> RDF.FragmentGraph.CSexp.decode(ERIS.ReadCapability.to_string(read_capability))
+      else
+        error -> Database.abort(error)
+      end
     end)
   end
 end

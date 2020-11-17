@@ -69,8 +69,60 @@ defmodule CPub.Database do
 
   # Helper to create tables
   defp create_tables() do
-    with :ok <- ensure_disc_only_table_exists(CPub.ERIS.Block) do
+    with :ok <- ensure_disc_only_table_exists(CPub.ERIS.Block),
+         :ok <- ensure_disc_only_table_exists(CPub.User) do
       :ok
     end
+  end
+
+  # Utility functions to interact with Database
+
+  alias Memento.{Query, Transaction}
+
+  @doc """
+  Run a database transaction.
+
+  If called from within transaction the transaction will be reused.
+  """
+  @spec transaction(fun) :: {:ok, any} | {:error, any}
+  def transaction(function) do
+    return_value =
+      if Memento.Transaction.inside?() do
+        {:ok, apply(function, [])}
+      else
+        Memento.transaction(function)
+      end
+
+    case return_value do
+      {:ok, _} ->
+        return_value
+
+      {:error, {:transaction_aborted, {:cpub_error, reason}}} ->
+        Logger.debug("mnesia transaction aborted.", error: reason)
+        {:error, reason}
+
+      _ ->
+        Logger.warn("mnesia transaction aborted", error: return_value)
+        return_value
+    end
+  end
+
+  @doc """
+  Abort transaction with `reason`.
+  """
+  def abort({:error, reason}), do: abort(reason)
+  def abort(reason), do: Memento.Transaction.abort({:cpub_error, reason})
+
+  @doc """
+  Reset the entire database.
+
+  WARNING: Use with extreme caution as this will drop all data!
+  """
+  def reset() do
+    Logger.warn("Resetting database.")
+    :mnesia.stop()
+    :mnesia.delete_schema(nodes())
+    :mnesia.start()
+    run([])
   end
 end

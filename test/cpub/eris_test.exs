@@ -11,7 +11,7 @@ defmodule CPub.ERISTest do
       THINGS AND HALF TRUE THINGS AND IRRELEVANT THINGS AND MEANINGLESS THINGS
       AND TRUE THINGS; THIS STATEMENT IS FALSE."
       assert {:ok, read_capability} = ERIS.put(quote)
-      assert quote = ERIS.decode(read_capability)
+      assert quote = ERIS.get(read_capability)
     end
   end
 end

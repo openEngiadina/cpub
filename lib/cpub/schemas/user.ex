@@ -1,4 +1,4 @@
-defmodule CPub.User do
+defmodule CPub.UserOld do
   @moduledoc """
   Schema for CPub user.
   """
