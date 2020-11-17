@@ -111,7 +111,7 @@ defmodule CPub.Web.Router do
   scope "/", CPub.Web do
     pipe_through :api
 
-    get "/objects", ObjectController, :show
+    get "/resolve", ResolveController, :show
     get "/public", PublicController, :get_public
   end
 

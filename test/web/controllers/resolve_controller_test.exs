@@ -1,53 +1,64 @@
-defmodule CPub.Web.ObjectControllerTest do
+defmodule CPub.Web.ResolveControllerTest do
   @moduledoc false
   use ExUnit.Case
   use CPub.Web.ConnCase
   use CPub.RDFCase
 
-  alias CPub.Object
-  alias CPub.Repo
+  alias CPub.DB
 
-  doctest CPub.Web.ObjectController
+  doctest CPub.Web.ResolveController
 
   setup do
     fg =
-      FragmentGraph.new("urn:dummy")
+      FragmentGraph.new()
       |> FragmentGraph.add(RDF.type(), EX.Something)
       |> FragmentGraph.add(EX.content(), "Hellow")
       |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Subthing)
       |> FragmentGraph.add_fragment_statement("abc", EX.something(), 42)
       |> FragmentGraph.finalize()
 
-    with {:ok, object} <- Object.new(fg) |> Object.changeset() |> Repo.insert() do
-      {:ok, %{object: object}}
+    with {:ok, read_capability} <- fg |> CPub.ERIS.put() do
+      {:ok, %{fg: fg, read_capability: read_capability}}
     end
   end
 
   describe "show/2" do
-    test "responds with object as RDF/Turtle", %{conn: conn, object: object} do
+    test "responds with ERIS encoded Fragment Graph as RDF/Turtle", %{
+      conn: conn,
+      fg: fg,
+      read_capability: read_capability
+    } do
       response =
         conn
         |> put_req_header("accept", "text/turtle")
-        |> get(Routes.object_path(conn, :show, iri: object.id |> RDF.IRI.to_string()))
+        |> get(
+          Routes.resolve_path(conn, :show, iri: read_capability |> ERIS.ReadCapability.to_string())
+        )
 
       assert response.status == 200
       assert {:ok, response_rdf} = RDF.Turtle.Decoder.decode(response.resp_body)
 
-      assert object.content ==
+      assert fg ==
                response_rdf
                |> RDF.FragmentGraph.new()
     end
 
-    test "responds with object as RDF/JSON", %{conn: conn, object: object} do
+    test "responds with ERIS encoded Fragment Graph as RDF/JSON", %{
+      conn: conn,
+      fg: fg,
+      read_capability: read_capability
+    } do
       response =
         conn
         |> put_req_header("accept", "application/rdf+json")
-        |> get(Routes.object_path(conn, :show, iri: object.id |> RDF.IRI.to_string()))
+        |> get(
+          Routes.resolve_path(conn, :show, iri: read_capability |> ERIS.ReadCapability.to_string())
+        )
 
       assert response.status == 200
       assert {:ok, response_rdf} = RDF.JSON.Decoder.decode(response.resp_body)
 
-      assert object.content ==
+      assert fg ==
                response_rdf
                |> RDF.FragmentGraph.new()
     end
@@ -57,7 +68,7 @@ defmodule CPub.Web.ObjectControllerTest do
 
       response =
         conn
-        |> get(Routes.object_path(conn, :show, iri: "urn:uuid:" <> uuid))
+        |> get(Routes.resolve_path(conn, :show, iri: "urn:uuid:" <> uuid))
 
       assert response.status == 404
     end
@@ -68,7 +79,7 @@ defmodule CPub.Web.ObjectControllerTest do
 
       response =
         conn
-        |> get(Routes.object_path(conn, :show, iri: uuid))
+        |> get(Routes.resolve_path(conn, :show, iri: uuid))
 
       assert response.status == 404
     end

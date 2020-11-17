@@ -76,7 +76,15 @@ defmodule CPub.ERIS do
     end)
   end
 
-  def get_rdf(read_capability) do
+  def get_rdf(urn) when is_binary(urn) do
+    urn
+    |> ERIS.ReadCapability.parse()
+    |> get_rdf()
+  end
+
+  def get_rdf({:ok, %ERIS.ReadCapability{} = read_capability}), do: get_rdf(read_capability)
+
+  def get_rdf(%ERIS.ReadCapability{} = read_capability) do
     DB.transaction(fn ->
       transaction = Transaction.new()
 
