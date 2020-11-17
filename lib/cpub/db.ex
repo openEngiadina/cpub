@@ -1,4 +1,4 @@
-defmodule CPub.Database do
+defmodule CPub.DB do
   @moduledoc """
   Helpers to access Database.
 
@@ -76,8 +76,6 @@ defmodule CPub.Database do
   end
 
   # Utility functions to interact with Database
-
-  alias Memento.{Query, Transaction}
 
   @doc """
   Run a database transaction.

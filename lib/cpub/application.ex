@@ -16,7 +16,7 @@ defmodule CPub.Application do
       {Task, &log_application_info/0},
       CPub.Repo,
       CPub.Web.Endpoint,
-      CPub.Database
+      CPub.DB
     ]
 
     opts = [strategy: :one_for_one, name: CPub.Supervisor]

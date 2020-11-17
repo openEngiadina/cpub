@@ -1,5 +1,5 @@
 defmodule CPub.User do
-  alias CPub.Database
+  alias CPub.DB
   alias CPub.ERIS
 
   # RDF namespaces
@@ -21,7 +21,7 @@ defmodule CPub.User do
   end
 
   def create(username) do
-    Database.transaction(fn ->
+    DB.transaction(fn ->
       case Query.select(__MODULE__, {:==, :username, username}) do
         [] ->
           with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put() do
@@ -38,7 +38,7 @@ defmodule CPub.User do
           end
 
         _ ->
-          Database.abort(:user_already_exists)
+          DB.abort(:user_already_exists)
       end
     end)
   end
@@ -47,17 +47,17 @@ defmodule CPub.User do
   Get a single user by username.
   """
   def get(username) do
-    Database.transaction(fn ->
+    DB.transaction(fn ->
       case Query.select(__MODULE__, {:==, :username, username}) do
         [] ->
-          Database.abort(:not_found)
+          DB.abort(:not_found)
 
         [user] ->
           with {:ok, profile} <- ERIS.get_rdf(user.profile) |> IO.inspect() do
             %{user | profile: profile}
           else
             error ->
-              Database.abort(error)
+              DB.abort(error)
           end
       end
     end)

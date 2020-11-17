@@ -3,7 +3,7 @@ defmodule CPub.ERIS do
   ERIS bindings to mnesia database.
   """
 
-  alias CPub.Database
+  alias CPub.DB
 
   defmodule Block do
     @moduledoc """
@@ -56,7 +56,7 @@ defmodule CPub.ERIS do
   end
 
   def put(data) when is_binary(data) do
-    Database.transaction(fn ->
+    DB.transaction(fn ->
       transaction = Transaction.new()
 
       with {read_capability, _} <- ERIS.encode(data, transaction) do
@@ -69,7 +69,7 @@ defmodule CPub.ERIS do
   Decode ERIS encoded content given a read capability.
   """
   def get(read_capability) do
-    Database.transaction(fn ->
+    DB.transaction(fn ->
       transaction = Transaction.new()
 
       ERIS.decode(read_capability, transaction)
@@ -77,13 +77,13 @@ defmodule CPub.ERIS do
   end
 
   def get_rdf(read_capability) do
-    Database.transaction(fn ->
+    DB.transaction(fn ->
       transaction = Transaction.new()
 
       with {:ok, data} <- ERIS.decode(read_capability, transaction) do
         data |> RDF.FragmentGraph.CSexp.decode(ERIS.ReadCapability.to_string(read_capability))
       else
-        error -> Database.abort(error)
+        error -> DB.abort(error)
       end
     end)
   end
