@@ -44,7 +44,7 @@ defmodule CPub.User do
   end
 
   defp load_profile(%__MODULE__{} = user) do
-    with {:ok, profile} <- ERIS.get_rdf(user.profile) |> IO.inspect() do
+    with {:ok, profile} <- ERIS.get_rdf(user.profile) do
       %{user | profile: profile}
     else
       error ->
@@ -62,7 +62,6 @@ defmodule CPub.User do
   def get(username) do
     DB.transaction(fn ->
       Query.select(__MODULE__, {:==, :username, username})
-      |> IO.inspect()
       |> load_profile
     end)
   end

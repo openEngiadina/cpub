@@ -54,8 +54,8 @@ defmodule CPub.DB do
     end
   end
 
-  defp ensure_disc_only_table_exists(table) do
-    case Memento.Table.create(table, disc_only_copies: nodes()) do
+  defp ensure_table_exists(table, opts \\ []) do
+    case Memento.Table.create(table, opts) do
       :ok ->
         :ok
 
@@ -69,9 +69,11 @@ defmodule CPub.DB do
 
   # Helper to create tables
   defp create_tables() do
-    with :ok <- ensure_disc_only_table_exists(CPub.ERIS.Block),
-         :ok <- ensure_disc_only_table_exists(CPub.User),
-         :ok <- ensure_disc_only_table_exists(CPub.User.Registration) do
+    with :ok <- ensure_table_exists(CPub.ERIS.Block, disc_only_copies: nodes()),
+         :ok <- ensure_table_exists(CPub.User, disc_only_copies: nodes()),
+         :ok <- ensure_table_exists(CPub.User.Registration, disc_only_copies: nodes()),
+         # Keep sessions in RAM as well
+         :ok <- ensure_table_exists(CPub.Web.Authentication.Session, disc_copies: nodes()) do
       :ok
     end
   end
@@ -97,11 +99,18 @@ defmodule CPub.DB do
         return_value
 
       {:error, {:transaction_aborted, {:cpub_error, reason}}} ->
-        Logger.debug("mnesia transaction aborted.", error: reason)
+        Logger.debug("mnesia transaction aborted (#{inspect(reason)})")
         {:error, reason}
 
+      {:error, reason} = error ->
+        Logger.warn("mnesia transaction aborted due to error (#{inspect(reason)})")
+        error
+
       _ ->
-        Logger.warn("mnesia transaction aborted", error: return_value)
+        Logger.warn(
+          "mnesia transaction aborted with unknown return value (#{inspect(return_value)})"
+        )
+
         return_value
     end
   end

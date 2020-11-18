@@ -21,6 +21,7 @@ defmodule CPub.User.Registration do
       :site,
       :external_id
     ],
+    index: [:user],
     type: :set
 
   @doc """
