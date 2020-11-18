@@ -73,8 +73,8 @@ defmodule CPub.Web.Router do
     pipe_through :json_api
     pipe_through :session_authentication
 
-    # Endpoint to register clients TODO move this to /oidc/register
-    resources("/clients", ClientController, only: [:create, :show])
+    # Client registration
+    post("/clients", ClientController, :create)
 
     # Authorization Endpoint
     get("/authorize", AuthorizationController, :authorize)

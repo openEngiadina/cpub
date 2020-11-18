@@ -72,6 +72,7 @@ defmodule CPub.DB do
     with :ok <- ensure_table_exists(CPub.ERIS.Block, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User.Registration, disc_only_copies: nodes()),
+         :ok <- ensure_table_exists(CPub.Web.Authorization.Client, disc_only_copies: nodes()),
          # Keep sessions in RAM as well
          :ok <- ensure_table_exists(CPub.Web.Authentication.Session, disc_copies: nodes()) do
       :ok

@@ -1,46 +1,63 @@
 defmodule CPub.Web.Authorization.Client do
   @moduledoc """
-  An OAuth 2.0 client that authenticates with CPub (see https://tools.ietf.org/html/rfc6749#section-2).
+  An OAuth 2.0 client that authenticates with CPub (see
+  https://tools.ietf.org/html/rfc6749#section-2).
+
+  A client holds some metadata such as a human readable name (`:client_name`)
+  and the authorization scopes (`:scopes`) the client can request.
   """
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  alias CPub.DB
 
-  alias CPub.Repo
+  alias CPub.Web.Authorization
 
-  alias CPub.Web.Authorization.Scope
+  use Memento.Table,
+    attributes: [
+      :id,
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  schema "oauth_server_clients" do
-    field :client_name, :string
-    field :redirect_uris, {:array, :string}
-    field :scope, {:array, Scope}
+      # Client Metadata
+      # See also https://tools.ietf.org/html/rfc7591#section-2
 
-    field :client_secret, :string
+      # list of permitted redirect_uris
+      :redirect_uris,
 
-    timestamps()
-  end
+      # human readable client name
+      :client_name,
 
-  defp random_id_token do
+      # list of permitted scopes
+      :scope,
+
+      # client secret
+      :client_secret
+    ],
+    type: :set
+
+  defp random_secret do
     :crypto.strong_rand_bytes(32)
     |> Base.encode32(padding: false)
   end
 
-  def changeset(%__MODULE__{} = client, attrs) do
-    client
-    |> cast(attrs, [:client_name, :redirect_uris, :scope])
-    |> put_change(:client_secret, random_id_token())
-    |> validate_required([:client_name, :redirect_uris, :scope])
-    |> unique_constraint(:id, name: "oauth_server_clients_pkey")
-  end
-
   @doc """
-  Create a new OAuth 2.0 client.
+  Create a new OAuth 2.0 client
   """
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> Repo.insert()
+    DB.transaction(fn ->
+      with {:ok, scope} <- Authorization.Scope.parse(Map.get(attrs, "scope")),
+           redirect_uris <- Map.get(attrs, "redirect_uris"),
+           true <- is_list(redirect_uris) and Enum.all?(redirect_uris, &is_binary/1) do
+        %__MODULE__{
+          id: UUID.uuid4(),
+          redirect_uris: redirect_uris,
+          client_name: Map.get(attrs, "client_name"),
+          scope: scope,
+          client_secret: random_secret()
+        }
+        |> Memento.Query.write()
+      else
+        _ ->
+          DB.abort(:invalid_client)
+      end
+    end)
   end
 
   # Check if redirect uri is valid for client
