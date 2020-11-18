@@ -83,30 +83,7 @@ defmodule CPub.Web.Router do
     # Token Endpoint
     post("/token", TokenController, :token)
     # TODO post("/revoke", TokenController, :revoke)
-
-    # OpenID Connect UserInfo endpoint
-    get("/userinfo", UserInfoController, :userinfo)
   end
-
-  # TODO
-  # scope "/auth", CPub.Web, as: :oauth do
-  #   pipe_through :json_api
-
-  #   ## OpenID Connect server
-  #   scope [] do
-  #     pipe_through :authenticated
-
-  #     get("/userinfo", OIDCController, :user_info)
-  #   end
-  # scope "/", CPub.Web.OAuth do
-  #   ## OpenID Connect server
-
-  #   get("/.well-known/openid-configuration", OIDCController, :provider_metadata)
-  #   get("/auth/jwks", OIDCController, :json_web_key_set)
-
-  #   options "/", OIDCController, :authorized_issuer
-  #   options "/users/:user_id/me", OIDCController, :authorized_issuer
-  # end
 
   scope "/", CPub.Web do
     pipe_through :api
