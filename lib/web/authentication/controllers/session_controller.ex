@@ -5,6 +5,8 @@ defmodule CPub.Web.Authentication.SessionController do
 
   use CPub.Web, :controller
 
+  alias CPub.User
+
   alias CPub.{Repo, User}
 
   alias CPub.Web.Authentication.{OAuthClient, Registration, Session}
@@ -65,24 +67,36 @@ defmodule CPub.Web.Authentication.SessionController do
   end
 
   def login(%Plug.Conn{method: "POST"} = conn, %{username: username}) do
-    with {:ok, user} <- Repo.get_one_by(User, %{username: username}),
-         user <- user |> Repo.preload(:registration) do
-      case user.registration do
-        %Registration{provider: provider} ->
+    with {:ok, user} <- User.get(username),
+         {:ok, registration} <- User.Registration.get_user_registration(user) do
+      case registration.type do
+        :internal ->
           conn
           |> redirect(
             to:
-              Routes.authentication_provider_path(conn, :request, provider, %{
-                site: user.registration.site
+              Routes.authentication_provider_path(conn, :request, "internal", %{
+                username: username
               })
           )
 
-        nil ->
+        :oidc ->
           conn
-          |> redirect(
-            to:
-              Routes.authentication_provider_path(conn, :request, "local", %{username: username})
-          )
+
+        # |> redirect(
+        #   to:
+        #     Routes.authentication_provider_path(conn, :request, provider, %{
+        #       site: user.registration.site
+        #     })
+        # )
+
+        :mastodon ->
+          conn
+          # |> redirect(
+          #   to:
+          #     Routes.authentication_provider_path(conn, :request, provider, %{
+          #       site: user.registration.site
+          #     })
+          # )
       end
     else
       _ ->
@@ -113,11 +127,11 @@ defmodule CPub.Web.Authentication.SessionController do
   end
 
   def show(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
-    with session <- Repo.preload(session, :user) do
+    with {:ok, user} <- User.get_by_id(session.user) do
       conn
       |> render("show.html",
         logout_url: Routes.authentication_session_path(conn, :logout),
-        username: session.user.username
+        username: user.username
       )
     end
   end

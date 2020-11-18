@@ -28,15 +28,15 @@ For the `Authorization Code` and `Resource Owner Password Credentials` flows a r
 
 CPub support authentication via:
 
-- a username and password
+- an internally stored username and password
 - an OpenID Connect provider
 - a Pleroma/Mastodon compatible OAuth 2.0 server
 
 The interactive authentication endpoint is at: `/auth/login`.
 
-### Local username/password
+### Internal username and password
 
-Local users can be sign up with a username and password at the endpoint: `/auth/register`.
+Users can sign up with a username and password at the endpoint: `/auth/register`.
 
 ### OpenID Connect
 

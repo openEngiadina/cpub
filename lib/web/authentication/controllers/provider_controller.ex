@@ -18,11 +18,11 @@ defmodule CPub.Web.Authentication.ProviderController do
 
   action_fallback CPub.Web.FallbackController
 
-  plug Ueberauth, provider: [:local]
+  plug Ueberauth, provider: [:internal]
 
-  def request(%Plug.Conn{} = conn, %{"provider" => "local"}) do
+  def request(%Plug.Conn{} = conn, %{"provider" => "internal"}) do
     conn
-    |> render("local.html",
+    |> render("internal.html",
       callback_url: Helpers.callback_path(conn),
       username: conn.params["username"]
     )
@@ -42,7 +42,7 @@ defmodule CPub.Web.Authentication.ProviderController do
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
     case auth.strategy do
-      Strategy.Local ->
+      Strategy.Internal ->
         conn
         |> SessionController.create_session(auth.extra.raw_info.user)
 

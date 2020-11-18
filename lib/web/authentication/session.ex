@@ -35,7 +35,7 @@ defmodule CPub.Web.Authentication.Session do
   """
   def get_by_id(id) do
     DB.transaction(fn ->
-      Query.read(__MODULE__, id)
+      Memento.Query.read(__MODULE__, id)
     end)
   end
 end
