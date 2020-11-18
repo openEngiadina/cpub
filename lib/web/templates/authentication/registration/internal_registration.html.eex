@@ -5,7 +5,7 @@
 <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
 <% end %>
 
-<h2>Local Registration</h2>
+<h2>Registration</h2>
 <%= form_for @conn, @callback_url, fn f -> %>
 
 <div class="input">
