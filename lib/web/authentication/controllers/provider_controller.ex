@@ -60,7 +60,7 @@ defmodule CPub.Web.Authentication.ProviderController do
         username = auth.extra.raw_info.id_token["preferred_username"] || auth.uid
 
         conn
-        |> callback_external_provider(site, :odic, auth.uid, username)
+        |> callback_external_provider(site, :oidc, auth.uid, username)
     end
   end
 

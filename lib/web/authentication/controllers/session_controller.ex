@@ -69,7 +69,7 @@ defmodule CPub.Web.Authentication.SessionController do
   def login(%Plug.Conn{method: "POST"} = conn, %{username: username}) do
     with {:ok, user} <- User.get(username),
          {:ok, registration} <- User.Registration.get_user_registration(user) do
-      case registration.type do
+      case registration.provider do
         :internal ->
           conn
           |> redirect(
@@ -84,7 +84,7 @@ defmodule CPub.Web.Authentication.SessionController do
           |> redirect(
             to:
               Routes.authentication_provider_path(conn, :request, "oidc", %{
-                site: user.registration.site
+                site: registration.site
               })
           )
 
@@ -93,7 +93,7 @@ defmodule CPub.Web.Authentication.SessionController do
           |> redirect(
             to:
               Routes.authentication_provider_path(conn, :request, "mastodon", %{
-                site: user.registration.site
+                site: registration.site
               })
           )
       end
@@ -142,7 +142,7 @@ defmodule CPub.Web.Authentication.SessionController do
     |> redirect(to: Routes.authentication_session_path(conn, :login))
   end
 
-  def logout(%Plug.Conn{assings: %{session: session}} = conn, _params) do
+  def logout(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
     Session.delete(session.id)
 
     conn

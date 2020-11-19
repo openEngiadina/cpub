@@ -1,6 +1,6 @@
 # Authentication and Authorization
 
-Certain requests to ressources on CPub need to be authorized. CPub uses the [The OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749) for handling authorization.
+Certain requests to resources on CPub need to be authorized. CPub uses the [The OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749) for handling authorization.
 
 Following OAuth 2.0 flows are supported:
 
@@ -52,8 +52,8 @@ An OAuth 2.0 client must be registered for CPub at the provider. The redirect ur
 The client id and client secret (if provider requires) must be configured in CPub from the Elixir shell:
 
 ```
-  CPub.Web.Authentication.OAuthClient.Client.create(%{
-    provider: "oidc",
+  CPub.Web.Authentication.OAuthClient.create(%{
+    provider: :oidc,
     site: "http://localhost:8080/auth/realms/cpub-test/",
     client_id: "something-something-something",
     client_secret: "secret-secret-secret-secret",
@@ -63,7 +63,7 @@ The client id and client secret (if provider requires) must be configured in CPu
 
 Where the fields are:
 
-- `provider`: must be `oidc` to indicate that the client is an OpenID Connect client.
+- `provider`: must be `:oidc` to indicate that the client is an OpenID Connect client.
 - `site`: the URL to the OpenID Connect provider.
 - `client_id`: OAuth 2.0 client id
 - `client_secret`: OAuth 2.0 client secret (optional). If defined it will be used when fetching the access/id token from the provider.

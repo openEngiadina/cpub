@@ -1,6 +1,7 @@
-defmodule Ueberauth.Strategy.OIDC do
+defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   @moduledoc """
-  An Ueberauth strategy for identifying with services implementing [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html).
+  An Ueberauth strategy for identifying with services implementing [OpenID
+  Connect](https://openid.net/specs/openid-connect-core-1_0.html).
 
   # Configuration
 
@@ -69,7 +70,7 @@ defmodule Ueberauth.Strategy.OIDC do
       client_secret: client_secret(conn),
       params: Map.merge(extra_request_params(conn), %{scope: scope(conn)}),
       redirect_uri: callback_url(conn),
-      strategy: OAuth2.Strategy.PublicAuthCode
+      strategy: CPub.Web.Authentication.Strategy.OIDC.OAuth2.Strategy.PublicAuthCode
     ]
     |> OAuth2.Client.new()
     |> OAuth2.Client.put_serializer("application/json", Jason)
