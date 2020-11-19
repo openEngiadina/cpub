@@ -8,7 +8,7 @@ defmodule CPub.Web.Authorization.ClientController do
 
   alias CPub.Web.Authorization.Client
 
-  action_fallback CPub.Web.FallbackController
+  action_fallback CPub.Web.Authorization.FallbackController
 
   @doc """
   Create a new OAuth 2.0 client

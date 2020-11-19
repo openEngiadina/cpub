@@ -1,5 +1,5 @@
 defmodule CPub.Web.Authorization.Scope do
-  @doc """
+  @moduledoc """
   Defines the valid scopes of authorization to CPub.
 
   Valid scopes are:
@@ -12,7 +12,7 @@ defmodule CPub.Web.Authorization.Scope do
   more finer-grained scopes that might be implemented in the future.
   """
 
-  @valid_scopes [:read, :write]
+  @valid_scopes [:openid, :read, :write]
 
   def default, do: [:read, :write]
 
@@ -29,18 +29,31 @@ defmodule CPub.Web.Authorization.Scope do
   def valid?(scope) when is_list(scope), do: Enum.all?(scope, &valid?/1)
   def valid?(scope), do: scope in @valid_scopes
 
+  defp parse_individual("read"), do: :read
+  defp parse_individual(:read), do: :read
+  defp parse_individual("write"), do: :write
+  defp parse_individual(:write), do: :write
+  defp parse_individual(_), do: :invalid
+
   @doc """
   Parse and validate a string into a list of valid scopes.
   """
-  def parse(scopes) when is_binary(scopes) do
-    with parsed <- scopes |> String.split() |> Enum.map(&String.to_existing_atom/1) do
-      if valid?(parsed) do
-        {:ok, scopes}
+  def parse(scope) when is_binary(scope) do
+    scope
+    |> String.split()
+    |> Enum.map(&parse_individual/1)
+    |> parse()
+  end
+
+  def parse(scope) when is_list(scope) do
+    with scope <- Enum.map(scope, &parse_individual/1) do
+      if valid?(scope) do
+        {:ok, scope}
       else
-        {:error, :invalid_scopes}
+        {:error, :invalid_scope}
       end
     end
   end
 
-  def parse(_), do: {:error, :invalid_scopes}
+  def parse(_), do: {:error, :invalid_scope}
 end

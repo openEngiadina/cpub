@@ -1,5 +1,6 @@
 defmodule CPub.Web.Authorization.AuthorizationControllerTest do
   use ExUnit.Case
+  use CPub.DataCase
   use CPub.Web.ConnCase
 
   alias CPub.User
@@ -13,9 +14,9 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
   setup do
     case Client.create(%{
-           client_name: "Test client",
-           redirect_uris: ["http://example.com/"],
-           scope: [:openid, :read, :write]
+           "client_name" => "Test client",
+           "scope" => "read write",
+           "redirect_uris" => ["http://example.com/"]
          }) do
       {:ok, client} ->
         {:ok, %{client: client}}
@@ -23,7 +24,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
   end
 
   setup do
-    with {:ok, user} <- User.create(%{username: "alice", password: "123"}),
+    with {:ok, user} <- User.create("alice"),
          {:ok, session} <- Session.create(user) do
       {:ok, %{user: user, session: session}}
     end
@@ -110,7 +111,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
       code = redirect_uri.query |> URI.decode_query() |> Access.get("code")
 
-      assert {:ok, code} = CPub.Repo.get_one_by(Authorization, %{authorization_code: code})
+      assert {:ok, authoriation} = Authorization.get_by_code(code)
     end
 
     test "redirect with error on deny", %{

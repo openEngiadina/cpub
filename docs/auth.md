@@ -8,9 +8,6 @@ Following OAuth 2.0 flows are supported:
 - [Resource Owner Password Credentials](https://tools.ietf.org/html/rfc6749#section-1.3.3)
 - [Refreshing an Access Token](https://tools.ietf.org/html/rfc6749#section-6)
 
-<!-- Furthermore CPub implements [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html). -->
-<!-- and [WebID-OIDC](https://github.com/solid/webid-oidc-spec) -->
-
 Authorization (in form of an OAuth 2.0 Access Token) is granted after a user has authenticated.
 
 ## Authorization (OAuth 2.0)
@@ -23,6 +20,14 @@ The OAuth 2.0 endpoints are:
 Access tokens are valid for 60 days.
 
 For the `Authorization Code` and `Resource Owner Password Credentials` flows a refresh token is issued which can be used to get a new access token. The refresh token can be used until the authorization is revoked by the user.
+
+### Client registration
+
+The `Authorization Code` flow requires a OAuth client to be registered.
+
+Clients can be registered using [OAuth 2.0 Dynamic Client Registration Protocol (RFC 7591)](https://tools.ietf.org/html/rfc7591) at the endpoint `/oauth/clients`.
+
+See the [Demonstration](demo.md) for an example.
 
 ## Authentication
 

@@ -44,6 +44,10 @@ defmodule CPub.Web.Authorization.FallbackController do
     end
   end
 
+  def call(%Plug.Conn{} = conn, {:error, reason}) do
+    call(conn, {:error, :bad_request, reason})
+  end
+
   def call(%Plug.Conn{} = conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)

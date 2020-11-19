@@ -17,60 +17,126 @@ defmodule CPub.Web.Authorization do
   `CPub.Web.Authorization.AuthorizationPlug`).
   """
 
-  use Ecto.Schema
+  alias CPub.DB
+  alias CPub.User
+  alias CPub.Web.Authorization
 
-  import Ecto.Changeset
+  use Memento.Table,
+    attributes: [
+      :id,
+      :user,
+      :client,
+      :scope,
+      :authorization_code,
+      :refresh_token,
+      :code_used,
+      :created_at
+    ],
+    index: [:authorization_code, :refresh_token],
+    type: :set
 
-  alias CPub.{Repo, User}
-
-  alias CPub.Web.Authorization.{Client, Scope, Token}
-
+  # generate a random code/token
   defp random_code do
     :crypto.strong_rand_bytes(32)
     |> Base.encode32(padding: false)
   end
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  schema "oauth_server_authorizations" do
-    field :scope, {:array, Scope}
-
-    field :authorization_code, :string
-    field :code_used, :boolean, default: false
-    field :refresh_token, :string
-
-    belongs_to :user, User, type: :binary_id
-    belongs_to :client, Client, type: :binary_id
-
-    has_many :tokens, Token
-
-    timestamps()
-  end
-
-  def changeset(%__MODULE__{} = authorization, attrs) do
-    authorization
-    |> cast(attrs, [:scope, :user_id, :client_id, :code_used])
-    |> validate_required([:scope, :user_id])
-    # TODO: validate that scope is in client.scopes
-    |> assoc_constraint(:user)
-    |> assoc_constraint(:client)
-    |> unique_constraint(:id, name: "oauth_server_authorizations_pkey")
-    |> unique_constraint(:code, name: "oauth_server_authorizations_code_index")
-  end
-
-  def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> put_change(:authorization_code, random_code())
-    |> put_change(:refresh_token, random_code())
-    |> Repo.insert()
+  @doc """
+  Create a new `Authorization` for the given `user`, `client` and `scope`.
+  """
+  def create(%User{} = user, %Authorization.Client{} = client, scope) do
+    DB.transaction(fn ->
+      with {:ok, scope} <- Authorization.Scope.parse(scope),
+           true <- Authorization.Scope.scope_subset?(scope, client.scope) do
+        %__MODULE__{
+          id: UUID.uuid4(),
+          user: user.id,
+          client: client.id,
+          scope: scope,
+          authorization_code: random_code(),
+          refresh_token: random_code(),
+          code_used: false,
+          created_at: NaiveDateTime.utc_now()
+        }
+        |> Memento.Query.write()
+      else
+        _ ->
+          DB.abort(:invalid_scope)
+      end
+    end)
   end
 
   @doc """
-  Returns a changeset that sets the authorization as used.
+  Create a new `Authorization` for the given `user` and scope without associating a client.
   """
-  def use_changeset(%__MODULE__{} = authorization) do
-    authorization
-    |> changeset(%{code_used: true})
+  def create(%User{} = user, scope) do
+    DB.transaction(fn ->
+      case Authorization.Scope.parse(scope) do
+        {:ok, scope} ->
+          %__MODULE__{
+            id: UUID.uuid4(),
+            user: user.id,
+            scope: scope,
+            authorization_code: random_code(),
+            refresh_token: random_code(),
+            code_used: false,
+            created_at: NaiveDateTime.utc_now()
+          }
+          |> Memento.Query.write()
+
+        _ ->
+          DB.abort(:invalid_scope)
+      end
+    end)
+  end
+
+  @doc """
+  Get an authorization by id.
+  """
+  def get(id) do
+    DB.transaction(fn ->
+      Memento.Query.read(__MODULE__, id)
+    end)
+  end
+
+  @doc """
+  Get an authorization by the code.
+  """
+  def get_by_code(code) do
+    DB.transaction(fn ->
+      case Memento.Query.select(__MODULE__, {:==, :authorization_code, code}) do
+        [authorization] ->
+          authorization
+
+        _ ->
+          DB.abort(:not_found)
+      end
+    end)
+  end
+
+  @doc """
+  Get an authorization by the refresh token.
+  """
+  def get_by_refresh_token(token) do
+    DB.transaction(fn ->
+      case Memento.Query.select(__MODULE__, {:==, :refresh_token, token}) do
+        [authorization] ->
+          authorization
+
+        _ ->
+          DB.abort(:not_found)
+      end
+    end)
+  end
+
+  @doc """
+  Mark the authorization code as used.
+  """
+  def use_code!(%__MODULE__{} = authorization) do
+    DB.transaction(fn ->
+      Memento.Query.delete_record(authorization)
+      Memento.Query.write(%{authorization | code_used: true})
+    end)
   end
 
   @doc """
@@ -83,6 +149,6 @@ defmodule CPub.Web.Authorization do
   Returns true if the `Authorization` has expired (has been created more than 10 minutes ago).
   """
   def expired?(%__MODULE__{} = authentication) do
-    valid_for() <= NaiveDateTime.diff(NaiveDateTime.utc_now(), authentication.inserted_at)
+    valid_for() <= NaiveDateTime.diff(NaiveDateTime.utc_now(), authentication.created_at)
   end
 end

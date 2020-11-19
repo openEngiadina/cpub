@@ -3,34 +3,18 @@ defmodule CPub.Web.Authorization.Token do
   An OAuth 2.0 Token that can be used to access ressources.
   """
 
-  use Ecto.Schema
-
-  import Ecto.Changeset
-  alias Ecto.Multi
-
-  alias CPub.Repo
+  alias CPub.DB
   alias CPub.Web.Authorization
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  schema "oauth_server_tokens" do
-    field :access_token, :string
-    belongs_to :authorization, Authorization, type: :binary_id
-    timestamps()
-  end
+  use Memento.Table,
+    attributes: [:id, :access_token, :authorization, :created_at],
+    index: [:access_token, :authorization],
+    type: :set
 
+  # generate a new random token
   defp random_token do
     :crypto.strong_rand_bytes(32)
     |> Base.encode32(padding: false)
-  end
-
-  def changeset(%__MODULE__{} = token, attrs) do
-    token
-    |> cast(attrs, [:authorization_id])
-    |> put_change(:access_token, random_token())
-    |> validate_required([:access_token, :authorization_id])
-    |> assoc_constraint(:authorization)
-    |> unique_constraint(:id, name: "oauth_server_tokens_pkey")
-    |> unique_constraint(:access_token, name: "oauth_server_tokens_authorization_id_index")
   end
 
   @doc """
@@ -40,19 +24,19 @@ defmodule CPub.Web.Authorization.Token do
     if authorization.code_used or Authorization.expired?(authorization) do
       {:error, :invalid_grant, "access code expired or already used"}
     else
-      case Multi.new()
-           |> Multi.insert(
-             :token,
-             changeset(%__MODULE__{}, %{authorization_id: authorization.id})
-           )
-           |> Multi.update(:used_authorization, Authorization.use_changeset(authorization))
-           |> Repo.transaction() do
-        {:ok, %{token: token}} ->
-          {:ok, token}
+      DB.transaction(fn ->
+        # mark the authorization code as used
+        Authorization.use_code!(authorization)
 
-        _ ->
-          {:error, :invalid_grant, "failed to create access token"}
-      end
+        # create a new token
+        %__MODULE__{
+          id: UUID.uuid4(),
+          access_token: random_token(),
+          authorization: authorization.id,
+          created_at: NaiveDateTime.utc_now()
+        }
+        |> Memento.Query.write()
+      end)
     end
   end
 
@@ -60,15 +44,30 @@ defmodule CPub.Web.Authorization.Token do
   Creates a refreshed token for an `Authorization`.
   """
   def refresh(%Authorization{} = authorization) do
-    case %__MODULE__{}
-         |> changeset(%{authorization_id: authorization.id})
-         |> Repo.insert() do
-      {:ok, token} ->
-        {:ok, token}
+    DB.transaction(fn ->
+      %__MODULE__{
+        id: UUID.uuid4(),
+        access_token: random_token(),
+        authorization: authorization.id,
+        created_at: NaiveDateTime.utc_now()
+      }
+      |> Memento.Query.write()
+    end)
+  end
 
-      _ ->
-        {:error, :invalid_grant, "failed to refresh token"}
-    end
+  @doc """
+  Get token by access token.
+  """
+  def get(access_token) do
+    DB.transaction(fn ->
+      case Memento.Query.select(__MODULE__, {:==, :access_token, access_token}) do
+        [token] ->
+          token
+
+        _ ->
+          DB.abort(:not_found)
+      end
+    end)
   end
 
   @doc """
@@ -81,6 +80,6 @@ defmodule CPub.Web.Authorization.Token do
   Returns true if the Token is expired and can no longer be used to access a ressource.
   """
   def expired?(%__MODULE__{} = token) do
-    valid_for() <= NaiveDateTime.diff(NaiveDateTime.utc_now(), token.inserted_at)
+    valid_for() <= NaiveDateTime.diff(NaiveDateTime.utc_now(), token.created_at)
   end
 end

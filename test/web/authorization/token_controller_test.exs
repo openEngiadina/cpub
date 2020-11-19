@@ -1,8 +1,9 @@
 defmodule CPub.Web.Authorization.TokenControllerTest do
   use ExUnit.Case
   use CPub.Web.ConnCase
+  use CPub.DataCase
 
-  alias CPub.{Repo, User}
+  alias CPub.User
 
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.{Client, Token}
@@ -12,17 +13,13 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
   setup do
     with {:ok, client} <-
            Client.create(%{
-             client_name: "Test client",
-             redirect_uris: ["http://example.com/"],
-             scope: [:openid, :read, :write]
+             "client_name" => "Test client",
+             "scope" => "read write",
+             "redirect_uris" => ["http://example.com/"]
            }),
-         {:ok, user} <- User.create(%{username: "alice", password: "123"}),
-         {:ok, authorization} <-
-           Authorization.create(%{
-             client_id: client.id,
-             user_id: user.id,
-             scope: [:openid, :read, :write]
-           }) do
+         {:ok, user} <- User.create("alice"),
+         {:ok, _registration} = User.Registration.create_internal(user, "123"),
+         {:ok, authorization} <- Authorization.create(user, client, "read write") do
       {:ok, %{client: client, user: user, authorization: authorization}}
     end
   end
@@ -47,7 +44,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
                "refresh_token" => refresh_token
              } = json_response(response, 200)
 
-      assert {:ok, token} = Repo.get_one_by(Token, %{access_token: access_token})
+      assert {:ok, token} = Token.get(access_token)
 
       assert expires_in == Token.valid_for()
       assert access_token == token.access_token
@@ -106,8 +103,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
                "refresh_token" => refresh_token
              } = json_response(response, 200)
 
-      assert {:ok, token} = Repo.get_one_by(Token, %{access_token: access_token})
-
+      assert {:ok, token} = Token.get(access_token)
       assert expires_in == Token.valid_for()
       assert access_token == token.access_token
       assert refresh_token == authorization.refresh_token
@@ -130,7 +126,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
                "refresh_token" => refresh_token
              } = json_response(response, 200)
 
-      assert {:ok, token} = Repo.get_one_by(Token, %{access_token: access_token})
+      assert {:ok, token} = Token.get(access_token)
     end
   end
 end

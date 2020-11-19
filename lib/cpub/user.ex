@@ -44,11 +44,9 @@ defmodule CPub.User do
   end
 
   defp load_profile(%__MODULE__{} = user) do
-    with {:ok, profile} <- ERIS.get_rdf(user.profile) do
-      %{user | profile: profile}
-    else
-      error ->
-        DB.abort(error)
+    case ERIS.get_rdf(user.profile) do
+      {:ok, profile} -> %{user | profile: profile}
+      error -> DB.abort(error)
     end
   end
 

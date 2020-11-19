@@ -60,6 +60,15 @@ defmodule CPub.Web.Authorization.Client do
     end)
   end
 
+  @doc """
+  Get a client by `id`.
+  """
+  def get(id) do
+    DB.transaction(fn ->
+      Memento.Query.read(__MODULE__, id)
+    end)
+  end
+
   # Check if redirect uri is valid for client
   defp redirect_uri_valid?(uri, %__MODULE__{} = client) do
     if uri in client.redirect_uris do
