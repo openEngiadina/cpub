@@ -142,6 +142,14 @@ defmodule CPub.Web.Authentication.SessionController do
     |> redirect(to: Routes.authentication_session_path(conn, :login))
   end
 
+  def logout(%Plug.Conn{assings: %{session: session}} = conn, _params) do
+    Session.delete(session.id)
+
+    conn
+    |> clear_session()
+    |> authentication_success()
+  end
+
   def logout(%Plug.Conn{} = conn, _params) do
     conn
     |> clear_session()

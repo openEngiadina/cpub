@@ -38,4 +38,13 @@ defmodule CPub.Web.Authentication.Session do
       Memento.Query.read(__MODULE__, id)
     end)
   end
+
+  @doc """
+  Delete a session.
+  """
+  def delete(id) do
+    DB.transaction(fn ->
+      Memento.Query.delete(__MODULE__, id)
+    end)
+  end
 end
