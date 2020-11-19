@@ -1,17 +1,17 @@
-defmodule CPub.Web.Authentication.Strategy.Fediverse do
+defmodule CPub.Web.Authentication.Strategy.Mastodon do
   @moduledoc """
-  `Ueberauth.Strategy` for authenticating with a dynamic Mastodon/Pleroma instance.
+  `Ueberauth.Strategy` for authenticating with a dynamic Mastodon/Pleroma
+  instance.
 
-  This is a "meta"-Strategy and uses `Uberauth.Strategy.Pleroma` for authenticating with individual instances.
+  This is a "meta"-Strategy and uses
+  `CPub.Web.Authentication.Strategy.Mastodon.Instance` for authenticating with
+  individual instances.
   """
 
   use Ueberauth.Strategy
 
-  alias CPub.Repo
-
-  alias CPub.Web.Authentication.OAuthClient.Client
-
-  alias Ueberauth.Strategy.Pleroma
+  alias CPub.Web.Authentication.OAuthClient
+  alias CPub.Web.Authentication.Strategy.Mastodon.Instance
 
   # The Mastodon API for dynamically creating clients (see https://docs.joinmastodon.org/methods/apps/)
   @register_client_endpoint "/api/v1/apps"
@@ -37,18 +37,18 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
     with {:ok, _, _, client_ref} <- :hackney.request(:post, url, headers, body, []),
          {:ok, body} <- :hackney.body(client_ref),
          {:ok, client_attrs} <- Jason.decode(body) do
-      Client.create(%{
+      OAuthClient.create(%{
         site: site,
-        provider: to_string(strategy_name(conn)),
+        provider: :mastodon,
         client_id: client_attrs["client_id"],
         client_secret: client_attrs["client_secret"]
       })
     end
   end
 
-  # Get a suitable client for the site
+  # Get or create a suitable client for the site.
   defp get_client(conn, site) do
-    case Repo.get_one_by(Client, %{provider: to_string(strategy_name(conn)), site: site}) do
+    case OAuthClient.get(site) do
       {:ok, client} ->
         {:ok, client}
 
@@ -62,17 +62,17 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
 
     if is_nil(site) do
       conn
-      |> set_errors!(error("fediverse", "no site given"))
+      |> set_errors!(error("mastodon_no_site_given", "no site given"))
     else
       # encode the site in the OAuth 2.0 state parameter
-      state = Phoenix.Token.encrypt(conn, "ueberauth.fediverse", site)
+      state = Phoenix.Token.encrypt(conn, "ueberauth.mastodon", site)
 
       case get_client(conn, site) do
         {:ok, client} ->
           conn
           |> Ueberauth.run_request(
             strategy_name(conn),
-            {Pleroma,
+            {Instance,
              [
                site: site,
                client_id: client.client_id,
@@ -83,7 +83,7 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
 
         _ ->
           conn
-          |> set_errors!(error("fediverse", "failed to create client"))
+          |> set_errors!(error("mastodon_no_client", "failed to create client"))
       end
     end
   end
@@ -98,12 +98,12 @@ defmodule CPub.Web.Authentication.Strategy.Fediverse do
   def handle_callback!(%Plug.Conn{} = conn) do
     # extract the site from the state param
     with {:ok, site} <-
-           Phoenix.Token.decrypt(conn, "ueberauth.fediverse", conn.params["state"]),
+           Phoenix.Token.decrypt(conn, "ueberauth.mastodon", conn.params["state"]),
          {:ok, client} <- get_client(conn, site) do
       conn
       |> Ueberauth.run_callback(
         strategy_name(conn),
-        {Pleroma,
+        {Instance,
          [
            site: site,
            client_id: client.client_id,

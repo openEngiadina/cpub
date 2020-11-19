@@ -54,7 +54,7 @@ defmodule CPub.DB do
     end
   end
 
-  defp ensure_table_exists(table, opts \\ []) do
+  defp ensure_table_exists(table, opts) do
     case Memento.Table.create(table, opts) do
       :ok ->
         :ok
@@ -76,7 +76,11 @@ defmodule CPub.DB do
          # keep auth* tables in memory and on disc
          :ok <- ensure_table_exists(CPub.Web.Authentication.Session, disc_copies: nodes()),
          :ok <- ensure_table_exists(CPub.Web.Authorization, disc_copies: nodes()),
-         :ok <- ensure_table_exists(CPub.Web.Authorization.Token, disc_copies: nodes()) do
+         :ok <- ensure_table_exists(CPub.Web.Authorization.Token, disc_copies: nodes()),
+         :ok <- ensure_table_exists(CPub.Web.Authentication.OAuthClient, disc_copies: nodes()),
+         # temporary `RegistrationRequest` only exists in memory
+         :ok <-
+           ensure_table_exists(CPub.Web.Authentication.RegistrationRequest, ram_copies: nodes()) do
       :ok
     end
   end

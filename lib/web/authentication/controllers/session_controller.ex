@@ -81,22 +81,21 @@ defmodule CPub.Web.Authentication.SessionController do
 
         :oidc ->
           conn
-
-        # |> redirect(
-        #   to:
-        #     Routes.authentication_provider_path(conn, :request, provider, %{
-        #       site: user.registration.site
-        #     })
-        # )
+          |> redirect(
+            to:
+              Routes.authentication_provider_path(conn, :request, "oidc", %{
+                site: user.registration.site
+              })
+          )
 
         :mastodon ->
           conn
-          # |> redirect(
-          #   to:
-          #     Routes.authentication_provider_path(conn, :request, provider, %{
-          #       site: user.registration.site
-          #     })
-          # )
+          |> redirect(
+            to:
+              Routes.authentication_provider_path(conn, :request, "mastodon", %{
+                site: user.registration.site
+              })
+          )
       end
     else
       _ ->
@@ -112,18 +111,20 @@ defmodule CPub.Web.Authentication.SessionController do
     conn
     |> redirect(
       to:
-        Routes.authentication_provider_path(conn, :request, "fediverse", %{
+        Routes.authentication_provider_path(conn, :request, "mastodon", %{
           site: site
         })
     )
   end
 
   def render_login(%Plug.Conn{} = conn) do
-    conn
-    |> render("login.html",
-      callback_url: Routes.authentication_session_path(conn, :login),
-      clients: OAuthClient.Client.get_displayable()
-    )
+    with {:ok, clients} <- OAuthClient.get_displayable() do
+      conn
+      |> render("login.html",
+        callback_url: Routes.authentication_session_path(conn, :login),
+        clients: clients
+      )
+    end
   end
 
   def show(%Plug.Conn{assigns: %{session: session}} = conn, _params) do

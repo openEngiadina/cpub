@@ -1,10 +1,9 @@
-defmodule Ueberauth.Strategy.Pleroma do
+defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
   @moduledoc """
   An Ueberauth strategy for Pleroma/Mastodon compatible providers.
 
-  This Strategy requires a site, client_id and client_secret and is limited to a single Pleroma/Mastodon instance.
-
-  TODO: Notes on how to use/configure.
+  This Strategy requires a site, client_id and client_secret and is limited to a
+  single Pleroma/Mastodon instance.
   """
 
   use Ueberauth.Strategy
@@ -13,7 +12,7 @@ defmodule Ueberauth.Strategy.Pleroma do
 
   def handle_request!(%Plug.Conn{} = conn) do
     client =
-      __MODULE__.OAuth.client(
+      CPub.Web.Authentication.Strategy.Mastodon.OAuth.client(
         site: Keyword.get(options(conn), :site),
         client_id: Keyword.get(options(conn), :client_id),
         redirect_uri: callback_url(conn),
@@ -26,7 +25,7 @@ defmodule Ueberauth.Strategy.Pleroma do
 
   def handle_callback!(%Plug.Conn{} = conn) do
     client =
-      __MODULE__.OAuth.client(
+      CPub.Web.Authentication.Strategy.Mastodon.OAuth.client(
         site: Keyword.get(options(conn), :site),
         client_id: Keyword.get(options(conn), :client_id),
         client_secret: Keyword.get(options(conn), :client_secret),

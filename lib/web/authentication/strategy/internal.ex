@@ -18,7 +18,7 @@ defmodule CPub.Web.Authentication.Strategy.Internal do
     password = conn.params["password"]
 
     with {:ok, user} <- User.get(username),
-         {:ok, %User.Registration{type: :internal} = registration} <-
+         {:ok, %User.Registration{provider: :internal} = registration} <-
            User.Registration.get_user_registration(user),
          :ok <- User.Registration.check_internal(registration, password) do
       conn

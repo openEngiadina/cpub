@@ -6,7 +6,8 @@ defmodule CPub.Web.Authentication.ProviderController do
   """
   use CPub.Web, :controller
 
-  alias CPub.Web.Authentication.Registration
+  alias CPub.User
+
   alias CPub.Web.Authentication.RegistrationRequest
   alias CPub.Web.Authentication.Strategy
 
@@ -46,12 +47,12 @@ defmodule CPub.Web.Authentication.ProviderController do
         conn
         |> SessionController.create_session(auth.extra.raw_info.user)
 
-      Strategy.Fediverse ->
+      Strategy.Mastodon ->
         site = auth.extra.raw_info.site
         username = auth.extra.raw_info.account["username"] || auth.uid
 
         conn
-        |> callback_external_provider(auth, site, username)
+        |> callback_external_provider(site, :mastodon, auth.uid, username)
 
       Strategy.OIDC ->
         # site is called provider in OpenID lingo
@@ -59,20 +60,23 @@ defmodule CPub.Web.Authentication.ProviderController do
         username = auth.extra.raw_info.id_token["preferred_username"] || auth.uid
 
         conn
-        |> callback_external_provider(auth, site, username)
+        |> callback_external_provider(site, :odic, auth.uid, username)
     end
   end
 
-  def callback_external_provider(conn, %Ueberauth.Auth{} = auth, site, username) do
+  def callback_external_provider(conn, site, provider, external_id, username) do
     # If user is already registered create a session an succeed
-    case Registration.get_from_auth(auth, site) do
+    case User.Registration.get_external(site, provider, external_id) do
       {:ok, registration} ->
-        conn
-        |> SessionController.create_session(registration.user)
+        with {:ok, user} <- User.get_by_id(registration.user) do
+          conn
+          |> SessionController.create_session(user)
+        end
 
       # if not create a registration requeset and redirect user to register form
       _ ->
-        with {:ok, registration_request} <- RegistrationRequest.create(auth, site, username),
+        with {:ok, registration_request} <-
+               RegistrationRequest.create(site, provider, external_id, username),
              registration_token <-
                Token.sign(conn, "registration_request", registration_request.id) do
           conn

@@ -15,10 +15,12 @@ defmodule CPub.Web.Authentication.RegistrationController do
 
   action_fallback CPub.Web.FallbackController
 
+  # External registration
+
   defp get_request(conn, request_token) do
     with {:ok, request_id} <-
            Token.verify(conn, "registration_request", request_token, max_age: 86_400) do
-      Repo.get_one(RegistrationRequest, request_id)
+      RegistrationRequest.get(request_id)
     end
   end
 
@@ -36,17 +38,32 @@ defmodule CPub.Web.Authentication.RegistrationController do
         "request" => request_token,
         "username" => username
       }) do
-    with {:ok, request} <- get_request(conn, request_token) do
-      case Registration.create(username, request) do
-        {:ok, %{user: user}} ->
+    case get_request(conn, request_token) do
+      {:ok, request} ->
+        with {:ok, user} <- User.create(username),
+             {:ok, _registration} <-
+               User.Registration.create_external(
+                 user,
+                 request.provider,
+                 request.site,
+                 request.external_id
+               ) do
           conn
           |> SessionController.create_session(user)
+        else
+          {:error, :user_already_exists} ->
+            conn
+            |> put_flash(:error, "username not available")
+            |> render_external_registration_form(request: request, request_token: request_token)
 
-        _ ->
-          conn
-          |> put_flash(:error, "Registration failed.")
-          |> render_external_registration_form(request: request, request_token: request_token)
-      end
+          _ ->
+            conn
+            |> put_flash(:error, "Registration failed.")
+        end
+
+      _ ->
+        conn
+        |> put_flash(:error, "Registration failed.")
     end
   end
 
@@ -91,7 +108,7 @@ defmodule CPub.Web.Authentication.RegistrationController do
       callback_url:
         Routes.authentication_registration_path(conn, :register, request: request_token),
       registration_external_id: request.external_id,
-      username: request.info["username"]
+      username: request.username
     )
   end
 

@@ -21,7 +21,7 @@ defmodule CPub.Web.Authorization.AuthorizationPlug do
       {:ok, access_token} ->
         with {:ok, token} <- Authorization.Token.get(access_token),
              {:ok, authorization} <- Authorization.get(token.authorization),
-             false <- Token.expired?(token) do
+             false <- Authorization.Token.expired?(token) do
           conn
           |> assign(:authorization, authorization)
         else

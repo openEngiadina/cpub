@@ -1,4 +1,4 @@
-defmodule Ueberauth.Strategy.Pleroma.OAuth do
+defmodule CPub.Web.Authentication.Strategy.Mastodon.OAuth do
   @moduledoc """
   An implementation of OAuth2 for Pleroma/Mastodon compatible providers.
   """
