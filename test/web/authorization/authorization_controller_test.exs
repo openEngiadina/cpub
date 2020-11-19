@@ -6,14 +6,12 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
   alias CPub.User
 
   alias CPub.Web.Authorization
-  alias CPub.Web.Authorization.{Client, Token}
-
-  alias CPub.Web.Authentication.Session
+  alias CPub.Web.Authentication
 
   doctest CPub.Web.Authorization.AuthorizationController
 
   setup do
-    case Client.create(%{
+    case Authorization.Client.create(%{
            "client_name" => "Test client",
            "scope" => "read write",
            "redirect_uris" => ["http://example.com/"]
@@ -25,7 +23,7 @@ defmodule CPub.Web.Authorization.AuthorizationControllerTest do
 
   setup do
     with {:ok, user} <- User.create("alice"),
-         {:ok, session} <- Session.create(user) do
+         {:ok, session} <- Authentication.Session.create(user) do
       {:ok, %{user: user, session: session}}
     end
   end

@@ -4,8 +4,6 @@ defmodule CPub.Web.ResolveControllerTest do
   use CPub.Web.ConnCase
   use CPub.RDFCase
 
-  alias CPub.DB
-
   doctest CPub.Web.ResolveController
 
   setup do

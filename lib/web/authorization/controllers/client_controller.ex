@@ -29,7 +29,7 @@ defmodule CPub.Web.Authorization.ClientController do
           client_id: client.id,
           client_secret: client.client_secret,
           redirect_uris: client.redirect_uris,
-          scope: client.scope
+          scope: client.scope |> Enum.join(" ")
         }
       )
     end
