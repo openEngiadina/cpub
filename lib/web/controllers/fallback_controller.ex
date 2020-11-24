@@ -9,25 +9,9 @@ defmodule CPub.Web.FallbackController do
 
   alias CPub.Web.ChangesetView
 
-  @type error_tuple ::
-          {:error, Ecto.Changeset.t() | String.Chars.t() | atom}
-          | {:error, any, Ecto.Changeset.t(), any}
+  @type error_tuple :: {:error, String.Chars.t() | atom}
 
   @spec call(Plug.Conn.t(), error_tuple) :: Plug.Conn.t()
-  def call(%Plug.Conn{} = conn, {:error, %Ecto.Changeset{} = changeset}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> put_view(ChangesetView)
-    |> render("error.json", changeset: changeset)
-  end
-
-  # Handles error response from an Repo.transaction
-  def call(%Plug.Conn{} = conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> put_view(ChangesetView)
-    |> render("error.json", changeset: changeset)
-  end
 
   def call(%Plug.Conn{} = conn, {:error, :not_found}) do
     conn
@@ -54,13 +38,6 @@ defmodule CPub.Web.FallbackController do
   end
 
   def call(%Plug.Conn{} = conn, {:error, msg}) do
-    conn
-    |> put_status(500)
-    |> text(msg)
-  end
-
-  # This catches Ecto.Multi errors
-  def call(%Plug.Conn{} = conn, {:error, _, msg, _}) do
     conn
     |> put_status(500)
     |> text(msg)

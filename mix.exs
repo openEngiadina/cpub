@@ -23,11 +23,14 @@ defmodule CPub.MixProject do
         main: "readme",
         # TODO: to some nicer grouping
         groups_for_modules: [
-          Schema: [CPub.Object, CPub.User, CPub.Activity],
+          Schema: [CPub.User, CPub.User.Registration],
+          Database: [CPub.DB, CPub.ERIS],
           Namespaces: [CPub.NS],
-          Types: [CPub.ID],
-          RDF: [RDF.JSON]
-        ]
+          RDF: [RDF.JSON],
+          Authentication: [CPub.Web.Authentication],
+          Authorization: [CPub.Web.Authorization]
+        ],
+        nest_modules_by_prefix: [CPub.Web.Authentication, CPub.Web.Authorization]
       ]
     ]
   end
@@ -62,12 +65,6 @@ defmodule CPub.MixProject do
       # Mnesia wrapper
       {:memento, "~> 0.3.1"},
 
-      # Ecto
-      {:phoenix_ecto, "~> 4.0"},
-      {:ecto_sql, "~> 3.0"},
-      {:ecto_enum, "~> 1.4"},
-      {:postgrex, ">= 0.0.0"},
-
       # Authorizaiton & Authentication
       {:ueberauth, "~> 0.6.3"},
       {:oauth2, "~> 2.0"},
@@ -85,8 +82,6 @@ defmodule CPub.MixProject do
       {:monocypher, git: "https://gitlab.com/openengiadina/erlang-monocypher", branch: "main"},
 
       # User passwords
-      {:comeonin_ecto_password, "~> 3.0.0"},
-      {:pbkdf2_elixir, "~> 1.2"},
       # TODO: replace argon2_elixir with argon2i from :monocypher
       {:argon2_elixir, "~> 2.3"},
 
@@ -110,10 +105,7 @@ defmodule CPub.MixProject do
   # Aliases are shortcuts or tasks specific to the current project.
   defp aliases do
     [
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
-      doctor: ["deps.get", "format", "credo --strict", "dialyzer"]
+      check: ["deps.get", "format", "credo --strict", "test"]
     ]
   end
 end

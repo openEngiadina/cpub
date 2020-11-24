@@ -9,7 +9,6 @@ use Mix.Config
 
 config :cpub,
   namespace: CPub,
-  ecto_repos: [CPub.Repo],
   base_url: System.get_env("BASE_URL") || "http://localhost:4000/"
 
 # Configures the endpoint
@@ -49,10 +48,6 @@ config :ueberauth, Ueberauth,
 
 # Database (mnesia) directory
 config :mnesia, dir: System.get_env("CPUB_DATABASE_DIR") || 'db/cpub.#{Mix.env()}'
-
-# Password hashing function
-# Use Pbkdf2 because it does not require any C code
-config :comeonin, Ecto.Password, Pbkdf2
 
 config :cpub, CPub.Web.Endpoint,
   cookie_signing_salt: "uME3vEPr",

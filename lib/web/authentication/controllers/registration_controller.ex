@@ -78,7 +78,7 @@ defmodule CPub.Web.Authentication.RegistrationController do
   defp create_user_with_internal_registration(username, password) do
     DB.transaction(fn ->
       with {:ok, user} <- User.create(username),
-           {:ok, registration} <- User.Registration.create_internal(user, password) do
+           {:ok, _registration} <- User.Registration.create_internal(user, password) do
         user
       end
     end)

@@ -2,8 +2,6 @@ defmodule CPub.Web.Authorization.ClientControllerTest do
   use ExUnit.Case
   use CPub.Web.ConnCase
 
-  alias CPub.Web.Authorization.Client
-
   doctest CPub.Web.Authorization.ClientController
 
   describe "create/2" do

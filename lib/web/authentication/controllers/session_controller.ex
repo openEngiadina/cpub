@@ -7,9 +7,7 @@ defmodule CPub.Web.Authentication.SessionController do
 
   alias CPub.User
 
-  alias CPub.{Repo, User}
-
-  alias CPub.Web.Authentication.{OAuthClient, Registration, Session}
+  alias CPub.Web.Authentication.{OAuthClient, Session}
 
   action_fallback CPub.Web.FallbackController
 

@@ -14,7 +14,6 @@ defmodule CPub.Application do
   def start(_type, _args) do
     children = [
       {Task, &log_application_info/0},
-      CPub.Repo,
       CPub.Web.Endpoint,
       CPub.DB
     ]

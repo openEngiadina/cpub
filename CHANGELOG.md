@@ -2,6 +2,11 @@
 
 ## [UNRELEASED]
 
+## Changed
+
+- Use the Erlang/OTP mnesia database instead of PostgresSQL
+- Use [elixir-eris](https://gitlab.com/openengiadina/elixir-eris/) library for ERIS encoding and update to v0.2.0 of encoding
+
 ## [0.2.0] - 2020-08-11
 
 ### Added
