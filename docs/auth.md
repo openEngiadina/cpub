@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Authentication and Authorization
 
 Certain requests to resources on CPub need to be authorized. CPub uses the [The OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749) for handling authorization.

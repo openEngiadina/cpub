@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: cpub
+Upstream-Contact: pukkamustard <pukkamustard@posteo.net>
+Source: https://gitlab.com/openengiadina/cpub
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...

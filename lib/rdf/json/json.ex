@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 defmodule RDF.JSON do
   @moduledoc """
   `RDF.JSON` provides support for reading and writing the RDF 1.1 JSON Alternate Serialization (RDF/JSON) format.

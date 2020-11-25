@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # CPub
 
 CPub is a general [ActivityPub](https://www.w3.org/TR/activitypub/) server built upon Semantic Web ideas. Most notably it also implements a [Linked Data Platform (LDP)](https://www.w3.org/TR/ldp/) and uses [RDF Turtle](https://www.w3.org/TR/turtle/) as serialization format.

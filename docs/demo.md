@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Demo
 
 A demo of selected features of CPub.

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 use Mix.Config
 
 # We don't run a server during test. If one is required,

@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 defmodule CPub.Web.Authorization.Client do
   @moduledoc """
   An OAuth 2.0 client that authenticates with CPub (see

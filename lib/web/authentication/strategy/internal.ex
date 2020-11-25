@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 defmodule CPub.Web.Authentication.Strategy.Internal do
   @moduledoc """
   `Ueberauth.Strategy` for authentication with username/password (using the

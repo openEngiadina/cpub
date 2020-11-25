@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # Changelog
 
 ## [UNRELEASED]

@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 defmodule CPub.MixProject do
   use Mix.Project
 

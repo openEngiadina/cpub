@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 defmodule CPub.Web.Authentication.SessionController do
   @moduledoc """
   Handles session creation and deletion (login/logout).

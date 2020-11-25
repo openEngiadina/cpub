@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 defmodule CPub.Config do
   @moduledoc """
   Configuration wrapper.

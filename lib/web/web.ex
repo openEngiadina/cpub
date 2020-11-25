@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 defmodule CPub.Web do
   @moduledoc """
   The entrypoint for defining your web interface, such

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 defmodule CPub.Web.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
