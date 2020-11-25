@@ -2,37 +2,8 @@
 
 image: elixir:latest
 
-services:
-  - postgres:latest
-
-variables:
-  POSTGRES_DB: cpub_test
-  POSTGRES_HOST: postgres
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: "postgres"
-
 stages:
-  - code-quality
   - test
-
-standards:
-  stage: code-quality
-  before_script:
-    - mix local.rebar --force
-    - mix local.hex --force
-    - mix deps.get
-  script:
-    - mix credo --strict
-    - mix format --check-formatted
-
-# dialyzer:
-#   stage: code-quality
-#   before_script:
-#     - mix local.rebar --force
-#     - mix local.hex --force
-#     - mix deps.get
-#   script:
-#     - mix dialyzer --halt-exit-status
 
 test:
   stage: test
@@ -42,13 +13,8 @@ test:
     - mix local.rebar --force
     - mix local.hex --force
     - mix deps.get
-    - mix ecto.reset
-  dependencies:
-    - standards
-    # - dialyzer
   script:
-    - mix coveralls
-    - mix test
+    - mix check
 
 # pages:
 #   script:
