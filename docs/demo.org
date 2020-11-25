@@ -1,4 +1,4 @@
-#+TITLE: Demo
+#+TITLE: Demonstration
 #+PROPERTY: header-args:restclient :eval never-export
 #+OPTIONS: toc:nil
 
@@ -11,7 +11,8 @@ Users can be created from the Elixir shell.
 For example we create the user "alice" with password "123":
 
 #+BEGIN_SRC elixir
-CPub.User.create(%{username: "alice", password: "123"})
+{:ok, alice} = CPub.User.create("alice")
+{:ok, registration} = CPub.User.create_internal_registration(alice, "123")
 #+END_SRC
 
 This creates the user, an actor profile, inbox and outbox for the user and inserts it into the database in a transaction.
@@ -31,41 +32,37 @@ Accept: text/turtle
 @prefix as: <https://www.w3.org/ns/activitystreams#> .
 
 <http://localhost:4000/users/alice>
-    a foaf:PersonalProfileDocument, as:Person ;
-    ldp:inbox <http://localhost:4000/users/alice/inbox> ;
-    foaf:primaryTopic <http://localhost:4000/users/alice#me> ;
-    as:outbox <http://localhost:4000/users/alice/outbox> ;
+    a as:Person ;
     as:preferredUsername "alice" .
-
-<http://localhost:4000/users/alice#me>
-    a foaf:Person ;
-    foaf:name "alice" ;
-    foaf:nick "alice" .
 
 // GET http://localhost:4000/users/alice
 // HTTP/1.1 200 OK
 // cache-control: max-age=0, private, must-revalidate
-// content-length: 719
+// content-length: 401
 // content-type: text/turtle; charset=utf-8
-// date: Mon, 27 Jul 2020 09:14:39 GMT
+// date: Thu, 19 Nov 2020 09:52:52 GMT
 // server: Cowboy
-// x-request-id: FiWRMFgq_6rl1QQAAAAC
-// Request duration: 0.052300s
+// x-request-id: Fki93mSSUMt2lRgAADuh
+// Request duration: 0.177961s
 #+END_SRC
 
-An inbox and outbox has been created for the actor. To access the inbox and outbox we first need to authenticate as "alice" and get a authorization token.
+An inbox and outbox has been created for the actor.
+
+The inbox and outbox are protected so that only the user "alice" can access them.
+
+In order to access the inbox and outbox we first need to authenticate and receive authorization.
 
 * Authentication and Authorization
 
-All routes that are only accessible to specific users can only be accessed with appropriate authorization.
+Some resources (such as user inbox and outbox) are accessible only to specific users. If a user wants to access such a resource, they need to authenticate (prove that they are the user) and then receive authorization to access the route. See [[auth.md][Authentication and Authorization]] for a complete reference on how this works.
 
-To get authorization we first need to authenticate as Alice. Once we are authenticated CPub will issue an authorization that we can use to access the protected routes (e.g. inbox and outbox).
+In this demo we will use the OAuth 2.0 "Resource Owner Password Credentials" flow. We will authenticate with a username and password and immediately receive a token (an Access Token in OAuth terminology) with which we can access the inbox and outbox.
 
-CPub uses OAuth 2.0 for managing authorization. It can authenticate users via username and password as well with external identity providers.
+This flow is suitable for clients that are capable of securely handling user secrets (i.e. password).
 
-We use simple username/password authentication via the OAuth 2.0 "Resource Owner Password Credentials" flow. This will immediately return us an access_token that we can use.
+Web applications are not capable of securely handling user secrets and should use the "Authorization Code" flow. See the documentation on [[./auth.md][Authentication and Authorization]] for more information.
 
-For web applications it is more suitable to use the "Implicit" flow. See the documentation on [[./auth.md][Authentication and Authorization]] for more information.
+** Resource Owner Password Credentials flow
 
 #+BEGIN_SRC restclient :exports both
 POST http://localhost:4000/oauth/token
@@ -95,6 +92,97 @@ Content-type: application/json
 // x-request-id: FiWRM-3r9zxCRGsAAAAi
 // Request duration: 0.543683s
 #+END_SRC
+
+** Authorization Code
+
+For illustration purposes we demonstrate the OAuth "Authorization Code" flow including dynamic client registration.
+
+*** Client registration
+
+Clients can be dynamically registered using the [[https://tools.ietf.org/html/rfc7591][OAuth 2.0 Dynamic Client Registration Protocol (RFC 7591)]]:
+
+#+BEGIN_SRC restclient :exports both
+POST http://localhost:4000/oauth/clients
+Content-type: application/json
+
+{"client_name": "Demo client",
+ "redirect_uris": ["https://example.com/"],
+ "scope": "read write"
+}
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+{
+  "client_id": "86ff98ca-b61c-4a5f-ba7b-0668f81af113",
+  "client_name": "Demo client",
+  "client_secret": "VEJ5SCFUA4VNXNE4CO5EV5DTIW377LVFY3AVOIEINKH52GA73BQQ",
+  "redirect_uris": [
+    "https://example.com/"
+  ],
+  "scope": [
+    "read",
+    "write"
+  ]
+}
+// POST http://localhost:4000/oauth/clients
+// HTTP/1.1 201 Created
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 217
+// content-type: application/json; charset=utf-8
+// date: Thu, 19 Nov 2020 10:17:53 GMT
+// server: Cowboy
+// x-request-id: Fki_Pz5H44PceYUAADYE
+// Request duration: 0.034235s
+#+END_SRC
+
+*** Authorization request
+
+A user can now be requested to grant authorization to the client by redirecting to following URL:
+
+http://localhost:4000/oauth/authorize?client_id=86ff98ca-b61c-4a5f-ba7b-0668f81af113&scope=read+write&response_type=code
+
+Note how this includes the ~client_id~, the requested ~scope~ and the ~response_type=code~.
+
+The user will be presented with an interface where they can either "Accept" or "Deny" the request.
+
+If the request is granted the browser will be redirected to the ~redirect_uri~ with an "Authorization Grant" that is encoded in the ~code~ query parameter:
+
+https://example.com/?code=A2DWGE3CLKVGA3XXTFFSZJRM7NJMBZKGPLHLUER3UWDIPK32RQDA
+
+*** Authorization Grant
+
+The Authorization Grant can be exchanged for an access token by making a call to the token endpoint:
+
+#+BEGIN_SRC restclient :exports both
+POST http://localhost:4000/oauth/token
+Content-type: application/json
+
+{"grant_type": "authorization_code",
+ "code": "A2DWGE3CLKVGA3XXTFFSZJRM7NJMBZKGPLHLUER3UWDIPK32RQDA",
+ "client_id": "86ff98ca-b61c-4a5f-ba7b-0668f81af113"}
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC js
+{
+  "access_token": "5ULWP3ZLUDZM6UFF55SCQPZRHH45W52SPG4UV4GSYFE2DEPF25GA",
+  "expires_in": 5184000,
+  "refresh_token": "VZGG2FCYDGXFNTFGIF3Z5GO76VF65QVZE7LSWIMVFQEBKOZQINMQ",
+  "token_type": "bearer"
+}
+// POST http://localhost:4000/oauth/token
+// HTTP/1.1 200 OK
+// cache-control: max-age=0, private, must-revalidate
+// content-length: 185
+// content-type: application/json; charset=utf-8
+// date: Thu, 19 Nov 2020 11:26:11 GMT
+// server: Cowboy
+// x-request-id: FkjC6RXdaUxefXAAAFqB
+// Request duration: 1.410083s
+#+END_SRC
+
+The returned ~access_token~ can be used to access protected resources.
 
 * Inbox and Outbox
 

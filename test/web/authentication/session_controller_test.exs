@@ -1,6 +1,7 @@
 defmodule CPub.Web.Authentication.SessionControllerTest do
   use ExUnit.Case
   use CPub.Web.ConnCase
+  use CPub.DataCase
 
   alias CPub.User
 
@@ -9,9 +10,9 @@ defmodule CPub.Web.Authentication.SessionControllerTest do
   doctest CPub.Web.Authentication.SessionController
 
   setup do
-    case User.create(%{username: "alice", password: "123"}) do
-      {:ok, user} ->
-        {:ok, %{user: user}}
+    with {:ok, user} <- User.create("alice"),
+         {:ok, _registration} <- User.Registration.create_internal(user, "123") do
+      {:ok, %{user: user}}
     end
   end
 
@@ -25,7 +26,7 @@ defmodule CPub.Web.Authentication.SessionControllerTest do
     #   assert html_response(response, 200) =~ "Login"
     # end
 
-    test "redirectes to local provider for local user", %{
+    test "redirectes to internal provider for user with internal registration", %{
       conn: conn,
       user: user
     } do
@@ -39,7 +40,7 @@ defmodule CPub.Web.Authentication.SessionControllerTest do
         )
 
       assert redirected_to(response) ==
-               Routes.authentication_provider_path(conn, :request, "local", %{
+               Routes.authentication_provider_path(conn, :request, "internal", %{
                  username: user.username
                })
     end

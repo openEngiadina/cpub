@@ -1,0 +1,22 @@
+<%= if get_flash(@conn, :info) do %>
+<p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+<% end %>
+<%= if get_flash(@conn, :error) do %>
+<p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+<% end %>
+
+<h2>Registration</h2>
+<%= form_for @conn, @callback_url, fn f -> %>
+
+<div class="input">
+  <%= label f, :username, "Username" %>
+  <%= text_input f, :username, value: @username %>
+</div>
+<div class="input">
+  <%= label f, :password, "Password" %>
+  <%= password_input f, :password %>
+</div>
+
+<%= submit "Sign up" %>
+
+<% end %>

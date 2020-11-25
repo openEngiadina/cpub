@@ -1,15 +1,16 @@
 defmodule CPub.Web.Authorization.AuthorizationController do
   @moduledoc """
-  Implements the OAuth 2.0 Authorization Endpoint (https://tools.ietf.org/html/rfc6749#section-3.1).
+  Implements the OAuth 2.0 Authorization Endpoint
+  (https://tools.ietf.org/html/rfc6749#section-3.1).
   """
   use CPub.Web, :controller
 
   action_fallback CPub.Web.Authorization.FallbackController
 
-  import CPub.Web.Authorization.Utils
+  alias CPub.User
 
-  alias CPub.Repo
   alias CPub.Web.Authorization
+  import CPub.Web.Authorization.Utils
 
   plug :fetch_flash
 
@@ -43,7 +44,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
          } = conn,
          _params
        ) do
-    with session <- session |> Repo.preload(:user),
+    with {:ok, user} <- User.get_by_id(session.user),
          {:ok, client} <- get_client(conn),
          {:ok, redirect_uri} <-
            get_redirect_uri(fetch_query_params(conn), client),
@@ -59,7 +60,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
           scope: scope |> Enum.map(&to_string/1),
           state: state
         },
-        user: session.user
+        user: user
       })
     end
   end
@@ -73,17 +74,12 @@ defmodule CPub.Web.Authorization.AuthorizationController do
          } = conn,
          %{"request_accepted" => _params}
        ) do
-    with session <- session |> Repo.preload(:user),
+    with {:ok, user} <- User.get_by_id(session.user),
          {:ok, client} <- get_client(conn),
          {:ok, redirect_uri} <- get_redirect_uri(conn, client),
          {:ok, scope} <- get_scope(conn, client),
          {:ok, state} <- get_state(conn),
-         {:ok, authorization} <-
-           Authorization.create(%{
-             user_id: session.user.id,
-             client_id: client.id,
-             scope: scope
-           }) do
+         {:ok, authorization} <- Authorization.create(user, client, scope) do
       cb_uri =
         redirect_uri
         |> Map.put(

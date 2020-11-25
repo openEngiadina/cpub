@@ -5,7 +5,6 @@ defmodule CPub.Web.Authentication.SessionPlug do
 
   import Plug.Conn
 
-  alias CPub.Repo
   alias CPub.Web.Authentication.Session
 
   def init(opts), do: opts
@@ -19,7 +18,7 @@ defmodule CPub.Web.Authentication.SessionPlug do
     if is_nil(session_id) do
       conn
     else
-      case Repo.get_one(Session, session_id) do
+      case Session.get_by_id(session_id) do
         {:ok, session} ->
           conn
           |> assign(:session, session)

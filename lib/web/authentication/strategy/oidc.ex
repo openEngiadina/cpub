@@ -1,19 +1,16 @@
 defmodule CPub.Web.Authentication.Strategy.OIDC do
   @moduledoc """
-  Meta strategy for `Ueberauth.Strategy.OIDC` that allows dynamic client configuration.
+  Meta strategy for `Ueberauth.Strategy.OIDC` that allows dynamic client
+  configuration.
+
+  This invokes `OIDC.Provider` strategies for individual sites (providers in
+  OIDC lingo).
   """
   use Ueberauth.Strategy
 
-  alias CPub.Repo
+  alias CPub.Web.Authentication.OAuthClient
 
-  alias CPub.Web.Authentication.OAuthClient.Client
-
-  alias Ueberauth.Strategy.OIDC
-
-  # Get a suitable client for the site
-  defp get_client(conn, site) do
-    Repo.get_one_by(Client, %{provider: to_string(strategy_name(conn)), site: site})
-  end
+  alias CPub.Web.Authentication.Strategy.OIDC
 
   def handle_request!(%Plug.Conn{} = conn) do
     site = conn.params["site"]
@@ -25,12 +22,12 @@ defmodule CPub.Web.Authentication.Strategy.OIDC do
       # encode the site in the OAuth 2.0 state parameter
       state = Phoenix.Token.encrypt(conn, "ueberauth.oidc", site)
 
-      case get_client(conn, site) do
+      case OAuthClient.get(site) do
         {:ok, client} ->
           conn
           |> Ueberauth.run_request(
             strategy_name(conn),
-            {OIDC,
+            {OIDC.Provider,
              [
                provider: site,
                client_id: client.client_id,
@@ -57,11 +54,11 @@ defmodule CPub.Web.Authentication.Strategy.OIDC do
     # extract the site from the state param
     with {:ok, site} <-
            Phoenix.Token.decrypt(conn, "ueberauth.oidc", conn.params["state"]),
-         {:ok, client} <- get_client(conn, site) do
+         {:ok, client} <- OAuthClient.get(site) do
       conn
       |> Ueberauth.run_callback(
         strategy_name(conn),
-        {OIDC,
+        {OIDC.Provider,
          [
            provider: site,
            client_id: client.client_id,

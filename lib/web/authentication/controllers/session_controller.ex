@@ -5,9 +5,9 @@ defmodule CPub.Web.Authentication.SessionController do
 
   use CPub.Web, :controller
 
-  alias CPub.{Repo, User}
+  alias CPub.User
 
-  alias CPub.Web.Authentication.{OAuthClient, Registration, Session}
+  alias CPub.Web.Authentication.{OAuthClient, Session}
 
   action_fallback CPub.Web.FallbackController
 
@@ -65,23 +65,34 @@ defmodule CPub.Web.Authentication.SessionController do
   end
 
   def login(%Plug.Conn{method: "POST"} = conn, %{username: username}) do
-    with {:ok, user} <- Repo.get_one_by(User, %{username: username}),
-         user <- user |> Repo.preload(:registration) do
-      case user.registration do
-        %Registration{provider: provider} ->
+    with {:ok, user} <- User.get(username),
+         {:ok, registration} <- User.Registration.get_user_registration(user) do
+      case registration.provider do
+        :internal ->
           conn
           |> redirect(
             to:
-              Routes.authentication_provider_path(conn, :request, provider, %{
-                site: user.registration.site
+              Routes.authentication_provider_path(conn, :request, "internal", %{
+                username: username
               })
           )
 
-        nil ->
+        :oidc ->
           conn
           |> redirect(
             to:
-              Routes.authentication_provider_path(conn, :request, "local", %{username: username})
+              Routes.authentication_provider_path(conn, :request, "oidc", %{
+                site: registration.site
+              })
+          )
+
+        :mastodon ->
+          conn
+          |> redirect(
+            to:
+              Routes.authentication_provider_path(conn, :request, "mastodon", %{
+                site: registration.site
+              })
           )
       end
     else
@@ -98,26 +109,28 @@ defmodule CPub.Web.Authentication.SessionController do
     conn
     |> redirect(
       to:
-        Routes.authentication_provider_path(conn, :request, "fediverse", %{
+        Routes.authentication_provider_path(conn, :request, "mastodon", %{
           site: site
         })
     )
   end
 
   def render_login(%Plug.Conn{} = conn) do
-    conn
-    |> render("login.html",
-      callback_url: Routes.authentication_session_path(conn, :login),
-      clients: OAuthClient.Client.get_displayable()
-    )
+    with {:ok, clients} <- OAuthClient.get_displayable() do
+      conn
+      |> render("login.html",
+        callback_url: Routes.authentication_session_path(conn, :login),
+        clients: clients
+      )
+    end
   end
 
   def show(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
-    with session <- Repo.preload(session, :user) do
+    with {:ok, user} <- User.get_by_id(session.user) do
       conn
       |> render("show.html",
         logout_url: Routes.authentication_session_path(conn, :logout),
-        username: session.user.username
+        username: user.username
       )
     end
   end
@@ -125,6 +138,14 @@ defmodule CPub.Web.Authentication.SessionController do
   def show(%Plug.Conn{} = conn, _params) do
     conn
     |> redirect(to: Routes.authentication_session_path(conn, :login))
+  end
+
+  def logout(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
+    Session.delete(session.id)
+
+    conn
+    |> clear_session()
+    |> authentication_success()
   end
 
   def logout(%Plug.Conn{} = conn, _params) do

@@ -9,8 +9,6 @@ defmodule CPub.Web.Authorization.FallbackController do
 
   import CPub.Web.Authorization.Utils
 
-  alias CPub.Web.ChangesetView
-
   @doc """
   Redirect connection to redirect_uri with error code and description
   """
@@ -44,10 +42,7 @@ defmodule CPub.Web.Authorization.FallbackController do
     end
   end
 
-  def call(%Plug.Conn{} = conn, {:error, %Ecto.Changeset{} = changeset}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> put_view(ChangesetView)
-    |> render("error.json", changeset: changeset)
+  def call(%Plug.Conn{} = conn, {:error, reason}) do
+    call(conn, {:error, :bad_request, reason})
   end
 end

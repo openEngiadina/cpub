@@ -11,8 +11,11 @@ defmodule CPub.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       dialyzer: dialyzer(),
-      deps: deps() ++ oauth_deps(),
+      deps: deps(),
       test_coverage: [tool: ExCoveralls],
+
+      # Use the :test environment when running checks
+      preferred_cli_env: [check: :test],
 
       # Docs
       name: "CPub",
@@ -23,11 +26,14 @@ defmodule CPub.MixProject do
         main: "readme",
         # TODO: to some nicer grouping
         groups_for_modules: [
-          Schema: [CPub.Object, CPub.User, CPub.Activity],
+          Schema: [CPub.User, CPub.User.Registration],
+          Database: [CPub.DB, CPub.ERIS],
           Namespaces: [CPub.NS],
-          Types: [CPub.ID],
-          RDF: [RDF.JSON]
-        ]
+          RDF: [RDF.JSON],
+          Authentication: [CPub.Web.Authentication],
+          Authorization: [CPub.Web.Authorization]
+        ],
+        nest_modules_by_prefix: [CPub.Web.Authentication, CPub.Web.Authorization]
       ]
     ]
   end
@@ -54,14 +60,13 @@ defmodule CPub.MixProject do
       # Phoenix, Web and Databse
       {:phoenix, "~> 1.5"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.14"},
       {:plug_cowboy, "~> 2.0"},
       {:corsica, "~> 1.1"},
-      {:ecto_sql, "~> 3.0"},
-      {:ecto_enum, "~> 1.4"},
-      {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
+
+      # Mnesia wrapper
+      {:memento, "~> 0.3.1"},
 
       # Authorizaiton & Authentication
       {:ueberauth, "~> 0.6.3"},
@@ -80,8 +85,8 @@ defmodule CPub.MixProject do
       {:monocypher, git: "https://gitlab.com/openengiadina/erlang-monocypher", branch: "main"},
 
       # User passwords
-      {:comeonin_ecto_password, "~> 3.0.0"},
-      {:pbkdf2_elixir, "~> 1.2"},
+      # TODO: replace argon2_elixir with argon2i from :monocypher
+      {:argon2_elixir, "~> 2.3"},
 
       # dev & test
       {:stream_data, "~> 0.5"},
@@ -90,25 +95,6 @@ defmodule CPub.MixProject do
       {:excoveralls, "~> 0.13", only: :test},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
     ]
-  end
-
-  # Specifies OAuth dependencies.
-  defp oauth_deps do
-    System.get_env("AUTH_CONSUMER_STRATEGIES")
-    |> to_string()
-    |> String.split()
-    |> Enum.filter(&public_oauth_provider?/1)
-    |> Enum.map(fn strategy_entry ->
-      case String.split(strategy_entry, ":") do
-        [_strategy, dependency] -> dependency
-        [strategy] -> "ueberauth_#{strategy}"
-      end
-    end)
-    |> Enum.map(&{String.to_atom(&1), ">= 0.0.0"})
-  end
-
-  defp public_oauth_provider?(provider) do
-    not (provider in ["solid", "cpub", "pleroma"] || String.starts_with?(provider, "oidc"))
   end
 
   defp dialyzer do
@@ -122,10 +108,7 @@ defmodule CPub.MixProject do
   # Aliases are shortcuts or tasks specific to the current project.
   defp aliases do
     [
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
-      doctor: ["deps.get", "format", "credo --strict", "dialyzer"]
+      check: ["deps.get", "format", "credo --strict", "test"]
     ]
   end
 end

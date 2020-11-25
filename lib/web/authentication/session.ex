@@ -1,39 +1,50 @@
 defmodule CPub.Web.Authentication.Session do
   @moduledoc """
-  Session that is stored in `Plug.Session` storage for locally authenticated users.
+  A `CPub.Web.Authentication.Session` is used for handling authentication with CPub.
+
+  An authenticated `CPub.User` has a session stored in the `Plug.Session` storage.
+
+  A session does not grant access to any resources. Access is granted with a
+  `Cpub.Web.Authorization`.
   """
 
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  alias CPub.Repo
-
+  alias CPub.DB
   alias CPub.User
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  schema "authentication_sessions" do
-    # session is associated with a user
-    belongs_to :user, User, type: :binary_id
+  use Memento.Table,
+    attributes: [:id, :user, :last_activity],
+    index: [:user],
+    type: :set
 
-    # last time the session was used
-    field :last_activity, :utc_datetime
-
-    # TODO: add information on browser user agent. This helps users identify which session is which.
-
-    timestamps()
-  end
-
-  def changeset(%__MODULE__{} = session, attrs) do
-    session
-    |> cast(attrs, [:user_id, :last_activity])
-    |> validate_required([:user_id, :last_activity])
-    |> assoc_constraint(:user)
-    |> unique_constraint(:id, name: "authentication_sessions_pkey")
-  end
-
+  @doc """
+  Create a new session for a user.
+  """
   def create(%User{} = user) do
-    %__MODULE__{}
-    |> changeset(%{user_id: user.id, last_activity: DateTime.utc_now()})
-    |> Repo.insert()
+    DB.transaction(fn ->
+      %__MODULE__{
+        id: UUID.uuid4(),
+        user: user.id,
+        last_activity: DateTime.utc_now()
+      }
+      |> Memento.Query.write()
+    end)
+  end
+
+  @doc """
+  Get a session by id.
+  """
+  def get_by_id(id) do
+    DB.transaction(fn ->
+      Memento.Query.read(__MODULE__, id)
+    end)
+  end
+
+  @doc """
+  Delete a session.
+  """
+  def delete(id) do
+    DB.transaction(fn ->
+      Memento.Query.delete(__MODULE__, id)
+    end)
   end
 end

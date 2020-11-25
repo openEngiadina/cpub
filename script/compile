@@ -1,3 +1,0 @@
-#!/bin/sh
-
-AUTH_CONSUMER_STRATEGIES="solid oidc_cpub cpub pleroma" mix deps.get && mix deps.compile

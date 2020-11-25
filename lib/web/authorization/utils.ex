@@ -3,15 +3,14 @@ defmodule CPub.Web.Authorization.Utils do
   Helpers and utils for dealing with OAuth 2.0 Endpoint requests.
   """
 
-  alias CPub.Repo
-
-  alias CPub.Web.Authorization.{Client, Scope}
+  alias CPub.Web.Authorization.Client
+  alias CPub.Web.Authorization.Scope
 
   @doc """
   Returns the `CPub.Web.Authorization.Client` associated with the connection.
   """
   def get_client(%Plug.Conn{} = conn) do
-    case Repo.get_one(Client, conn.params["client_id"]) do
+    case Client.get(conn.params["client_id"]) do
       {:ok, client} ->
         {:ok, client}
 
@@ -37,15 +36,11 @@ defmodule CPub.Web.Authorization.Utils do
   Returns a valid scope for given connection and client
   """
   def get_scope(%Plug.Conn{} = conn, %Client{} = client) do
-    case Ecto.Type.cast({:array, Scope}, Access.get(conn.params, "scope", Scope.default())) do
-      {:ok, scope} ->
-        if MapSet.subset?(MapSet.new(scope), MapSet.new(client.scope)) do
-          {:ok, scope}
-        else
-          {:error, :invalid_request, "scope not valid or not allowed for client."}
-        end
-
-      :error ->
+    with {:ok, scope} <- Scope.parse(Access.get(conn.params, "scope", Scope.default())),
+         true <- Scope.scope_subset?(scope, client.scope) do
+      {:ok, scope}
+    else
+      _ ->
         {:error, :invalid_request, "scope not valid or not allowed for client."}
     end
   end

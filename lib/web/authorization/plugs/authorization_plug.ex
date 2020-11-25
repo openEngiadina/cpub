@@ -1,26 +1,29 @@
 defmodule CPub.Web.Authorization.AuthorizationPlug do
   @moduledoc """
-  Plug that assigns a `CPub.Web.Authorization.Authorization` to the connection if valid access token is found in headers.
+  Plug that assigns a `CPub.Web.Authorization` to the connection
+  if valid access token is found in headers.
 
-  Note that routes that require authorization still need to manually check if the authorization assigned in the connection by this plug is valid for the ressource being accessed.
+  Note that routes that require authorization still need to manually check if
+  the authorization assigned in the connection by this plug is valid for the
+  ressource being accessed.
   """
 
   use Phoenix.Controller, namespace: CPub.Web
+
   import Plug.Conn
 
-  alias CPub.Repo
-  alias CPub.Web.Authorization.Token
+  alias CPub.Web.Authorization
 
   def init(opts), do: opts
 
   def call(%Plug.Conn{} = conn, _opts) do
     case fetch_token_from_header(conn) do
       {:ok, access_token} ->
-        with {:ok, token} <- Repo.get_one_by(Token, %{access_token: access_token}),
-             token <- token |> Repo.preload(:authorization),
-             false <- Token.expired?(token) do
+        with {:ok, token} <- Authorization.Token.get(access_token),
+             {:ok, authorization} <- Authorization.get(token.authorization),
+             false <- Authorization.Token.expired?(token) do
           conn
-          |> assign(:authorization, token.authorization)
+          |> assign(:authorization, authorization)
         else
           _ ->
             # If token is invalid or expired then halt the connection and display error

@@ -14,42 +14,15 @@ defmodule CPub.DataCase do
 
   use ExUnit.CaseTemplate
 
-  alias Ecto.Adapters.SQL
-
   using do
     quote do
-      alias CPub.Repo
+      alias CPub.DB
 
-      import Ecto
-      import Ecto.Changeset
-      import Ecto.Query
       import CPub.DataCase
     end
   end
 
   setup tags do
-    :ok = SQL.Sandbox.checkout(CPub.Repo)
-
-    unless tags[:async] do
-      SQL.Sandbox.mode(CPub.Repo, {:shared, self()})
-    end
-
-    :ok
-  end
-
-  @doc """
-  A helper that transforms changeset errors into a map of messages.
-
-      assert {:error, changeset} = Accounts.create_user(%{password: "short"})
-      assert "password is too short" in errors_on(changeset).password
-      assert %{password: ["password is too short"]} = errors_on(changeset)
-
-  """
-  def errors_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
-      Enum.reduce(opts, message, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
-    end)
+    CPub.DB.reset()
   end
 end

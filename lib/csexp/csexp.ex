@@ -12,7 +12,7 @@ defmodule CSexp do
   def encode(lst) when is_list(lst), do: "(" <> Enum.map_join(lst, "", &encode/1) <> ")"
 
   # Decoder
-
+  # credo:disable-for-next-line
   defp read_number(binary, digits \\ "") do
     # somebody please show me how to properly use guards
     case binary do

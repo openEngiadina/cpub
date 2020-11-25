@@ -19,7 +19,6 @@ Requirements:
 To start the CPub server:
 
   * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.setup`
   * Start CPub with an Elixir shell `iex -S mix phx.server`
 
 This will start a shell where you can interact with CPub as well as start the
