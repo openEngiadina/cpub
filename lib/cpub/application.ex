@@ -22,7 +22,7 @@ defmodule CPub.Application do
     Supervisor.start_link(children, opts)
   end
 
-  defp log_application_info() do
+  defp log_application_info do
     with {:ok, version} <- CPub.MixProject.project() |> Keyword.fetch(:version),
          {:ok, source_url} <- CPub.MixProject.project() |> Keyword.fetch(:source_url) do
       Logger.info("Starting CPub (" <> version <> "; " <> source_url <> ")")

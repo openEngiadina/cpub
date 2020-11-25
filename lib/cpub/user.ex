@@ -1,4 +1,8 @@
 defmodule CPub.User do
+  @moduledoc """
+  A CPub user.
+  """
+
   alias CPub.DB
   alias CPub.ERIS
 
@@ -7,7 +11,7 @@ defmodule CPub.User do
 
   alias RDF.FragmentGraph
 
-  alias Memento.{Transaction, Query}
+  alias Memento.{Query, Transaction}
 
   use Memento.Table,
     attributes: [:id, :username, :profile],
@@ -20,22 +24,28 @@ defmodule CPub.User do
     |> FragmentGraph.add(AS.preferredUsername(), username)
   end
 
+  # don't check if user already exists, just write.
+  def create!(username) do
+    case default_profile(username) |> ERIS.put() do
+      {:ok, profile_read_capability} ->
+        user = %__MODULE__{
+          id: UUID.uuid4(),
+          username: username,
+          profile: profile_read_capability
+        }
+
+        Query.write(user)
+
+      error ->
+        Transaction.abort(error)
+    end
+  end
+
   def create(username) do
     DB.transaction(fn ->
       case Query.select(__MODULE__, {:==, :username, username}) do
         [] ->
-          with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put() do
-            user = %__MODULE__{
-              id: UUID.uuid4(),
-              username: username,
-              profile: profile_read_capability
-            }
-
-            Query.write(user)
-          else
-            error ->
-              Transaction.abort(error)
-          end
+          create!(username)
 
         _ ->
           DB.abort(:user_already_exists)

@@ -269,7 +269,7 @@ defmodule RDF.FragmentGraph do
 
   # Helper to create a FragmentGraph with a dummy base subject (useful when creating a content-addressed Frgment Graph).
   @spec new() :: t
-  def new(), do: new("urn:fragment-graph-to-be-finalized")
+  def new, do: new("urn:fragment-graph-to-be-finalized")
 
   @doc """
   Returns a fragment reference to `id`.

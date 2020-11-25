@@ -14,6 +14,9 @@ defmodule CPub.MixProject do
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
 
+      # Use the :test environment when running checks
+      preferred_cli_env: [check: :test],
+
       # Docs
       name: "CPub",
       homepage_url: "https://openengiadina.net/",

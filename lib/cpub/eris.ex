@@ -5,6 +5,8 @@ defmodule CPub.ERIS do
 
   alias CPub.DB
 
+  alias RDF.FragmentGraph
+
   defmodule Block do
     @moduledoc """
     An encrypted block.
@@ -23,7 +25,7 @@ defmodule CPub.ERIS do
     @doc """
     Returns a new transaction.
     """
-    def new() do
+    def new do
       %Transaction{}
     end
 
@@ -49,9 +51,9 @@ defmodule CPub.ERIS do
   @doc """
   Encode some data using ERIS and persist block to database.any()
   """
-  def put(%RDF.FragmentGraph{} = fg) do
+  def put(%FragmentGraph{} = fg) do
     fg
-    |> RDF.FragmentGraph.CSexp.encode()
+    |> FragmentGraph.CSexp.encode()
     |> put()
   end
 
@@ -88,10 +90,12 @@ defmodule CPub.ERIS do
     DB.transaction(fn ->
       transaction = Transaction.new()
 
-      with {:ok, data} <- ERIS.decode(read_capability, transaction) do
-        data |> RDF.FragmentGraph.CSexp.decode(ERIS.ReadCapability.to_string(read_capability))
-      else
-        error -> DB.abort(error)
+      case ERIS.decode(read_capability, transaction) do
+        {:ok, data} ->
+          data |> FragmentGraph.CSexp.decode(ERIS.ReadCapability.to_string(read_capability))
+
+        error ->
+          DB.abort(error)
       end
     end)
   end

@@ -8,11 +8,12 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
 
   use Ueberauth.Strategy
 
+  alias CPub.Web.Authenticatoin.Strategy.Mastodon
   alias Ueberauth.Auth.{Credentials, Extra, Info}
 
   def handle_request!(%Plug.Conn{} = conn) do
     client =
-      CPub.Web.Authentication.Strategy.Mastodon.OAuth.client(
+      Mastodon.OAuth.client(
         site: Keyword.get(options(conn), :site),
         client_id: Keyword.get(options(conn), :client_id),
         redirect_uri: callback_url(conn),
@@ -25,7 +26,7 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
 
   def handle_callback!(%Plug.Conn{} = conn) do
     client =
-      CPub.Web.Authentication.Strategy.Mastodon.OAuth.client(
+      Mastodon.OAuth.client(
         site: Keyword.get(options(conn), :site),
         client_id: Keyword.get(options(conn), :client_id),
         client_secret: Keyword.get(options(conn), :client_secret),

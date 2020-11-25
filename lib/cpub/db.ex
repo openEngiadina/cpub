@@ -16,13 +16,13 @@ defmodule CPub.DB do
   @doc """
   The nodes where data is persisted.
   """
-  def nodes(), do: [node()]
+  def nodes, do: [node()]
 
   def run(_arg) do
     Logger.info("Initializing mnesia database.")
 
     # Create the DB directory
-    with :ok = File.mkdir_p!(Application.get_env(:mnesia, :dir)),
+    with :ok <- File.mkdir_p!(Application.get_env(:mnesia, :dir)),
          # mnesia needs to be stopped before schema can be created
          :ok <- Memento.stop(),
          # Ensure the schema is created.
@@ -39,7 +39,7 @@ defmodule CPub.DB do
   end
 
   # Helper to create schema and gracefully continue if schema already exists
-  defp create_schema() do
+  defp create_schema do
     case :mnesia.create_schema(nodes()) do
       :ok ->
         Logger.debug("mnesia schema created.")
@@ -68,7 +68,7 @@ defmodule CPub.DB do
   end
 
   # Helper to create tables
-  defp create_tables() do
+  defp create_tables do
     with :ok <- ensure_table_exists(CPub.ERIS.Block, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User.Registration, disc_only_copies: nodes()),
@@ -133,7 +133,7 @@ defmodule CPub.DB do
 
   WARNING: Use with extreme caution as this will drop all data!
   """
-  def reset() do
+  def reset do
     unless Mix.env() == :test do
       Logger.warn("Resetting database.")
     end
