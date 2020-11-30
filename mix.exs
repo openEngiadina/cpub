@@ -86,8 +86,6 @@ defmodule CPub.MixProject do
 
       # ERIS & content-addressing
       {:eris, git: "https://gitlab.com/openengiadina/elixir-eris", branch: "main"},
-      # for some reason transitive dependencies are not automatically fetched (probably because manually fetching from git)
-      {:monocypher, git: "https://gitlab.com/openengiadina/erlang-monocypher", branch: "main"},
 
       # User passwords
       # TODO: replace argon2_elixir with argon2i from :monocypher
