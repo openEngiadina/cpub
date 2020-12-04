@@ -80,7 +80,7 @@ defmodule CPub.MixProject do
       {:jason, "~> 1.2"},
 
       # RDF
-      {:rdf, "~> 0.9"},
+      {:rdf, git: "https://github.com/rdf-elixir/rdf-ex.git", branch: "master", override: true},
       {:json_ld, "~> 0.3"},
       {:elixir_uuid, "~> 1.2"},
 
