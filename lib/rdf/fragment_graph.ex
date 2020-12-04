@@ -16,6 +16,10 @@ defmodule RDF.FragmentGraph do
   fragments of the base subject as subject (e.g. If ~I<http://example.com/> is
   the base subject of the `RDF.FragmentGraph` then statements with subject
   ~I<http://example.com/#a-fragment> are also permitted).
+
+  TODO: This needs some love:
+   - Make more explicit a FragmentGraph that is being built and a finalized FragmentGraph
+   - Update RDF.Data to 0.9 interface of rdf-ex
   """
 
   alias RDF.FragmentGraph.CSexp
