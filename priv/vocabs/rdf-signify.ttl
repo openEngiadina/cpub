@@ -1,0 +1,30 @@
+@prefix signify: <http://purl.org/signify#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+
+<http://purl.org/signify#>
+    a owl:Ontology ;
+    rdfs:label "RDF Signify";
+    rdfs:comment " A RDF vocabulary for cryptographically signing content-addressed content using the Ed25519 algorithm."@en .
+
+signify:publicKey
+    a rdf:Property ;
+    rdfs:label "Public Key"@en ;
+    rdfs:comment "An associated Ed25519 public key"@en .
+
+signify:secretKey
+    a rdf:Property ;
+    rdfs:label "Secret Key"@en ;
+    rdfs:comment "An associated Ed25519 secret key"@en .
+
+signify:Signature
+    a rdfs:Class ;
+    rdfs:label "Signature"@en ;
+    rdfs:comment "An Ed25519 signature"@en .
+
+signify:message
+   a rdf:Property ;
+   rdfs:label "Signed Message"@en ;
+   rdfs:domain signify:Signature .
