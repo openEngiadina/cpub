@@ -74,6 +74,8 @@ defmodule CPub.DB do
   # Helper to create tables
   defp create_tables do
     with :ok <- ensure_table_exists(CPub.ERIS.Block, disc_only_copies: nodes()),
+         # RDF Signify
+         :ok <- ensure_table_exists(CPub.Signify, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User.Registration, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.Web.Authorization.Client, disc_only_copies: nodes()),
@@ -125,6 +127,11 @@ defmodule CPub.DB do
         return_value
     end
   end
+
+  @doc """
+  Write a record to a table.
+  """
+  def write(record, opts \\ []), do: Memento.Query.write(record, opts)
 
   @doc """
   Abort transaction with `reason`.

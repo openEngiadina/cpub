@@ -94,7 +94,10 @@ defmodule RDF.Signify do
   """
   @spec verify(RDF.FragmentGraph.t()) :: {:ok, RDF.FragmentGraph.t()} | {:error, atom()}
   def verify(%RDF.FragmentGraph{} = fg) do
+    signature_type = RDF.IRI.new(NS.Signature)
+
     with description <- fg[:base_subject],
+         [^signature_type] <- description[RDF.type()],
          [public_key_urn] <- description[NS.publicKey()],
          {:ok, public_key} <- PublicKey.parse(public_key_urn),
          [message] <- description[NS.message()],
@@ -105,7 +108,7 @@ defmodule RDF.Signify do
              RDF.IRI.to_string(message)
            ) do
         :ok ->
-          {:ok, fg}
+          {:ok, %{message: message, public_key: public_key}}
 
         :forgery ->
           {:error, :invalid_signature}
