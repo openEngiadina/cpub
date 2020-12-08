@@ -75,9 +75,14 @@ defmodule CPub.DB do
   defp create_tables do
     with :ok <- ensure_table_exists(CPub.ERIS.Block, disc_only_copies: nodes()),
          # RDF Signify
-         :ok <- ensure_table_exists(CPub.Signify, disc_only_copies: nodes()),
+         :ok <- ensure_table_exists(CPub.Signify.Signature, disc_only_copies: nodes()),
+         # DMC
+         :ok <- ensure_table_exists(CPub.DMC.Set.Add, disc_only_copies: nodes()),
+         :ok <- ensure_table_exists(CPub.DMC.Set.Remove, disc_only_copies: nodes()),
+         # User management
          :ok <- ensure_table_exists(CPub.User, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User.Registration, disc_only_copies: nodes()),
+         # OAuth Clients (that use CPub as Authorization server)
          :ok <- ensure_table_exists(CPub.Web.Authorization.Client, disc_only_copies: nodes()),
          # keep auth* tables in memory and on disc
          :ok <- ensure_table_exists(CPub.Web.Authentication.Session, disc_copies: nodes()),

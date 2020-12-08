@@ -70,8 +70,9 @@ defmodule CPub.MixProject do
       {:corsica, "~> 1.1"},
       {:gettext, "~> 0.11"},
 
-      # Mnesia wrapper
+      # Mnesia/QLC wrapper
       {:memento, "~> 0.3.1"},
+      {:qlc, "~> 1.0"},
 
       # Authorizaiton & Authentication
       {:ueberauth, "~> 0.6.3"},

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule RDF.Signify do
+defmodule CPub.Signify do
   @moduledoc """
   RDF Signify (http://purl.org/signify/spec).
 
@@ -17,6 +17,49 @@ defmodule RDF.Signify do
   )
 
   alias :monocypher, as: Monocypher
+
+  defmodule Signature do
+    @moduledoc """
+    A mnesia table indexing valid signatures.
+    """
+    use Memento.Table,
+      attributes: [:id, :public_key, :message],
+      index: [:message],
+      type: :set
+
+    defp insert!(fg, public_key, message) do
+      CPub.DB.transaction(fn ->
+        with {:ok, read_capability} <- CPub.ERIS.put(fg),
+             {:ok, message_read_capability} <- ERIS.ReadCapability.parse(message) do
+          %__MODULE__{
+            id: read_capability,
+            public_key: CPub.Signify.PublicKey.to_iri(public_key),
+            message: message_read_capability
+          }
+          |> CPub.DB.write()
+        else
+          {:error, reason} ->
+            CPub.DB.abort(reason)
+
+          _ ->
+            CPub.DB.abort(:can_not_insert_signature)
+        end
+      end)
+    end
+
+    @doc """
+    Verify signature and add to index if valid.
+    """
+    def insert(%RDF.FragmentGraph{} = fg) do
+      case CPub.Signify.verify(fg) do
+        {:ok, %{message: message, public_key: public_key}} ->
+          insert!(fg, public_key, RDF.IRI.to_string(message))
+
+        _ ->
+          :invalid_signature
+      end
+    end
+  end
 
   defmodule PublicKey do
     @moduledoc """
@@ -78,14 +121,22 @@ defmodule RDF.Signify do
   Signs the `RDF.IRI` `message` with the `SecretKey` `sk` and returns the
   signature as a finalized `RDF.FragmentGraph`.
   """
-  def sign(%RDF.IRI{} = message, %SecretKey{} = sk) do
-    with signature <- Monocypher.crypto_ed25519_sign(sk.value, sk.public_key.value, message.value) do
-      RDF.FragmentGraph.new()
-      |> RDF.FragmentGraph.add(RDF.type(), NS.Signature)
-      |> RDF.FragmentGraph.add(RDF.value(), RDF.XSD.base64Binary(signature))
-      |> RDF.FragmentGraph.add(NS.message(), message)
-      |> RDF.FragmentGraph.add(NS.publicKey(), PublicKey.to_iri(sk.public_key))
-      |> RDF.FragmentGraph.finalize()
+  def sign(%ERIS.ReadCapability{} = read_capability, %SecretKey{} = sk) do
+    with message <- read_capability |> ERIS.ReadCapability.to_string(),
+         signature <- Monocypher.crypto_ed25519_sign(sk.value, sk.public_key.value, message) do
+      {:ok,
+       RDF.FragmentGraph.new()
+       |> RDF.FragmentGraph.add(RDF.type(), NS.Signature)
+       |> RDF.FragmentGraph.add(RDF.value(), RDF.XSD.base64Binary(signature, as_value: true))
+       |> RDF.FragmentGraph.add(NS.message(), RDF.iri(message))
+       |> RDF.FragmentGraph.add(NS.publicKey(), PublicKey.to_iri(sk.public_key))
+       |> RDF.FragmentGraph.finalize()}
+    end
+  end
+
+  def sign(message, %SecretKey{} = sk) do
+    with {:ok, read_capability} <- ERIS.ReadCapability.parse(message) do
+      sign(read_capability, sk)
     end
   end
 
