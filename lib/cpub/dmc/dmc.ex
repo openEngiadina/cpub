@@ -59,5 +59,18 @@ defmodule CPub.DMC do
           {:error, :invalid_dmc_container_definition}
       end
     end
+
+    @doc """
+    Returns a new DMC Definition.
+    """
+    def new(id, type, %CPub.Signify.PublicKey{} = root_public_key) do
+      with {:ok, read_capability} <- Identifier.parse(id) do
+        %__MODULE__{
+          id: read_capability,
+          type: RDF.iri(type),
+          root_public_key: root_public_key
+        }
+      end
+    end
   end
 end

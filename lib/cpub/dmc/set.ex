@@ -203,7 +203,7 @@ defmodule CPub.DMC.Set do
            )
            |> FragmentGraph.finalize()
            |> CPub.ERIS.put() do
-      {:ok, %{id: read_capability, root_public_key: public_key}}
+      {:ok, DMC.Definition.new(read_capability, DMC.NS.Set, public_key)}
     end
   end
 end
