@@ -6,11 +6,13 @@ defmodule CPub.SignifyTest do
   use ExUnit.Case
   use CPub.RDFCase
 
+  alias CPub.Signify
+
   doctest CPub.Signify
 
   describe "SecretKey.generate/0" do
     test "generate a new key pair" do
-      assert %CPub.Signify.SecretKey{} = CPub.Signify.SecretKey.generate()
+      assert %Signify.SecretKey{} = Signify.SecretKey.generate()
     end
   end
 
@@ -18,9 +20,9 @@ defmodule CPub.SignifyTest do
     test "sign and verify valid signature" do
       message = ERIS.encode_read_capability("Hello")
 
-      assert sk = CPub.Signify.SecretKey.generate()
-      assert {:ok, signature} = CPub.Signify.sign(message, sk)
-      assert {:ok, _} = CPub.Signify.verify(signature)
+      assert sk = Signify.SecretKey.generate()
+      assert {:ok, signature} = Signify.sign(message, sk)
+      assert {:ok, _} = Signify.verify(signature)
     end
   end
 end

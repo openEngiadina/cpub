@@ -8,7 +8,9 @@ defmodule CPub.User do
   """
 
   alias CPub.DB
+  alias CPub.DMC
   alias CPub.ERIS
+  alias CPub.Signify
 
   # RDF namespaces
   alias CPub.NS.ActivityStreams, as: AS
@@ -31,8 +33,8 @@ defmodule CPub.User do
   # don't check if user already exists, just write.
   def create!(username) do
     with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put(),
-         inbox_secret_key <- CPub.Signify.SecretKey.generate(),
-         {:ok, inbox} <- CPub.DMC.Set.new(inbox_secret_key.public_key) do
+         inbox_secret_key <- Signify.SecretKey.generate(),
+         {:ok, inbox} <- DMC.Set.new(inbox_secret_key.public_key) do
       %__MODULE__{
         id: UUID.uuid4(),
         username: username,

@@ -9,6 +9,11 @@ defmodule CPub.Signify do
   Signatures for content-addressed content using an RDF vocabulary.
   """
 
+  alias CPub.DB
+  alias CPub.Signify
+
+  alias RDF.FragmentGraph
+
   use RDF.Vocabulary.Namespace
 
   defvocab(NS,
@@ -28,21 +33,21 @@ defmodule CPub.Signify do
       type: :set
 
     defp insert!(fg, public_key, message) do
-      CPub.DB.transaction(fn ->
+      DB.transaction(fn ->
         with {:ok, read_capability} <- CPub.ERIS.put(fg),
              {:ok, message_read_capability} <- ERIS.ReadCapability.parse(message) do
           %__MODULE__{
             id: read_capability,
-            public_key: CPub.Signify.PublicKey.to_iri(public_key),
+            public_key: Signify.PublicKey.to_iri(public_key),
             message: message_read_capability
           }
-          |> CPub.DB.write()
+          |> DB.write()
         else
           {:error, reason} ->
-            CPub.DB.abort(reason)
+            DB.abort(reason)
 
           _ ->
-            CPub.DB.abort(:can_not_insert_signature)
+            DB.abort(:can_not_insert_signature)
         end
       end)
     end
@@ -50,7 +55,7 @@ defmodule CPub.Signify do
     @doc """
     Verify signature and add to index if valid.
     """
-    def insert(%RDF.FragmentGraph{} = fg) do
+    def insert(%FragmentGraph{} = fg) do
       case CPub.Signify.verify(fg) do
         {:ok, %{message: message, public_key: public_key}} ->
           insert!(fg, public_key, RDF.IRI.to_string(message))
@@ -106,7 +111,7 @@ defmodule CPub.Signify do
     """
     defstruct [:value, :public_key]
 
-    def generate() do
+    def generate do
       with secret_key <- :crypto.strong_rand_bytes(32),
            public_key <- Monocypher.crypto_ed25519_public_key(secret_key) do
         %__MODULE__{
@@ -125,12 +130,12 @@ defmodule CPub.Signify do
     with message <- read_capability |> ERIS.ReadCapability.to_string(),
          signature <- Monocypher.crypto_ed25519_sign(sk.value, sk.public_key.value, message) do
       {:ok,
-       RDF.FragmentGraph.new()
-       |> RDF.FragmentGraph.add(RDF.type(), NS.Signature)
-       |> RDF.FragmentGraph.add(RDF.value(), RDF.XSD.base64Binary(signature, as_value: true))
-       |> RDF.FragmentGraph.add(NS.message(), RDF.iri(message))
-       |> RDF.FragmentGraph.add(NS.publicKey(), PublicKey.to_iri(sk.public_key))
-       |> RDF.FragmentGraph.finalize()}
+       FragmentGraph.new()
+       |> FragmentGraph.add(RDF.type(), NS.Signature)
+       |> FragmentGraph.add(RDF.value(), RDF.XSD.base64Binary(signature, as_value: true))
+       |> FragmentGraph.add(NS.message(), RDF.iri(message))
+       |> FragmentGraph.add(NS.publicKey(), PublicKey.to_iri(sk.public_key))
+       |> FragmentGraph.finalize()}
     end
   end
 
@@ -143,8 +148,8 @@ defmodule CPub.Signify do
   @doc """
   Verify signature in the `RDF.FragmentGraph` `fg`.
   """
-  @spec verify(RDF.FragmentGraph.t()) :: {:ok, RDF.FragmentGraph.t()} | {:error, atom()}
-  def verify(%RDF.FragmentGraph{} = fg) do
+  @spec verify(FragmentGraph.t()) :: {:ok, FragmentGraph.t()} | {:error, atom()}
+  def verify(%FragmentGraph{} = fg) do
     signature_type = RDF.IRI.new(NS.Signature)
 
     with description <- fg[:base_subject],

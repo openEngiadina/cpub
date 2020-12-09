@@ -6,6 +6,8 @@ defmodule CPub.DMC do
   @moduledoc """
   Distributed Mutable Containers (http://purl.org/dmc/spec).
   """
+  alias CPub.Signify
+
   use RDF.Vocabulary.Namespace
 
   defvocab(NS,
@@ -45,7 +47,7 @@ defmodule CPub.DMC do
            description <- fg[:base_subject],
            [%RDF.IRI{} = type] <- description[RDF.type()],
            [%RDF.IRI{} = root_public_key_iri] <- description[NS.rootPublicKey()],
-           {:ok, root_public_key} <- CPub.Signify.PublicKey.parse(root_public_key_iri) do
+           {:ok, root_public_key} <- Signify.PublicKey.parse(root_public_key_iri) do
         {:ok,
          %__MODULE__{
            id: read_capability,
@@ -64,7 +66,7 @@ defmodule CPub.DMC do
     @doc """
     Returns a new DMC Definition.
     """
-    def new(id, type, %CPub.Signify.PublicKey{} = root_public_key) do
+    def new(id, type, %Signify.PublicKey{} = root_public_key) do
       with {:ok, read_capability} <- Identifier.parse(id) do
         %__MODULE__{
           id: read_capability,

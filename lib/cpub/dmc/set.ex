@@ -8,6 +8,7 @@ defmodule CPub.DMC.Set do
   """
 
   alias CPub.DMC
+  alias CPub.Signify
 
   alias RDF.FragmentGraph
 
@@ -149,8 +150,8 @@ defmodule CPub.DMC.Set do
         "[ROperation || {_, RId, RContainer, ROperation} <- Remove, RContainer == Container, {_,_,SPublicKey, SMessage} <- Signature, SMessage == RId, SPublicKey == RootPublicKey]",
         Remove: Mnesia.table(Remove),
         Container: container_id,
-        RootPublicKey: root_public_key |> CPub.Signify.PublicKey.to_iri(),
-        Signature: Mnesia.table(CPub.Signify.Signature)
+        RootPublicKey: root_public_key |> Signify.PublicKey.to_iri(),
+        Signature: Mnesia.table(Signify.Signature)
       ),
       MapSet.new(),
       fn op, ops ->
@@ -163,10 +164,10 @@ defmodule CPub.DMC.Set do
     Qlc.q(
       "[{AId, Value} || {_, AId, AContainer, Value} <- Add, AContainer == Container, {_,_,SPublicKey, SMessage} <- Signature, SMessage == AId, SPublicKey == RootPublicKey]",
       Add: Mnesia.table(Add),
-      Signature: Mnesia.table(CPub.Signify.Signature),
+      Signature: Mnesia.table(Signify.Signature),
       Container: id,
-      RootPublicKey: root_public_key |> CPub.Signify.PublicKey.to_iri(),
-      Signature: Mnesia.table(CPub.Signify.Signature)
+      RootPublicKey: root_public_key |> Signify.PublicKey.to_iri(),
+      Signature: Mnesia.table(Signify.Signature)
     )
   end
 
@@ -178,6 +179,7 @@ defmodule CPub.DMC.Set do
       with removed_ops <- removed_ops(set.id, set.root_public_key),
            adds <- add_ops_handle(set.id, set.root_public_key) do
         Qlc.fold(adds, MapSet.new(), fn {add_op, value}, state ->
+          # credo:disable-for-next-line
           if MapSet.member?(removed_ops, add_op) do
             state
           else
@@ -200,13 +202,13 @@ defmodule CPub.DMC.Set do
   @doc """
   Returns a new DMC set definition for the given public key.
   """
-  def new(%CPub.Signify.PublicKey{} = public_key) do
+  def new(%Signify.PublicKey{} = public_key) do
     with {:ok, read_capability} <-
            FragmentGraph.new()
            |> FragmentGraph.add(RDF.type(), DMC.NS.SetDefinition)
            |> FragmentGraph.add(
              DMC.NS.rootPublicKey(),
-             CPub.Signify.PublicKey.to_iri(public_key)
+             Signify.PublicKey.to_iri(public_key)
            )
            |> FragmentGraph.finalize()
            |> CPub.ERIS.put() do
