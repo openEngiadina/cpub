@@ -149,7 +149,7 @@ defmodule CPub.DMC.Set do
         "[ROperation || {_, RId, RContainer, ROperation} <- Remove, RContainer == Container, {_,_,SPublicKey, SMessage} <- Signature, SMessage == RId, SPublicKey == RootPublicKey]",
         Remove: Mnesia.table(Remove),
         Container: container_id,
-        RootPublicKey: root_public_key,
+        RootPublicKey: root_public_key |> CPub.Signify.PublicKey.to_iri(),
         Signature: Mnesia.table(CPub.Signify.Signature)
       ),
       MapSet.new(),
@@ -165,7 +165,7 @@ defmodule CPub.DMC.Set do
       Add: Mnesia.table(Add),
       Signature: Mnesia.table(CPub.Signify.Signature),
       Container: id,
-      RootPublicKey: root_public_key,
+      RootPublicKey: root_public_key |> CPub.Signify.PublicKey.to_iri(),
       Signature: Mnesia.table(CPub.Signify.Signature)
     )
   end
@@ -173,12 +173,10 @@ defmodule CPub.DMC.Set do
   @doc """
   Return the current state of the DMC Set as a `MapSet`.
   """
-  def state(dmc_identifier) do
+  def state(%DMC.Definition{} = set) do
     CPub.DB.transaction(fn ->
-      with {:ok, %{id: id, root_public_key: root_public_key}} <-
-             DMC.Definition.get(dmc_identifier),
-           removed_ops <- removed_ops(id, root_public_key),
-           adds <- add_ops_handle(id, root_public_key) do
+      with removed_ops <- removed_ops(set.id, set.root_public_key),
+           adds <- add_ops_handle(set.id, set.root_public_key) do
         Qlc.fold(adds, MapSet.new(), fn {add_op, value}, state ->
           if MapSet.member?(removed_ops, add_op) do
             state
@@ -186,6 +184,15 @@ defmodule CPub.DMC.Set do
             MapSet.put(state, value)
           end
         end)
+      end
+    end)
+  end
+
+  def state(id) do
+    CPub.DB.transaction(fn ->
+      with {:ok, definition} <- DMC.Definition.get(id),
+           {:ok, state} <- state(definition) do
+        state
       end
     end)
   end

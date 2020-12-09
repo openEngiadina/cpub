@@ -44,7 +44,8 @@ defmodule CPub.DMC do
            {:ok, fg} <- CPub.ERIS.get_rdf(read_capability),
            description <- fg[:base_subject],
            [%RDF.IRI{} = type] <- description[RDF.type()],
-           [%RDF.IRI{} = root_public_key] <- description[NS.rootPublicKey()] do
+           [%RDF.IRI{} = root_public_key_iri] <- description[NS.rootPublicKey()],
+           {:ok, root_public_key} <- CPub.Signify.PublicKey.parse(root_public_key_iri) do
         {:ok,
          %__MODULE__{
            id: read_capability,

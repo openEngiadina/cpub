@@ -15,10 +15,10 @@ defmodule CPub.User do
 
   alias RDF.FragmentGraph
 
-  alias Memento.{Query, Transaction}
+  alias Memento.Query
 
   use Memento.Table,
-    attributes: [:id, :username, :profile],
+    attributes: [:id, :username, :profile, :inbox, :inbox_secret_key],
     index: [:username],
     type: :set
 
@@ -30,18 +30,23 @@ defmodule CPub.User do
 
   # don't check if user already exists, just write.
   def create!(username) do
-    case default_profile(username) |> ERIS.put() do
-      {:ok, profile_read_capability} ->
-        user = %__MODULE__{
-          id: UUID.uuid4(),
-          username: username,
-          profile: profile_read_capability
-        }
+    with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put(),
+         inbox_secret_key <- CPub.Signify.SecretKey.generate(),
+         {:ok, inbox} <- CPub.DMC.Set.new(inbox_secret_key.public_key) do
+      %__MODULE__{
+        id: UUID.uuid4(),
+        username: username,
+        profile: profile_read_capability,
+        inbox: inbox,
+        inbox_secret_key: inbox_secret_key
+      }
+      |> Query.write()
+    else
+      {:error, reason} ->
+        DB.abort(reason)
 
-        Query.write(user)
-
-      error ->
-        Transaction.abort(error)
+      _ ->
+        DB.abort(:could_not_create_user)
     end
   end
 

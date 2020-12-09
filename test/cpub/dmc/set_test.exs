@@ -16,8 +16,7 @@ defmodule CPub.DMC.SetTest do
       assert {:ok, set_definition} = CPub.DMC.Definition.get(set.id)
       assert set_definition.id === set.id
 
-      assert set_definition.root_public_key ===
-               CPub.Signify.PublicKey.to_iri(secret_key.public_key)
+      assert set_definition.root_public_key === secret_key.public_key
     end
   end
 
@@ -29,7 +28,7 @@ defmodule CPub.DMC.SetTest do
       element = ERIS.encode_urn("Hello world!")
       assert {:ok, add_op} = CPub.DMC.Set.Add.new(set.id, element)
 
-      assert {:ok, state} = CPub.DMC.Set.state(set.id)
+      assert {:ok, state} = CPub.DMC.Set.state(set)
       assert MapSet.size(state) === 0
     end
 
@@ -42,7 +41,7 @@ defmodule CPub.DMC.SetTest do
       assert {:ok, signature} = CPub.Signify.sign(add_op.id, secret_key)
       assert {:ok, _} = CPub.Signify.Signature.insert(signature)
 
-      assert {:ok, state} = CPub.DMC.Set.state(set.id)
+      assert {:ok, state} = CPub.DMC.Set.state(set)
       assert MapSet.member?(state, element)
       assert MapSet.size(state) === 1
     end
