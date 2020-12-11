@@ -9,17 +9,36 @@ defmodule CPub.Web.UserController do
   alias CPub.User
   alias RDF.FragmentGraph
 
+  alias CPub.NS.ActivityStreams, as: AS
+  alias CPub.NS.LDP
+
   action_fallback CPub.Web.FallbackController
 
-  # defp get_authorized_user(conn, scope: scope) do
-  #   if scope_subset?(scope, conn.assigns.authorization.scope) do
-  #     with authorization <- conn.assigns.authorization |> Repo.preload(:user) do
-  #       {:ok, authorization.user}
-  #     end
-  #   else
-  #     {:error, :unauthorized}
-  #   end
-  # end
+  defp get_authorized_user(conn, scope: scope) do
+    if scope_subset?(scope, conn.assigns.authorization.scope) do
+      with {:ok, user} <- CPub.User.get_by_id(conn.assigns.authorization.user),
+           true <- conn.params["user_id"] === user.username do
+        {:ok, user}
+      end
+    else
+      {:error, :unauthorized}
+    end
+  end
+
+  # Add a inbox/outbox property to user profile based on current connection.
+  defp add_inbox_outbox(profile, conn) do
+    profile
+    |> FragmentGraph.add(
+      LDP.inbox(),
+      Routes.user_inbox_url(conn, :get_inbox, conn.params["id"])
+      |> RDF.iri()
+    )
+    |> FragmentGraph.add(
+      AS.outbox(),
+      Routes.user_outbox_url(conn, :get_outbox, conn.params["id"])
+      |> RDF.iri()
+    )
+  end
 
   @doc """
   Show the `CPub.User`s profile.
@@ -33,52 +52,67 @@ defmodule CPub.Web.UserController do
         data:
           user
           |> User.get_profile()
+          # Add the HTTP inbox/outbox
+          |> add_inbox_outbox(conn)
           # Replace the base subject of the profile object with the request URL
           |> FragmentGraph.set_base_subject(request_url(conn))
       )
     end
   end
 
-  # @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def post_to_outbox(%Plug.Conn{} = conn, %{graph: graph}) do
-  #   with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
-  #        {:ok, %{activity: activity}} <- ActivityPub.handle_activity(graph, user) do
-  #     conn
-  #     |> put_resp_header(
-  #       "location",
-  #       Routes.object_url(conn, :show, %{"iri" => IRI.to_string(activity.activity_object_id)})
-  #     )
-  #     |> send_resp(:created, "")
-  #   end
-  # end
+  @doc """
+  Returns a RDF.Graph containing a list of objects in a ldp:Container and in an
+  as:Collection.
+  """
+  def as_container(objects, id) do
+    objects
+    |> Enum.reduce(
+      RDF.Graph.new()
+      |> RDF.Graph.add({id, RDF.type(), RDF.iri(LDP.BasicContainer)})
+      |> RDF.Graph.add({id, RDF.type(), RDF.iri(AS.Collection)}),
+      fn read_cap, graph ->
+        iri =
+          ERIS.ReadCapability.to_string(read_cap)
+          |> RDF.iri()
 
-  # @spec get_inbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def get_inbox(%Plug.Conn{} = conn, %{"user_id" => username}) do
-  #   with {:ok, user} <- get_authorized_user(conn, scope: [:write]) do
-  #     if user.username == username do
-  #       data = User.get_inbox(user)
+        graph
+        |> RDF.Graph.add({id, LDP.member(), iri})
+        |> RDF.Graph.add({id, AS.items(), iri})
+      end
+    )
+  end
 
-  #       conn
-  #       |> put_view(RDFView)
-  #       |> render(:show, data: data)
-  #     else
-  #       {:error, :unauthorized}
-  #     end
-  #   end
-  # end
+  @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def post_to_outbox(%Plug.Conn{} = conn, %{graph: graph}) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
+         {:ok, {activity_read_cap, _}} <- User.Outbox.post(user, graph) do
+      conn
+      |> put_resp_header(
+        "location",
+        ERIS.ReadCapability.to_string(activity_read_cap)
+      )
+      |> send_resp(:created, "")
+    end
+  end
 
-  # @spec get_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def get_outbox(%Plug.Conn{} = conn, %{"user_id" => username}) do
-  #   with {:ok, user} <- get_authorized_user(conn, scope: [:write]) do
-  #     if user.username == username do
-  #       data = User.get_outbox(user)
+  @spec get_inbox(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def get_inbox(%Plug.Conn{} = conn, _params) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
+         {:ok, inbox} <- User.Inbox.get(user) do
+      conn
+      |> put_view(RDFView)
+      |> render(:show, data: as_container(inbox, RDF.iri(request_url(conn))))
+    end
+  end
 
-  #       conn
-  #       |> put_view(RDFView)
-  #       |> render(:show, data: data)
-  #     else
-  #       {:error, :unauthorized}
-  #     end
-  #   end
-  # end
+  @spec get_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def get_outbox(%Plug.Conn{} = conn, _params) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
+         # TODO: get real outbox
+         {:ok, outbox} <- {:ok, MapSet.new()} do
+      conn
+      |> put_view(RDFView)
+      |> render(:show, data: as_container(outbox, RDF.iri(request_url(conn))))
+    end
+  end
 end

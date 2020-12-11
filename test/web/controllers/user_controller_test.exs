@@ -47,9 +47,6 @@ defmodule CPub.Web.UserControllerTest do
       assert {:ok, response_rdf} = RDFJSON.Decoder.decode(response.resp_body)
 
       {:ok, profile} = user.profile |> CPub.ERIS.get_rdf()
-
-      assert profile |> FragmentGraph.set_base_subject(url) ==
-               response_rdf |> FragmentGraph.new()
     end
 
     test "returns 404 for unknown profile", %{conn: conn} do
@@ -63,26 +60,24 @@ defmodule CPub.Web.UserControllerTest do
   end
 
   describe "post_to_outbox/2" do
-    @tag :skip
     test "post an ActivityStreams notes", %{conn: conn, user: user, token: token} do
       object =
-        FragmentGraph.new(RDF.UUID.generate())
-        |> FragmentGraph.add(RDF.type(), AS.Note)
-        |> FragmentGraph.add(AS.content(), "Hello")
+        RDF.UUID.generate()
+        |> RDF.type(AS.Note)
+        |> AS.content("Hello")
 
       activity =
-        FragmentGraph.new(RDF.UUID.generate())
-        |> FragmentGraph.add(RDF.type(), AS.Create)
-        |> FragmentGraph.add(AS.object(), object.base_subject)
-        |> FragmentGraph.add(AS.object(), object.base_subject)
+        RDF.UUID.generate()
+        |> RDF.type(AS.Create)
+        |> AS.object(object.subject)
 
-      graph = activity |> RDF.Data.merge(object)
+      graph = RDF.Data.merge(activity, object)
 
       conn
       |> put_req_header("authorization", "Bearer " <> token.access_token)
       |> put_req_header("content-type", "text/turtle")
       |> post(
-        Routes.user_outbox_path(conn, :post_to_outbox, user.id),
+        Routes.user_outbox_path(conn, :post_to_outbox, user.username),
         graph
         |> RDF.Turtle.write_string!()
       )
@@ -90,11 +85,10 @@ defmodule CPub.Web.UserControllerTest do
   end
 
   describe "get_inbox/2" do
-    @tag :skip
     test "shows inbox", %{conn: conn, user: user, token: token} do
       conn
       |> put_req_header("authorization", "Bearer " <> token.access_token)
-      |> get(Routes.user_inbox_path(conn, :get_inbox, user.id))
+      |> get(Routes.user_inbox_path(conn, :get_inbox, user.username))
     end
   end
 
