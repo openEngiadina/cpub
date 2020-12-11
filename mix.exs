@@ -70,8 +70,9 @@ defmodule CPub.MixProject do
       {:corsica, "~> 1.1"},
       {:gettext, "~> 0.11"},
 
-      # Mnesia wrapper
+      # Mnesia/QLC wrapper
       {:memento, "~> 0.3.1"},
+      {:qlc, "~> 1.0"},
 
       # Authorizaiton & Authentication
       {:ueberauth, "~> 0.6.3"},
@@ -80,7 +81,7 @@ defmodule CPub.MixProject do
       {:jason, "~> 1.2"},
 
       # RDF
-      {:rdf, "~> 0.8"},
+      {:rdf, git: "https://github.com/rdf-elixir/rdf-ex.git", branch: "master", override: true},
       {:json_ld, "~> 0.3"},
       {:elixir_uuid, "~> 1.2"},
 
@@ -93,8 +94,8 @@ defmodule CPub.MixProject do
 
       # dev & test
       {:stream_data, "~> 0.5"},
-      {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:excoveralls, "~> 0.13", only: :test},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
     ]

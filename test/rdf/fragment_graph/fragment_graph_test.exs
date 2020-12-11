@@ -138,9 +138,9 @@ defmodule RDF.FragmentGraphTest do
 
     test "adds RDF.Data" do
       description =
-        Description.new(EX.Foo)
-        |> Description.add(RDF.type(), EX.Bar)
-        |> Description.add(EX.p(), EX.FooBar)
+        EX.Foo
+        |> RDF.type(EX.Bar)
+        |> EX.p(EX.FooBar)
 
       fg =
         FragmentGraph.new(EX.Foo)
@@ -181,9 +181,9 @@ defmodule RDF.FragmentGraphTest do
 
     test "deletes RDF.Data" do
       description =
-        Description.new(EX.Foo)
-        |> Description.add(RDF.type(), EX.Bar)
-        |> Description.add(EX.p(), EX.FooBar)
+        EX.Foo
+        |> RDF.type(EX.Bar)
+        |> EX.p(EX.FooBar)
 
       fg =
         FragmentGraph.new(EX.Foo)
@@ -197,9 +197,9 @@ defmodule RDF.FragmentGraphTest do
   describe "set_base_subject/2" do
     test "sets the base subject" do
       description =
-        Description.new(EX.Foo)
-        |> Description.add(RDF.type(), EX.Bar)
-        |> Description.add(EX.property(), 5)
+        EX.Foo
+        |> RDF.type(EX.Bar)
+        |> EX.property(5)
 
       fg =
         FragmentGraph.new(EX.Foo)

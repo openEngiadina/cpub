@@ -39,7 +39,7 @@ defmodule RDF.JSON.Encoder do
 
   @spec subject_key(Statement.subject()) :: String.t()
   defp subject_key(%IRI{} = subject), do: IRI.to_string(subject)
-  defp subject_key(%BlankNode{id: id}), do: "_:#{id}"
+  defp subject_key(%BlankNode{value: value}), do: "_:#{value}"
 
   @spec subject_object(Description.t()) :: %{String.t() => [value_object]}
   defp subject_object(description) do
@@ -59,7 +59,7 @@ defmodule RDF.JSON.Encoder do
 
   @spec value_object(Statement.object()) :: value_object
   defp value_object(%IRI{} = object), do: %{type: "uri", value: IRI.to_string(object)}
-  defp value_object(%BlankNode{id: id}), do: %{type: "bnode", value: "_:#{id}"}
+  defp value_object(%BlankNode{value: value}), do: %{type: "bnode", value: "_:#{value}"}
 
   defp value_object(%Literal{} = literal) do
     # %{type: "literal", value: RDF.Literal.lexical(literal)}
