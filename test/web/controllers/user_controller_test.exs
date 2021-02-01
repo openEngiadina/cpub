@@ -13,7 +13,6 @@ defmodule CPub.Web.UserControllerTest do
 
   alias CPub.NS.ActivityStreams, as: AS
 
-  alias RDF.FragmentGraph
   alias RDF.JSON, as: RDFJSON
 
   alias CPub.Web.Authorization
@@ -32,7 +31,7 @@ defmodule CPub.Web.UserControllerTest do
   describe "show/2" do
     test "returns user profile", %{conn: conn, user: user} do
       # The URL used in testing seems to be `http://www.example.com/`
-      url =
+      _url =
         ("http://www.example.com" <>
            Routes.user_path(conn, :show, user.username))
         |> RDF.IRI.new!()
@@ -46,7 +45,7 @@ defmodule CPub.Web.UserControllerTest do
 
       assert {:ok, response_rdf} = RDFJSON.Decoder.decode(response.resp_body)
 
-      {:ok, profile} = user.profile |> CPub.ERIS.get_rdf()
+      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
 
     test "returns 404 for unknown profile", %{conn: conn} do

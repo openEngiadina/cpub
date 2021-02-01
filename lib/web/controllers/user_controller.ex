@@ -107,7 +107,7 @@ defmodule CPub.Web.UserController do
 
   @spec get_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
   def get_outbox(%Plug.Conn{} = conn, _params) do
-    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
+    with {:ok, _user} <- get_authorized_user(conn, scope: [:write]),
          # TODO: get real outbox
          {:ok, outbox} <- {:ok, MapSet.new()} do
       conn

@@ -26,7 +26,7 @@ defmodule CPub.DataCase do
     end
   end
 
-  setup tags do
+  setup do
     CPub.DB.reset()
   end
 end
