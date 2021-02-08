@@ -1,18 +1,22 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 defmodule CPub.Web.Authentication.OAuthClient do
   @moduledoc """
   An OAuth 2.0 client that is used by CPub to authenticate with an external
-  provider.
+  provider. Replaces some functions of `OAuth2.Client` which uses `CPub.Web.HTTP`
+  to make requests.
 
   See `CPub.Web.Authorization.Client` for OAuth 2.0 clients for receving
   authorization to access resources on CPub.
   """
 
   alias CPub.DB
+  alias CPub.Web.Authentication.OAuthRequest
+
+  alias OAuth2.{AccessToken, Client, Error, Response}
 
   use Memento.Table,
     attributes: [
@@ -60,11 +64,55 @@ defmodule CPub.Web.Authentication.OAuthClient do
   end
 
   @doc """
-  Returns list of Clients with display name
+  Returns list of Clients with display name.
   """
   def get_displayable do
     DB.transaction(fn ->
       Memento.Query.select(__MODULE__, {:!=, :display_name, nil})
     end)
   end
+
+  @doc """
+  Replaces `OAuth2.Client.get_token/4` and uses `CPub.Web.HTTP` to make requests.
+  """
+  @spec get_token(Client.t(), Client.params(), Client.headers(), keyword) ::
+          {:ok, Client.t()} | {:error, Response.t()} | {:error, Error.t()}
+  def get_token(%{token_method: method} = client, params \\ [], headers \\ [], opts \\ []) do
+    {client, url} = token_url(client, params, headers)
+
+    case OAuthRequest.request(method, client, url, client.params, client.headers, opts) do
+      {:ok, response} ->
+        {:ok, %{client | headers: [], params: %{}, token: AccessToken.new(response.body)}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp token_url(client, params, headers) do
+    client
+    |> token_post_header()
+    |> client.strategy.get_token(params, headers)
+    |> to_url(:token_url)
+  end
+
+  defp token_post_header(%Client{token_method: :post} = client) do
+    Client.put_header(client, "content-type", "application/x-www-form-urlencoded")
+  end
+
+  defp token_post_header(%Client{} = client), do: client
+
+  defp to_url(%Client{token_method: :post} = client, :token_url) do
+    {client, endpoint(client, client.token_url)}
+  end
+
+  defp to_url(client, endpoint) do
+    endpoint = Map.get(client, endpoint)
+    url = "#{endpoint(client, endpoint)}?#{URI.encode_query(client.params)}"
+
+    {client, url}
+  end
+
+  defp endpoint(client, <<"/"::utf8, _::binary>> = endpoint), do: "#{client.site}#{endpoint}"
+  defp endpoint(_client, endpoint), do: endpoint
 end

@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: CC0-1.0
 
@@ -69,6 +69,14 @@ defmodule CPub.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:corsica, "~> 1.1"},
       {:gettext, "~> 0.11"},
+      {:tesla, "~> 1.4.0", override: true},
+      {:castore, "~> 0.1"},
+      {:cowlib, "~> 2.9", override: true},
+      {:gun,
+       github: "ninenines/gun", ref: "921c47146b2d9567eac7e9a4d2ccc60fffd4f327", override: true},
+      {:concurrent_limiter,
+       git: "https://git.pleroma.social/pleroma/elixir-libraries/concurrent_limiter.git",
+       ref: "d81be41024569330f296fc472e24198d7499ba78"},
 
       # Mnesia/QLC wrapper
       {:memento, "~> 0.3.1"},

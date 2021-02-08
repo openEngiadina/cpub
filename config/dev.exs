@@ -18,6 +18,9 @@ config :cpub, CPub.Web.Endpoint,
   check_origin: false,
   watchers: []
 
+# config :cpub, :http,
+#   proxy_url: "127.0.0.1:9150"
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed
