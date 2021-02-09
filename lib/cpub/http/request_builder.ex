@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.RequestBuilder do
+defmodule CPub.HTTP.RequestBuilder do
   @moduledoc """
   Helper functions for building Tesla requests.
   """
 
   alias CPub.Config
-  alias CPub.Web.HTTP.Request
+  alias CPub.HTTP.Request
 
   alias Tesla.Multipart
 

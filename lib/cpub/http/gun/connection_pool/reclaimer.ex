@@ -3,14 +3,14 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Gun.ConnectionPool.Reclaimer do
+defmodule CPub.HTTP.Gun.ConnectionPool.Reclaimer do
   @moduledoc false
 
   use GenServer, restart: :temporary
 
   alias CPub.Config
-  alias CPub.Web.HTTP.Gun
-  alias CPub.Web.HTTP.Gun.ConnectionPool.WorkerSupervisor
+  alias CPub.HTTP.Gun
+  alias CPub.HTTP.Gun.ConnectionPool.WorkerSupervisor
 
   @registry Gun.ConnectionPool
 

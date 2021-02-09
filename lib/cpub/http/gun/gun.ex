@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Gun do
+defmodule CPub.HTTP.Gun do
   @moduledoc false
 
   @api __MODULE__.API

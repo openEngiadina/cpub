@@ -6,7 +6,7 @@
 defmodule CPub.Web.Authentication.OAuthClient do
   @moduledoc """
   An OAuth 2.0 client that is used by CPub to authenticate with an external
-  provider. Replaces some functions of `OAuth2.Client` which uses `CPub.Web.HTTP`
+  provider. Replaces some functions of `OAuth2.Client` which uses `CPub.HTTP`
   to make requests.
 
   See `CPub.Web.Authorization.Client` for OAuth 2.0 clients for receving
@@ -73,7 +73,7 @@ defmodule CPub.Web.Authentication.OAuthClient do
   end
 
   @doc """
-  Replaces `OAuth2.Client.get_token/4` and uses `CPub.Web.HTTP` to make requests.
+  Replaces `OAuth2.Client.get_token/4` and uses `CPub.HTTP` to make requests.
   """
   @spec get_token(Client.t(), Client.params(), Client.headers(), keyword) ::
           {:ok, Client.t()} | {:error, Response.t()} | {:error, Error.t()}

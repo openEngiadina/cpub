@@ -4,12 +4,12 @@
 
 defmodule CPub.Web.Authentication.OAuthRequest do
   @moduledoc """
-  Replacement for `OAuth2.Request` which uses `CPub.Web.HTTP` to make requests.
+  Replacement for `OAuth2.Request` which uses `CPub.HTTP` to make requests.
   """
 
   import OAuth2.Util
 
-  alias CPub.Web.HTTP
+  alias CPub.HTTP
 
   alias OAuth2.{Client, Error, Response}
 

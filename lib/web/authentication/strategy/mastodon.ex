@@ -15,9 +15,9 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon do
 
   use Ueberauth.Strategy
 
+  alias CPub.HTTP
   alias CPub.Web.Authentication.OAuthClient
   alias CPub.Web.Authentication.Strategy.Mastodon.Instance
-  alias CPub.Web.HTTP
 
   # The Mastodon API for dynamically creating clients
   # (see https://docs.joinmastodon.org/methods/apps/)

@@ -30,8 +30,8 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
 
   use Ueberauth.Strategy
 
+  alias CPub.HTTP
   alias CPub.Web.Authentication.OAuthClient
-  alias CPub.Web.HTTP
 
   alias Ueberauth.Auth.{Credentials, Extra}
 

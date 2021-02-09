@@ -3,12 +3,12 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Gun.ConnectionPool do
+defmodule CPub.HTTP.Gun.ConnectionPool do
   @moduledoc false
 
   @registry __MODULE__
 
-  alias CPub.Web.HTTP.Gun.ConnectionPool.WorkerSupervisor
+  alias CPub.HTTP.Gun.ConnectionPool.WorkerSupervisor
 
   def children do
     [

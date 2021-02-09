@@ -3,14 +3,14 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Tesla.Middleware.ConnectionPool do
+defmodule CPub.HTTP.Tesla.Middleware.ConnectionPool do
   @moduledoc """
-  Middleware to get/release connections from `CPub.Web.HTTP.Gun.ConnectionPool`
+  Middleware to get/release connections from `CPub.HTTP.Gun.ConnectionPool`
   """
 
   @behaviour Tesla.Middleware
 
-  alias CPub.Web.HTTP.Gun.ConnectionPool
+  alias CPub.HTTP.Gun.ConnectionPool
 
   @impl Tesla.Middleware
   def call(%Tesla.Env{url: url, opts: opts} = env, next, _) do

@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.AdapterHelper.Default do
+defmodule CPub.HTTP.AdapterHelper.Default do
   @moduledoc false
 
-  @behaviour CPub.Web.HTTP.AdapterHelper
+  @behaviour CPub.HTTP.AdapterHelper
 
   alias CPub.Config
-  alias CPub.Web.HTTP.AdapterHelper
+  alias CPub.HTTP.AdapterHelper
 
   @spec options(keyword, URI.t()) :: keyword
   def options(opts, _uri) do

@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.AdapterHelper.Gun do
+defmodule CPub.HTTP.AdapterHelper.Gun do
   @moduledoc false
 
-  @behaviour CPub.Web.HTTP.AdapterHelper
+  @behaviour CPub.HTTP.AdapterHelper
 
   alias CPub.Config
-  alias CPub.Web.HTTP.AdapterHelper
+  alias CPub.HTTP.AdapterHelper
 
   require Logger
 
@@ -56,7 +56,7 @@ defmodule CPub.Web.HTTP.AdapterHelper.Gun do
     Config.get([:pools, pool, :recv_timeout], default)
   end
 
-  @pool CPub.Web.HTTP.Gun.ConnectionPool
+  @pool CPub.HTTP.Gun.ConnectionPool
   def limiter_setup do
     wait = Config.get([:connections_pool, :connection_acquisition_wait])
     retries = Config.get([:connections_pool, :connection_acquisition_retries])

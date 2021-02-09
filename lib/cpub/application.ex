@@ -10,9 +10,9 @@ defmodule CPub.Application do
 
   use Application
 
+  alias CPub.HTTP.AdapterHelper
+  alias CPub.HTTP.Gun
   alias CPub.Web.Endpoint
-  alias CPub.Web.HTTP.AdapterHelper
-  alias CPub.Web.HTTP.Gun
 
   require Logger
 

@@ -3,12 +3,12 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Gun.Conn do
+defmodule CPub.HTTP.Gun.Conn do
   @moduledoc false
 
   alias CPub.Config
-  alias CPub.Web.HTTP.AdapterHelper
-  alias CPub.Web.HTTP.Gun
+  alias CPub.HTTP.AdapterHelper
+  alias CPub.HTTP.Gun
 
   require Logger
 

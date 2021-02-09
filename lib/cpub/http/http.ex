@@ -3,14 +3,14 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP do
+defmodule CPub.HTTP do
   @moduledoc """
   Wrapper for `Tesla.request/2`.
   """
 
-  alias CPub.Web.HTTP.AdapterHelper
-  alias CPub.Web.HTTP.Request
-  alias CPub.Web.HTTP.RequestBuilder, as: Builder
+  alias CPub.HTTP.AdapterHelper
+  alias CPub.HTTP.Request
+  alias CPub.HTTP.RequestBuilder, as: Builder
 
   alias Tesla.Client
   alias Tesla.Env
@@ -76,12 +76,12 @@ defmodule CPub.Web.HTTP do
   end
 
   defp adapter_middlewares(Tesla.Adapter.Gun) do
-    [Tesla.Middleware.FollowRedirects, CPub.Web.HTTP.Tesla.Middleware.ConnectionPool]
+    [Tesla.Middleware.FollowRedirects, CPub.HTTP.Tesla.Middleware.ConnectionPool]
   end
 
   defp adapter_middlewares(_), do: []
 
-  @pool CPub.Web.HTTP.Gun.ConnectionPool
+  @pool CPub.HTTP.Gun.ConnectionPool
   defp maybe_limit(fun, Tesla.Adapter.Gun, opts) do
     ConcurrentLimiter.limit(:"#{@pool}.#{opts[:pool] || :default}", fun)
   end

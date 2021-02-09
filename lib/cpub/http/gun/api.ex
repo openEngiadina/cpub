@@ -3,12 +3,12 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Gun.API do
+defmodule CPub.HTTP.Gun.API do
   @moduledoc false
 
-  @behaviour CPub.Web.HTTP.Gun
+  @behaviour CPub.HTTP.Gun
 
-  alias CPub.Web.HTTP.Gun
+  alias CPub.HTTP.Gun
 
   @gun_keys [
     :connect_timeout,

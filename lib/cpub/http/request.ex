@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Request do
+defmodule CPub.HTTP.Request do
   @moduledoc """
   `CPub.HTTP.Request` struct.
   """

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-defmodule CPub.Web.HTTP.Gun.ConnectionPool.WorkerSupervisor do
+defmodule CPub.HTTP.Gun.ConnectionPool.WorkerSupervisor do
   @moduledoc """
   Supervisor for pool workers. Does not do anything except enforce max
   connection limit.
@@ -12,8 +12,8 @@ defmodule CPub.Web.HTTP.Gun.ConnectionPool.WorkerSupervisor do
   use DynamicSupervisor
 
   alias CPub.Config
-  alias CPub.Web.HTTP.Gun.ConnectionPool.Reclaimer
-  alias CPub.Web.HTTP.Gun.ConnectionPool.Worker
+  alias CPub.HTTP.Gun.ConnectionPool.Reclaimer
+  alias CPub.HTTP.Gun.ConnectionPool.Worker
 
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
