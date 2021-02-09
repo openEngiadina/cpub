@@ -101,17 +101,6 @@ config :cpub, :pools,
     recv_timeout: 5_000
   ]
 
-# Setting for Hackney (HTTP client) connections pools
-config :cpub, :hackney_pools,
-  federation: [
-    max_connections: 50,
-    timeout: 150_000
-  ],
-  media: [
-    max_connections: 50,
-    timeout: 150_000
-  ]
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

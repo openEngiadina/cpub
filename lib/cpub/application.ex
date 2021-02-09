@@ -52,19 +52,7 @@ defmodule CPub.Application do
     ]
   end
 
-  defp http_children(_, :test) do
-    http_children(Tesla.Adapter.Hackney, nil) ++
-      http_children(Tesla.Adapter.Gun, nil)
-  end
-
-  defp http_children(Tesla.Adapter.Hackney, _) do
-    pools = [:federation, :media]
-
-    for pool <- pools do
-      options = CPub.Config.get([:hackney_pools, pool])
-      :hackney_pool.child_spec(pool, options)
-    end
-  end
+  defp http_children(_, :test), do: http_children(Tesla.Adapter.Gun, nil)
 
   defp http_children(Tesla.Adapter.Gun, _) do
     Gun.ConnectionPool.children() ++
@@ -82,11 +70,7 @@ defmodule CPub.Application do
 
     if adapter == Tesla.Adapter.Gun do
       if version = otp_version() do
-        [major, minor] =
-          version
-          |> String.split(".")
-          |> Enum.map(&String.to_integer/1)
-          |> Enum.take(2)
+        [major, minor] = otp_version_major_minor(version)
 
         if (major == 22 and minor < 2) or major < 22 do
           raise "
@@ -111,19 +95,26 @@ defmodule CPub.Application do
       Path.join(:code.root_dir(), "OTP_VERSION"),
       Path.join([:code.root_dir(), "releases", :erlang.system_info(:otp_release), "OTP_VERSION"])
     ]
-    |> get_otp_version_from_files()
+    |> otp_version_from_files()
   end
 
-  defp get_otp_version_from_files([]), do: nil
+  defp otp_version_from_files([]), do: nil
 
-  defp get_otp_version_from_files([path | paths]) do
+  defp otp_version_from_files([path | paths]) do
     if File.exists?(path) do
       path
       |> File.read!()
       |> String.replace(~r/\r|\n|\s/, "")
     else
-      get_otp_version_from_files(paths)
+      otp_version_from_files(paths)
     end
+  end
+
+  defp otp_version_major_minor(version) do
+    version
+    |> String.split(".")
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.take(2)
   end
 
   @spec config_change(keyword, keyword, [atom]) :: :ok

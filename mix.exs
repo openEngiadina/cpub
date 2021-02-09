@@ -72,11 +72,8 @@ defmodule CPub.MixProject do
       {:tesla, "~> 1.4.0", override: true},
       {:castore, "~> 0.1"},
       {:cowlib, "~> 2.9", override: true},
-      {:gun,
-       github: "ninenines/gun", ref: "921c47146b2d9567eac7e9a4d2ccc60fffd4f327", override: true},
-      {:concurrent_limiter,
-       git: "https://git.pleroma.social/pleroma/elixir-libraries/concurrent_limiter.git",
-       ref: "d81be41024569330f296fc472e24198d7499ba78"},
+      {:gun, "~> 2.0.0-rc.1", override: true},
+      {:concurrent_limiter, "~> 0.1.1"},
 
       # Mnesia/QLC wrapper
       {:memento, "~> 0.3.1"},

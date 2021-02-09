@@ -51,7 +51,6 @@ defmodule CPub.Web.HTTP.AdapterHelper do
   defp adapter_helper do
     case adapter() do
       Tesla.Adapter.Gun -> __MODULE__.Gun
-      Tesla.Adapter.Hackney -> __MODULE__.Hackney
       _ -> __MODULE__.Default
     end
   end
