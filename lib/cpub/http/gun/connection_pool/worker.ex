@@ -143,6 +143,11 @@ defmodule CPub.HTTP.Gun.ConnectionPool.Worker do
   end
 
   @impl true
+  def handle_info({:gun_tunnel_up, _pid, _stream_ref, _protocol}, state) do
+    {:noreply, state, :hibernate}
+  end
+
+  @impl true
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
     :telemetry.execute(
       [:cpub, :connection_pool, :client, :dead],
