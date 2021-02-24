@@ -74,6 +74,8 @@ defmodule CPub.DB do
   # Helper to create tables
   defp create_tables do
     with :ok <- ensure_table_exists(CPub.ERIS.Block, disc_only_copies: nodes()),
+         # DB Set and Register
+         :ok <- ensure_table_exists(CPub.DB.Set, disc_only_copies: nodes()),
          # RDF Signify
          :ok <- ensure_table_exists(CPub.Signify.Signature, disc_only_copies: nodes()),
          # DMC
@@ -113,6 +115,9 @@ defmodule CPub.DB do
       end
 
     case return_value do
+      :ok ->
+        return_value
+
       {:ok, _} ->
         return_value
 
