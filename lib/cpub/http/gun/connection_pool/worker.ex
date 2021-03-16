@@ -13,6 +13,7 @@ defmodule CPub.HTTP.Gun.ConnectionPool.Worker do
 
   @registry Gun.ConnectionPool
 
+  @spec start_link(keyword) :: GenServer.on_start()
   def start_link([key | _] = opts) do
     GenServer.start_link(__MODULE__, opts, name: {:via, Registry, {@registry, key}})
   end
@@ -81,7 +82,7 @@ defmodule CPub.HTTP.Gun.ConnectionPool.Worker do
 
     state =
       if state.timer != nil do
-        Process.cancel_timer(state[:timer])
+        _ = Process.cancel_timer(state[:timer])
 
         %{state | timer: nil}
       else

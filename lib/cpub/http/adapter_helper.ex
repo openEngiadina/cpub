@@ -46,21 +46,11 @@ defmodule CPub.HTTP.AdapterHelper do
     |> adapter_helper().options(uri)
   end
 
-  defp adapter, do: Application.get_env(:tesla, :adapter)
-
-  defp adapter_helper do
-    case adapter() do
-      Tesla.Adapter.Gun -> __MODULE__.Gun
-      _ -> __MODULE__.Default
-    end
-  end
-
   @spec parse_proxy(String.t() | tuple | nil) ::
           {:ok, host, pos_integer}
           | {:ok, proxy_type, host, pos_integer}
           | {:error, atom}
           | nil
-
   def parse_proxy(nil), do: nil
 
   def parse_proxy(proxy) when is_binary(proxy) do
@@ -117,6 +107,17 @@ defmodule CPub.HTTP.AdapterHelper do
 
       {:ok, _ip} ->
         host_charlist
+    end
+  end
+
+  @spec adapter :: module
+  defp adapter, do: Application.get_env(:tesla, :adapter)
+
+  @spec adapter_helper :: module
+  defp adapter_helper do
+    case adapter() do
+      Tesla.Adapter.Gun -> __MODULE__.Gun
+      _ -> __MODULE__.Default
     end
   end
 end

@@ -12,6 +12,7 @@ defmodule CPub.HTTP.Gun.Conn do
 
   require Logger
 
+  @spec open(URI.t(), keyword) :: {:ok, pid, atom} | {:error, any}
   def open(%URI{} = uri, opts) do
     pool_opts = Config.get([:connections_pool], [])
 
@@ -25,6 +26,7 @@ defmodule CPub.HTTP.Gun.Conn do
     do_open(uri, opts)
   end
 
+  @spec maybe_add_tls_opts(map, URI.t()) :: map
   defp maybe_add_tls_opts(opts, %URI{scheme: "http"}), do: opts
 
   defp maybe_add_tls_opts(opts, %URI{scheme: "https"}) do
@@ -47,6 +49,7 @@ defmodule CPub.HTTP.Gun.Conn do
     Map.put(opts, :tls_opts, tls_opts)
   end
 
+  @spec do_open(URI.t(), map) :: {:ok, pid, atom} | {:error, any}
   defp do_open(uri, %{proxy: {proxy_host, proxy_port}} = opts) do
     connect_opts =
       uri
@@ -119,19 +122,22 @@ defmodule CPub.HTTP.Gun.Conn do
     end
   end
 
+  @spec destination_opts(URI.t()) :: map
   defp destination_opts(%URI{host: host, port: port}) do
     host = AdapterHelper.parse_host(host)
 
     %{host: host, port: port}
   end
 
+  @spec add_http2_opts(map, String.t(), keyword) :: map
   defp add_http2_opts(opts, "https", tls_opts) do
     Map.merge(opts, %{protocols: [:http2], transport: :tls, tls_opts: tls_opts})
   end
 
   defp add_http2_opts(opts, _, _), do: opts
 
-  def compose_uri_log(%URI{scheme: scheme, host: host, path: path}) do
+  @spec compose_uri_log(URI.t()) :: String.t()
+  defp compose_uri_log(%URI{scheme: scheme, host: host, path: path}) do
     "#{scheme}://#{host}#{path}"
   end
 end

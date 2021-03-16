@@ -36,19 +36,6 @@ defmodule CPub.HTTP.AdapterHelper.Gun do
     |> put_timeout()
   end
 
-  defp add_scheme_opts(opts, %{scheme: "http"}), do: opts
-
-  defp add_scheme_opts(opts, %{scheme: "https"}) do
-    Keyword.put(opts, :certificates_verification, true)
-  end
-
-  defp put_timeout(opts) do
-    {recv_timeout, opts} = Keyword.pop(opts, :recv_timeout, pool_timeout(opts[:pool]))
-    # this is the timeout to receive a message from Gun
-    # `:timeout` key is used in Tesla
-    Keyword.put(opts, :timeout, recv_timeout)
-  end
-
   @spec pool_timeout(pool) :: non_neg_integer
   def pool_timeout(pool) do
     default = Config.get([:pools, :default, :recv_timeout], 5_000)
@@ -57,6 +44,8 @@ defmodule CPub.HTTP.AdapterHelper.Gun do
   end
 
   @pool CPub.HTTP.Gun.ConnectionPool
+
+  @spec limiter_setup :: :ok
   def limiter_setup do
     wait = Config.get([:connections_pool, :connection_acquisition_wait])
     retries = Config.get([:connections_pool, :connection_acquisition_retries])
@@ -79,5 +68,20 @@ defmodule CPub.HTTP.AdapterHelper.Gun do
     end)
 
     :ok
+  end
+
+  @spec add_scheme_opts(keyword, URI.t()) :: keyword
+  defp add_scheme_opts(opts, %{scheme: "http"}), do: opts
+
+  defp add_scheme_opts(opts, %{scheme: "https"}) do
+    Keyword.put(opts, :certificates_verification, true)
+  end
+
+  @spec put_timeout(keyword) :: keyword
+  defp put_timeout(opts) do
+    {recv_timeout, opts} = Keyword.pop(opts, :recv_timeout, pool_timeout(opts[:pool]))
+    # this is the timeout to receive a message from Gun
+    # `:timeout` key is used in Tesla
+    Keyword.put(opts, :timeout, recv_timeout)
   end
 end

@@ -14,9 +14,10 @@ defmodule CPub.HTTP.Gun.ConnectionPool.Reclaimer do
 
   @registry Gun.ConnectionPool
 
+  @spec start_monitor :: {pid, reference}
   def start_monitor do
     pid =
-      case :gen_server.start(__MODULE__, [], name: {:via, Registry, {@registry, "reclaimer"}}) do
+      case GenServer.start(__MODULE__, [], name: {:via, Registry, {@registry, "reclaimer"}}) do
         {:ok, pid} -> pid
         {:error, {:already_registered, pid}} -> pid
       end

@@ -48,6 +48,24 @@ defmodule CPub.HTTP.Gun.ConnectionPool do
     end
   end
 
+  @spec release_conn(pid) :: :ok
+  def release_conn(conn_pid) do
+    query_result =
+      Registry.select(
+        @registry,
+        [{{:_, :"$1", {:"$2", :_, :_, :_}}, [{:==, :"$2", conn_pid}], [:"$1"]}]
+      )
+
+    case query_result do
+      [worker_pid] ->
+        GenServer.call(worker_pid, :remove_client)
+
+      [] ->
+        :ok
+    end
+  end
+
+  @spec get_gun_pid_from_worker(pid, bool) :: {:ok, pid} | {:error, any}
   defp get_gun_pid_from_worker(worker_pid, register) do
     # GenServer.call will block the process for timeout length if
     # the server crashes on startup (which will happen if gun fails to connect)
@@ -68,23 +86,6 @@ defmodule CPub.HTTP.Gun.ConnectionPool do
           {:shutdown, error} -> {:error, error}
           _ -> {:error, reason}
         end
-    end
-  end
-
-  @spec release_conn(pid) :: :ok
-  def release_conn(conn_pid) do
-    query_result =
-      Registry.select(
-        @registry,
-        [{{:_, :"$1", {:"$2", :_, :_, :_}}, [{:==, :"$2", conn_pid}], [:"$1"]}]
-      )
-
-    case query_result do
-      [worker_pid] ->
-        GenServer.call(worker_pid, :remove_client)
-
-      [] ->
-        :ok
     end
   end
 end

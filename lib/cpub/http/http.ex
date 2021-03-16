@@ -75,6 +75,7 @@ defmodule CPub.HTTP do
     |> Builder.convert_to_keyword()
   end
 
+  @spec adapter_middlewares(module) :: [module]
   defp adapter_middlewares(Tesla.Adapter.Gun) do
     [Tesla.Middleware.FollowRedirects, CPub.HTTP.Tesla.Middleware.ConnectionPool]
   end
@@ -82,6 +83,8 @@ defmodule CPub.HTTP do
   defp adapter_middlewares(_), do: []
 
   @pool CPub.HTTP.Gun.ConnectionPool
+
+  @spec maybe_limit(fun, module, keyword) :: any
   defp maybe_limit(fun, Tesla.Adapter.Gun, opts) do
     ConcurrentLimiter.limit(:"#{@pool}.#{opts[:pool] || :default}", fun)
   end

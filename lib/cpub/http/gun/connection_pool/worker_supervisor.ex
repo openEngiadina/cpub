@@ -15,10 +15,12 @@ defmodule CPub.HTTP.Gun.ConnectionPool.WorkerSupervisor do
   alias CPub.HTTP.Gun.ConnectionPool.Reclaimer
   alias CPub.HTTP.Gun.ConnectionPool.Worker
 
+  @spec start_link(any) :: Supervisor.on_start()
   def start_link(opts) do
     DynamicSupervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
+  @spec init(any) :: {:ok, DynamicSupervisor.sup_flags()}
   def init(_opts) do
     DynamicSupervisor.init(
       strategy: :one_for_one,
@@ -26,6 +28,7 @@ defmodule CPub.HTTP.Gun.ConnectionPool.WorkerSupervisor do
     )
   end
 
+  @spec start_worker(keyword, bool) :: DynamicSupervisor.on_start_child() | {:error, any}
   def start_worker(opts, retry \\ false) do
     case DynamicSupervisor.start_child(__MODULE__, {Worker, opts}) do
       {:error, :max_children} ->
@@ -42,10 +45,12 @@ defmodule CPub.HTTP.Gun.ConnectionPool.WorkerSupervisor do
     end
   end
 
+  @spec free_pool :: :ok | :error
   defp free_pool do
     wait_for_reclaimer_finish(Reclaimer.start_monitor())
   end
 
+  @spec wait_for_reclaimer_finish({pid, reference}) :: :ok | :error
   defp wait_for_reclaimer_finish({pid, mon}) do
     receive do
       {:DOWN, ^mon, :process, ^pid, :no_unused_conns} -> :error

@@ -87,6 +87,7 @@ defmodule CPub.HTTP.RequestBuilder do
     Map.update(request, location, [{key, value}], &(&1 ++ [{key, value}]))
   end
 
+  @spec convert_to_keyword(Request.t()) :: keyword
   def convert_to_keyword(request) do
     request
     |> Map.from_struct()

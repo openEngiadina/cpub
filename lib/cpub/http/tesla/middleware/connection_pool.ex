@@ -36,6 +36,8 @@ defmodule CPub.HTTP.Tesla.Middleware.ConnectionPool do
     end
   end
 
+  @spec run_tesla(pid, Tesla.Env.t(), Tesla.Env.stack(), any) ::
+          {:ok, Tesla.Env.t()} | {:error, any}
   defp run_tesla(conn_pid, env, next, opts) do
     case Tesla.run(env, next) do
       {:ok, env} ->
