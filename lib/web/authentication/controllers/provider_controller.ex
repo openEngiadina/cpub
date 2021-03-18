@@ -35,7 +35,7 @@ defmodule CPub.Web.Authentication.ProviderController do
   end
 
   def request(%Plug.Conn{assigns: %{ueberauth_failure: _fails}}, %{"provider" => provider}) do
-    {:error, "Failed to run request for provider " <> provider}
+    {:error, "Failed to run request for provider #{provider}"}
   end
 
   # go back to session login on failure

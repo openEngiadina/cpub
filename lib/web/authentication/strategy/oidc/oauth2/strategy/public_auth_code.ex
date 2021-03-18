@@ -5,7 +5,8 @@
 
 defmodule CPub.Web.Authentication.Strategy.OIDC.OAuth2.Strategy.PublicAuthCode do
   @moduledoc """
-  The Authorization Code Strategy that does not use BasicAuth when there is no client_secret set.
+  The Authorization Code Strategy that does not use BasicAuth when there is no
+  client_secret set.
 
   See also: https://github.com/scrogson/oauth2/issues/142
   """

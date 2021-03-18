@@ -15,10 +15,12 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon do
 
   use Ueberauth.Strategy
 
+  alias CPub.HTTP
   alias CPub.Web.Authentication.OAuthClient
   alias CPub.Web.Authentication.Strategy.Mastodon.Instance
 
-  # The Mastodon API for dynamically creating clients (see https://docs.joinmastodon.org/methods/apps/)
+  # The Mastodon API for dynamically creating clients
+  # (see https://docs.joinmastodon.org/methods/apps/)
   @register_client_endpoint "/api/v1/apps"
 
   # TODO this should idenitfy the instance
@@ -39,8 +41,7 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon do
         redirect_uris: callback_url(conn)
       })
 
-    with {:ok, _, _, client_ref} <- :hackney.request(:post, url, headers, body, []),
-         {:ok, body} <- :hackney.body(client_ref),
+    with {:ok, %{body: body}} <- HTTP.post(url, body, headers, []),
          {:ok, client_attrs} <- Jason.decode(body) do
       OAuthClient.create(%{
         site: site,

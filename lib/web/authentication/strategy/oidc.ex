@@ -49,8 +49,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC do
   end
 
   defp replace_strategy(%Plug.Conn{assigns: %{ueberauth_auth: auth}} = conn) do
-    conn
-    |> assign(:ueberauth_auth, %{auth | strategy: __MODULE__})
+    assign(conn, :ueberauth_auth, %{auth | strategy: __MODULE__})
   end
 
   defp replace_strategy(conn), do: conn

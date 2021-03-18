@@ -5,8 +5,8 @@
 
 defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   @moduledoc """
-  An Ueberauth strategy for identifying with services implementing [OpenID
-  Connect](https://openid.net/specs/openid-connect-core-1_0.html).
+  An Ueberauth strategy for identifying with services implementing
+  [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html).
 
   # Configuration
 
@@ -18,13 +18,20 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   ]}
   ````
 
-  There is no need to specify the authorization, token and jwk endpoint. The strategy will automatically detect them from the [OpenID Provider Configuration Information](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig).
+  There is no need to specify the authorization, token and jwk endpoint. The
+  strategy will automatically detect them from the [OpenID Provider Configuration
+  Information](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig).
 
 
-  TODO: Currently this strategy make multiple requests to the OpenID provider every time it is invoked that could be cached (configuration and jwks keys). Implement a more efficient caching strategy.
+  TODO: Currently this strategy make multiple requests to the OpenID provider
+  every time it is invoked that could be cached (configuration and jwks keys).
+  Implement a more efficient caching strategy.
   """
 
   use Ueberauth.Strategy
+
+  alias CPub.HTTP
+  alias CPub.Web.Authentication.OAuthClient
 
   alias Ueberauth.Auth.{Credentials, Extra}
 
@@ -56,9 +63,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
 
     headers = [{"Content-Type", "application/json"}]
 
-    with {:ok, _, _, client_ref} <-
-           :hackney.request(:get, uri, headers, <<>>, []),
-         {:ok, body_binary} <- :hackney.body(client_ref),
+    with {:ok, %{body: body_binary}} <- HTTP.get(uri, headers, []),
          {:ok, body} <- Jason.decode(body_binary) do
       {:ok, body}
     else
@@ -121,7 +126,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   def handle_callback!(%Plug.Conn{} = conn) do
     with {:ok, config} <- get_openid_config(conn),
          client <- oauth_client(conn, config),
-         {:ok, client} <- OAuth2.Client.get_token(client, code: conn.params["code"]),
+         {:ok, client} <- OAuthClient.get_token(client, code: conn.params["code"]),
          {:ok, id_token} <- verify_id_token(config, client) do
       conn
       |> put_private(:ueberauth_oidc_oauth_client, client)
@@ -150,9 +155,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   defp get_signer(config, kid) do
     headers = [{"Content-Type", "application/json"}]
 
-    with {:ok, _, _, client_ref} <-
-           :hackney.request(:get, jwks_uri(config), headers, <<>>, []),
-         {:ok, body_binary} <- :hackney.body(client_ref),
+    with {:ok, %{body: body_binary}} <- HTTP.get(jwks_uri(config), headers, []),
          {:ok, body} <- Jason.decode(body_binary),
          keys <- body["keys"] do
       case Enum.find(keys, fn key -> key["kid"] == kid end) do

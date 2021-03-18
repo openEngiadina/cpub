@@ -50,7 +50,8 @@ defmodule CPub.Web.Authorization.AuthorizationPlug do
 
   @spec fetch_token_from_header(Plug.Conn.t()) :: :no_token_found | {:ok, String.t()}
   defp fetch_token_from_header(%Plug.Conn{} = conn) do
-    get_req_header(conn, "authorization")
+    conn
+    |> get_req_header("authorization")
     |> fetch_token_str()
   end
 

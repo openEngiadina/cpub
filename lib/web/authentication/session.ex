@@ -10,7 +10,7 @@ defmodule CPub.Web.Authentication.Session do
   An authenticated `CPub.User` has a session stored in the `Plug.Session` storage.
 
   A session does not grant access to any resources. Access is granted with a
-  `Cpub.Web.Authorization`.
+  `CPub.Web.Authorization`.
   """
 
   alias CPub.DB

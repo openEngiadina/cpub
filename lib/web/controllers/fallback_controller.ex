@@ -12,8 +12,6 @@ defmodule CPub.Web.FallbackController do
 
   use CPub.Web, :controller
 
-  alias CPub.Web.ChangesetView
-
   @type error_tuple :: {:error, String.Chars.t() | atom}
 
   @spec call(Plug.Conn.t(), error_tuple) :: Plug.Conn.t()

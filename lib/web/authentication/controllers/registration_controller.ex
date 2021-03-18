@@ -79,16 +79,6 @@ defmodule CPub.Web.Authentication.RegistrationController do
     |> render_internal_registration_form(username: nil)
   end
 
-  # Helper that creates a user with internal registration
-  defp create_user_with_internal_registration(username, password) do
-    DB.transaction(fn ->
-      with {:ok, user} <- User.create(username),
-           {:ok, _registration} <- User.Registration.create_internal(user, password) do
-        user
-      end
-    end)
-  end
-
   def register(%Plug.Conn{method: "POST"} = conn, %{
         "username" => username,
         "password" => password
@@ -103,6 +93,16 @@ defmodule CPub.Web.Authentication.RegistrationController do
         |> put_flash(:error, "Registration failed.")
         |> render_internal_registration_form(username: username)
     end
+  end
+
+  # Helper that creates a user with internal registration
+  defp create_user_with_internal_registration(username, password) do
+    DB.transaction(fn ->
+      with {:ok, user} <- User.create(username),
+           {:ok, _registration} <- User.Registration.create_internal(user, password) do
+        user
+      end
+    end)
   end
 
   # Render helpers

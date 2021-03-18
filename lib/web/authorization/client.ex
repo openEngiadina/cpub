@@ -86,12 +86,15 @@ defmodule CPub.Web.Authorization.Client do
   @doc """
   Returns a single redirect uri.
 
-  If `params` contains a `"redirect_uri"` key the value will be checked to match the `redirect_uris` of the client.
+  If `params` contains a `"redirect_uri"` key the value will be checked to match
+  the `redirect_uris` of the client.
 
-  If `params` does not contain a `redirect_uri` the first uri from client.redirect_uris will be used.
+  If `params` does not contain a `redirect_uri` the first uri from
+  client.redirect_uris will be used.
   """
   def get_redirect_uri(%__MODULE__{} = client, %{} = params) do
-    Map.get(params, "redirect_uri", client.redirect_uris |> List.first())
+    params
+    |> Map.get("redirect_uri", client.redirect_uris |> List.first())
     |> redirect_uri_valid?(client)
   end
 end

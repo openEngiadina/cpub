@@ -13,7 +13,10 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
 
   use Ueberauth.Strategy
 
-  alias CPub.Web.Authenticatoin.Strategy.Mastodon
+  alias CPub.Web.Authentication.OAuthClient
+  alias CPub.Web.Authentication.OAuthRequest
+  alias CPub.Web.Authentication.Strategy.Mastodon
+
   alias Ueberauth.Auth.{Credentials, Extra, Info}
 
   def handle_request!(%Plug.Conn{} = conn) do
@@ -46,7 +49,7 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
         do: Keyword.put(opts, :client_secret, Keyword.get(options(conn), :client_secret)),
         else: opts
 
-    case OAuth2.Client.get_token(client, opts) do
+    case OAuthClient.get_token(client, opts) do
       {:ok, client} ->
         conn
         |> put_private(:ueberauth_pleroma_oauth_client, client)
@@ -96,7 +99,7 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
 
   # gets additional information from the "verify account credentials" endpoint
   defp verify_account(conn, client) do
-    case OAuth2.Client.get(client, @verify_account_credentials_endpoint) do
+    case OAuthRequest.request(:get, client, @verify_account_credentials_endpoint, "", [], []) do
       {:ok, %OAuth2.Response{body: body}} ->
         conn
         |> put_private(:ueberauth_pleroma_account, body)

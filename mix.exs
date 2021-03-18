@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: CC0-1.0
 
@@ -69,6 +69,11 @@ defmodule CPub.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:corsica, "~> 1.1"},
       {:gettext, "~> 0.11"},
+      {:tesla, "~> 1.4.0", override: true},
+      {:castore, "~> 0.1"},
+      {:cowlib, "~> 2.9", override: true},
+      {:gun, "~> 2.0.0-rc.1", override: true},
+      {:concurrent_limiter, "~> 0.1.1"},
 
       # Mnesia/QLC wrapper
       {:memento, "~> 0.3.1"},
