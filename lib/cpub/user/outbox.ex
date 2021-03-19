@@ -82,11 +82,12 @@ defmodule CPub.User.Outbox do
   @doc """
   Post activity in `graph` on behalf of `user`.
   """
-  def post(%User{} = _user, %RDF.Graph{} = graph) do
+  def post(%User{} = user, %RDF.Graph{} = graph) do
     DB.transaction(fn ->
       with {:ok, type, activity} <- extract_activity(graph),
            {:ok, activity} <- perform_activity_side_effec(type, activity, graph),
            {:ok, activity_read_capability} <- CPub.ERIS.put(activity),
+           :ok <- DB.Set.add(user.outbox, activity_read_capability),
            recipients <- extract_recipients(activity) do
         {activity_read_capability,
          recipients

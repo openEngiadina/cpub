@@ -78,9 +78,6 @@ defmodule CPub.DB do
          :ok <- ensure_table_exists(CPub.DB.Set, disc_only_copies: nodes()),
          # RDF Signify
          :ok <- ensure_table_exists(CPub.Signify.Signature, disc_only_copies: nodes()),
-         # DMC
-         :ok <- ensure_table_exists(CPub.DMC.Set.Add, disc_only_copies: nodes()),
-         :ok <- ensure_table_exists(CPub.DMC.Set.Remove, disc_only_copies: nodes()),
          # User management
          :ok <- ensure_table_exists(CPub.User, disc_only_copies: nodes()),
          :ok <- ensure_table_exists(CPub.User.Registration, disc_only_copies: nodes()),
@@ -117,6 +114,9 @@ defmodule CPub.DB do
     case return_value do
       :ok ->
         return_value
+
+      {:ok, :ok} ->
+        :ok
 
       {:ok, _} ->
         return_value
