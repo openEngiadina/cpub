@@ -58,47 +58,25 @@ defmodule CSexp do
   end
 
   # Decoder
-  # credo:disable-for-next-line
+
   @spec read_number(String.t(), String.t()) :: {:ok, number, String.t()} | {:error, atom}
-  defp read_number(binary, digits \\ "") when is_binary(binary) do
-    # somebody please show me how to properly use guards
-    case binary do
-      <<"0">> <> rest ->
-        read_number(rest, digits <> "0")
+  defp read_number(binary, digits \\ "")
+  defp read_number(<<"0">> <> rest, digits), do: read_number(rest, digits <> "0")
+  defp read_number(<<"1">> <> rest, digits), do: read_number(rest, digits <> "1")
+  defp read_number(<<"2">> <> rest, digits), do: read_number(rest, digits <> "2")
+  defp read_number(<<"3">> <> rest, digits), do: read_number(rest, digits <> "3")
+  defp read_number(<<"4">> <> rest, digits), do: read_number(rest, digits <> "4")
+  defp read_number(<<"5">> <> rest, digits), do: read_number(rest, digits <> "5")
+  defp read_number(<<"6">> <> rest, digits), do: read_number(rest, digits <> "6")
+  defp read_number(<<"7">> <> rest, digits), do: read_number(rest, digits <> "7")
+  defp read_number(<<"8">> <> rest, digits), do: read_number(rest, digits <> "8")
+  defp read_number(<<"9">> <> rest, digits), do: read_number(rest, digits <> "9")
 
-      <<"1">> <> rest ->
-        read_number(rest, digits <> "1")
-
-      <<"2">> <> rest ->
-        read_number(rest, digits <> "2")
-
-      <<"3">> <> rest ->
-        read_number(rest, digits <> "3")
-
-      <<"4">> <> rest ->
-        read_number(rest, digits <> "4")
-
-      <<"5">> <> rest ->
-        read_number(rest, digits <> "5")
-
-      <<"6">> <> rest ->
-        read_number(rest, digits <> "6")
-
-      <<"7">> <> rest ->
-        read_number(rest, digits <> "7")
-
-      <<"8">> <> rest ->
-        read_number(rest, digits <> "8")
-
-      <<"9">> <> rest ->
-        read_number(rest, digits <> "9")
-
-      _ ->
-        if String.length(digits) == 0 do
-          {:error, :not_a_digit}
-        else
-          {:ok, String.to_integer(digits), binary}
-        end
+  defp read_number(binary, digits) when is_binary(binary) do
+    if String.length(digits) == 0 do
+      {:error, :not_a_digit}
+    else
+      {:ok, String.to_integer(digits), binary}
     end
   end
 
