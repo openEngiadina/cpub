@@ -25,7 +25,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <p>
 <%= for client <- @clients do %>
-    <a href=<%= Routes.authentication_provider_path(@conn, :request, client.provider, %{site: client.site})%>> <%= client.display_name %> </a>
+  <a href=<%= Routes.authentication_provider_path(@conn, :request, client.provider, %{site: client.site})%>> <%= client.display_name %> </a>
     -
 <% end %>
   <a href=<%= Routes.authentication_registration_path(@conn, :register) %>>Sign up</a>

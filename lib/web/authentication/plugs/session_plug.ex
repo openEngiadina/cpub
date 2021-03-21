@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -12,8 +12,10 @@ defmodule CPub.Web.Authentication.SessionPlug do
 
   alias CPub.Web.Authentication.Session
 
+  @spec init(Plug.opts()) :: Plug.opts()
   def init(opts), do: opts
 
+  @spec call(Plug.Conn.t(), Plug.opts()) :: Plug.Conn.t()
   def call(%Plug.Conn{} = conn, _opts) do
     session_id =
       conn
@@ -25,12 +27,10 @@ defmodule CPub.Web.Authentication.SessionPlug do
     else
       case Session.get_by_id(session_id) do
         {:ok, session} ->
-          conn
-          |> assign(:session, session)
+          assign(conn, :session, session)
 
         _ ->
-          conn
-          |> delete_session(:session_id)
+          delete_session(conn, :session_id)
       end
     end
   end

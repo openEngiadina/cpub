@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -13,6 +14,7 @@ defmodule CPub.DB do
 
   require Logger
 
+  @spec start_link(keyword) :: GenServer.on_start()
   def start_link(arg) do
     Task.start_link(__MODULE__, :run, [arg])
   end
@@ -20,8 +22,10 @@ defmodule CPub.DB do
   @doc """
   The nodes where data is persisted.
   """
+  @spec nodes :: [node]
   def nodes, do: [node()]
 
+  @spec run(any) :: :ok | no_return
   def run(_arg) do
     Logger.info("Initializing mnesia database.")
 
@@ -43,6 +47,7 @@ defmodule CPub.DB do
   end
 
   # Helper to create schema and gracefully continue if schema already exists
+  @spec create_schema :: :ok | {:error, any}
   defp create_schema do
     case :mnesia.create_schema(nodes()) do
       :ok ->
@@ -58,6 +63,7 @@ defmodule CPub.DB do
     end
   end
 
+  @spec ensure_table_exists(module, keyword) :: :ok | {:error, any}
   defp ensure_table_exists(table, opts) do
     case Memento.Table.create(table, opts) do
       :ok ->
@@ -72,6 +78,7 @@ defmodule CPub.DB do
   end
 
   # Helper to create tables
+  @spec create_tables :: :ok | {:error, any}
   defp create_tables do
     with :ok <- ensure_table_exists(CPub.ERIS.Block, disc_only_copies: nodes()),
          # DB Set and Register
@@ -102,7 +109,8 @@ defmodule CPub.DB do
 
   If called from within transaction the transaction will be reused.
   """
-  @spec transaction(fun) :: {:ok, any} | {:error, any}
+  @dialyzer {:nowarn_function, transaction: 1}
+  @spec transaction(fun) :: :ok | any | {:ok, any} | {:error, any}
   def transaction(function) do
     return_value =
       if Memento.Transaction.inside?() do
@@ -113,7 +121,7 @@ defmodule CPub.DB do
 
     case return_value do
       :ok ->
-        return_value
+        :ok
 
       {:ok, :ok} ->
         :ok
@@ -128,40 +136,38 @@ defmodule CPub.DB do
       {:error, reason} = error ->
         Logger.warn("mnesia transaction aborted due to error (#{inspect(reason)})")
         error
-
-      _ ->
-        Logger.warn(
-          "mnesia transaction aborted with unknown return value (#{inspect(return_value)})"
-        )
-
-        return_value
     end
   end
 
   @doc """
   Write a record to a table.
   """
+  @spec write(Memento.Table.record(), Memento.Query.options()) ::
+          Memento.Table.record() | no_return()
   def write(record, opts \\ []), do: Memento.Query.write(record, opts)
 
   @doc """
   Abort transaction with `reason`.
   """
-  def abort({:error, reason}), do: abort(reason)
-  def abort(reason), do: Memento.Transaction.abort({:cpub_error, reason})
+  @spec abort({:error, atom} | atom) :: no_return
+  def abort({:error, reason}) when is_atom(reason), do: abort(reason)
+  def abort(reason) when is_atom(reason), do: Memento.Transaction.abort({:cpub_error, reason})
 
   @doc """
   Reset the entire database.
 
   WARNING: Use with extreme caution as this will drop all data!
   """
+  @spec reset :: :ok | no_return
   def reset do
     unless Mix.env() == :test do
       Logger.warn("Resetting database.")
     end
 
-    :mnesia.stop()
-    :mnesia.delete_schema(nodes())
-    :mnesia.start()
+    _ = :mnesia.stop()
+    _ = :mnesia.delete_schema(nodes())
+    _ = :mnesia.start()
+
     run([])
   end
 end

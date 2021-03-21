@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -19,6 +19,7 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
 
   alias Ueberauth.Auth.{Credentials, Extra, Info}
 
+  @spec handle_request!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_request!(%Plug.Conn{} = conn) do
     client =
       Mastodon.OAuth.client(
@@ -28,10 +29,10 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
         params: Keyword.get(options(conn), :oauth_request_params)
       )
 
-    conn
-    |> redirect!(OAuth2.Client.authorize_url!(client))
+    redirect!(conn, OAuth2.Client.authorize_url!(client))
   end
 
+  @spec handle_callback!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_callback!(%Plug.Conn{} = conn) do
     client =
       Mastodon.OAuth.client(
@@ -56,16 +57,17 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
         |> verify_account(client)
 
       {:error, _} ->
-        conn
-        |> set_errors!([error("pleroma", "failed to get access token")])
+        set_errors!(conn, [error("pleroma", "failed to get access token")])
     end
   end
 
   # Fill in the Ueberauth.Auth struct
 
-  def uid(conn), do: conn.private.ueberauth_pleroma_account["url"]
+  @spec uid(Plug.Conn.t()) :: String.t()
+  def uid(%Plug.Conn{} = conn), do: conn.private.ueberauth_pleroma_account["url"]
 
-  def extra(conn) do
+  @spec extra(Plug.Conn.t()) :: Extra.t()
+  def extra(%Plug.Conn{} = conn) do
     %Extra{
       raw_info: %{
         account: conn.private.ueberauth_pleroma_account,
@@ -75,15 +77,15 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
     }
   end
 
-  def info(conn) do
+  @spec info(Plug.Conn.t()) :: Info.t()
+  def info(%Plug.Conn{} = conn) do
     account = conn.private.ueberauth_pleroma_account
 
-    %Info{
-      nickname: account["username"]
-    }
+    %Info{nickname: account["username"]}
   end
 
-  def credentials(conn) do
+  @spec credentials(Plug.Conn.t()) :: Credentials.t()
+  def credentials(%Plug.Conn{} = conn) do
     client = conn.private.ueberauth_pleroma_oauth_client
 
     %Credentials{
@@ -98,15 +100,14 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon.Instance do
   @verify_account_credentials_endpoint "/api/v1/accounts/verify_credentials"
 
   # gets additional information from the "verify account credentials" endpoint
-  defp verify_account(conn, client) do
+  @spec verify_account(Plug.Conn.t(), OAuth2.Client.t()) :: Plug.Conn.t()
+  defp verify_account(%Plug.Conn{} = conn, client) do
     case OAuthRequest.request(:get, client, @verify_account_credentials_endpoint, "", [], []) do
       {:ok, %OAuth2.Response{body: body}} ->
-        conn
-        |> put_private(:ueberauth_pleroma_account, body)
+        put_private(conn, :ueberauth_pleroma_account, body)
 
       _ ->
-        conn
-        |> set_errors!([
+        set_errors!(conn, [
           error("pleroma", "could not fetch account details from verify credential endpoint")
         ])
     end

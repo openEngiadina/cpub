@@ -7,19 +7,45 @@ defmodule CPub.User.Outbox do
   A `CPub.User`s outbox that can be used to post ActivityStream activities.
   """
 
+  import RDF.Sigils
+
+  alias RDF.FragmentGraph
+  alias RDF.Graph
+  alias RDF.IRI
+  alias RDF.NS.RDFS
+  alias RDF.Statement
+
   alias CPub.ActivityPub
   alias CPub.DB
-  alias CPub.User
-
-  import RDF.Sigils
-  alias RDF.FragmentGraph
-
   alias CPub.NS.ActivityStreams, as: AS
-  alias RDF.NS.RDFS
+  alias CPub.User
 
   @activity_streams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
 
+  @doc """
+  Extract object from activity
+  """
+  @spec extract_object(FragmentGraph.t(), Graph.t()) ::
+          {:ok, FragmentGraph.t(), FragmentGraph.t()} | {:error, any}
+  def extract_object(activity, graph) do
+    case activity[:base_subject][AS.object()] do
+      [%IRI{} = object_id] ->
+        with object <-
+               object_id
+               |> FragmentGraph.new()
+               |> FragmentGraph.add(graph)
+               |> FragmentGraph.finalize() do
+          {:ok, object,
+           replace_object_in_fragment_graph(activity, object_id, object.base_subject)}
+        end
+
+      _ ->
+        {:error, :could_not_extract_object}
+    end
+  end
+
   # Extract the activity from the input graph
+  @spec extract_activity(Graph.t()) :: {:ok, IRI.t(), FragmentGraph.t()} | {:error, any}
   defp extract_activity(graph) do
     case [
            {:activity_type?, RDFS.subClassOf(), AS.Activity},
@@ -28,7 +54,8 @@ defmodule CPub.User.Outbox do
          |> RDF.Query.execute(RDF.Data.merge(graph, @activity_streams)) do
       {:ok, [%{activity_id: activity_id, activity_type: type}]} ->
         {:ok, type,
-         FragmentGraph.new(activity_id)
+         activity_id
+         |> FragmentGraph.new()
          |> FragmentGraph.add(graph)
          |> FragmentGraph.finalize()}
 
@@ -38,10 +65,13 @@ defmodule CPub.User.Outbox do
   end
 
   # Helper to replace occurence of a specific object in a FragmentGraph
+  @spec replace_object_in_fragment_graph(FragmentGraph.t(), IRI.t(), IRI.t()) :: FragmentGraph.t()
   defp replace_object_in_fragment_graph(fg, from, to) do
-    FragmentGraph.new(fg.base_subject)
+    fg.base_subject
+    |> FragmentGraph.new()
     |> FragmentGraph.add(
-      RDF.Data.statements(fg)
+      fg
+      |> RDF.Data.statements()
       |> Enum.map(fn {s, p, o} ->
         case o do
           ^from -> {s, p, to}
@@ -51,28 +81,13 @@ defmodule CPub.User.Outbox do
     )
   end
 
-  # Extract object from activity
-  def extract_object(activity, graph) do
-    case activity[:base_subject][AS.object()] do
-      [%RDF.IRI{} = object_id] ->
-        with object <-
-               FragmentGraph.new(object_id)
-               |> FragmentGraph.add(graph)
-               |> FragmentGraph.finalize() do
-          {:ok, object,
-           activity |> replace_object_in_fragment_graph(object_id, object.base_subject)}
-        end
-
-      _ ->
-        {:error, :could_not_extract_object}
-    end
-  end
-
+  @spec get_all(RDF.Description.t(), [IRI.t()], [Statement.object()]) :: [Statement.object()]
   defp get_all(container, keys, default) do
     Enum.map(keys, &Access.get(container, &1, default))
   end
 
   # Extract recipients from activity
+  @spec extract_recipients(FragmentGraph.t()) :: [Statement.object()]
   defp extract_recipients(activity) do
     activity[:base_subject]
     |> get_all([AS.to(), AS.bto(), AS.cc(), AS.bcc(), AS.audience()], [])
@@ -82,7 +97,8 @@ defmodule CPub.User.Outbox do
   @doc """
   Post activity in `graph` on behalf of `user`.
   """
-  def post(%User{} = user, %RDF.Graph{} = graph) do
+  @spec post(User.t(), Graph.t()) :: {:ok, {ERIS.ReadCapability.t(), map}} | {:error, any}
+  def post(%User{} = user, %Graph{} = graph) do
     DB.transaction(fn ->
       with {:ok, type, activity} <- extract_activity(graph),
            {:ok, activity} <- perform_activity_side_effec(type, activity, graph),
@@ -90,8 +106,7 @@ defmodule CPub.User.Outbox do
            :ok <- DB.Set.add(user.outbox, activity_read_capability),
            recipients <- extract_recipients(activity) do
         {activity_read_capability,
-         recipients
-         |> Map.new(fn recipient ->
+         Map.new(recipients, fn recipient ->
            {recipient, ActivityPub.Delivery.deliver(recipient, activity_read_capability)}
          end)}
       end
@@ -101,6 +116,8 @@ defmodule CPub.User.Outbox do
   # Perform ActivityPub side effects
 
   # Create
+  @spec perform_activity_side_effec(IRI.t(), FragmentGraph.t(), Graph.t()) ::
+          {:ok, FragmentGraph.t()}
   defp perform_activity_side_effec(
          ~I<https://www.w3.org/ns/activitystreams#Create>,
          activity,

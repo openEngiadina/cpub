@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -11,12 +11,21 @@ defmodule CPub.Web.Authentication.RegistrationRequest do
   with external provider but not created an associated local user yet.
   """
 
-  alias CPub.DB
-
   use Memento.Table,
     attributes: [:id, :provider, :site, :external_id, :username],
     type: :set
 
+  alias CPub.DB
+
+  @type t :: %__MODULE__{
+          id: String.t(),
+          provider: String.t(),
+          site: String.t(),
+          external_id: String.t(),
+          username: String.t()
+        }
+
+  @spec create(String.t(), String.t(), String.t(), String.t()) :: {:ok, t} | {:error, any}
   def create(site, provider, external_id, username) do
     DB.transaction(fn ->
       %__MODULE__{
@@ -30,6 +39,7 @@ defmodule CPub.Web.Authentication.RegistrationRequest do
     end)
   end
 
+  @spec get(String.t()) :: {:ok, t} | {:error, any}
   def get(id) do
     DB.transaction(fn ->
       Memento.Query.read(__MODULE__, id)

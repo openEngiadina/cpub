@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -7,6 +8,11 @@ defmodule CPub.User do
   A CPub user.
   """
 
+  use Memento.Table,
+    attributes: [:id, :username, :profile, :inbox, :outbox],
+    index: [:username],
+    type: :set
+
   alias CPub.DB
   alias CPub.ERIS
 
@@ -14,21 +20,22 @@ defmodule CPub.User do
   alias CPub.NS.ActivityStreams, as: AS
 
   alias RDF.FragmentGraph
+  alias RDF.IRI
 
   alias Memento.Query
 
-  use Memento.Table,
-    attributes: [:id, :username, :profile, :inbox, :outbox],
-    index: [:username],
-    type: :set
+  @type username :: atom | String.t() | FragmentGraph.FragmentReference.t()
 
-  defp default_profile(username) do
-    FragmentGraph.new()
-    |> FragmentGraph.add(RDF.type(), AS.Person)
-    |> FragmentGraph.add(AS.preferredUsername(), username)
-  end
+  @type t :: %__MODULE__{
+          id: String.t(),
+          username: username,
+          profile: FragmentGraph.t(),
+          inbox: IRI.t(),
+          outbox: IRI.t()
+        }
 
   # don't check if user already exists, just write.
+  @spec create!(username) :: t
   def create!(username) do
     with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put(),
          inbox <- DB.Set.new(),
@@ -50,6 +57,7 @@ defmodule CPub.User do
     end
   end
 
+  @spec create(username) :: {:ok, t} | {:error, any}
   def create(username) do
     DB.transaction(fn ->
       case Query.select(__MODULE__, {:==, :username, username}) do
@@ -62,6 +70,14 @@ defmodule CPub.User do
     end)
   end
 
+  @spec default_profile(username) :: FragmentGraph.t()
+  defp default_profile(username) do
+    FragmentGraph.new()
+    |> FragmentGraph.add(RDF.type(), AS.Person)
+    |> FragmentGraph.add(AS.preferredUsername(), username)
+  end
+
+  @spec load_profile(any) :: t
   defp load_profile(%__MODULE__{} = user) do
     case ERIS.get_rdf(user.profile) do
       {:ok, profile} -> %{user | profile: profile}
@@ -76,6 +92,7 @@ defmodule CPub.User do
   @doc """
   Get a single user by username.
   """
+  @spec get(username) :: {:ok, t} | {:error, any}
   def get(username) do
     DB.transaction(fn ->
       Query.select(__MODULE__, {:==, :username, username})
@@ -86,6 +103,7 @@ defmodule CPub.User do
   @doc """
   Get a single user by id.
   """
+  @spec get_by_id(String.t()) :: {:ok, t} | {:error, any}
   def get_by_id(id) do
     DB.transaction(fn ->
       Query.read(__MODULE__, id)
@@ -96,6 +114,7 @@ defmodule CPub.User do
   @doc """
   Get the user profile
   """
+  @spec get_profile(t) :: FragmentGraph.t()
   def get_profile(%__MODULE__{} = user) do
     user.profile
   end

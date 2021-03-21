@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -17,28 +17,21 @@ defmodule CPub.Web.Authorization.FallbackController do
   @doc """
   Redirect connection to redirect_uri with error code and description
   """
-  def call(
-        %Plug.Conn{} = conn,
-        {:error, code, description}
-      ) do
+  @spec call(Plug.Conn.t(), any) :: Plug.Conn.t()
+  def call(%Plug.Conn{} = conn, {:error, code, description}) do
     with %{oauth_redirect_on_error: true} <- conn.assigns,
          {:ok, client} <- get_client(conn),
          {:ok, redirect_uri} <- get_redirect_uri(conn, client),
          {:ok, state} <- get_state(conn) do
-      cb_uri =
+      callback_uri =
         redirect_uri
         |> Map.put(
           :query,
-          URI.encode_query(%{
-            error: code,
-            error_description: description,
-            state: state
-          })
+          URI.encode_query(%{error: code, error_description: description, state: state})
         )
         |> URI.to_string()
 
-      conn
-      |> redirect(external: cb_uri)
+      redirect(conn, external: callback_uri)
     else
       _ ->
         conn

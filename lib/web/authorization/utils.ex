@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -14,6 +14,7 @@ defmodule CPub.Web.Authorization.Utils do
   @doc """
   Returns the `CPub.Web.Authorization.Client` associated with the connection.
   """
+  @spec get_client(Plug.Conn.t()) :: {:ok, Client.t()} | {:error, any}
   def get_client(%Plug.Conn{} = conn) do
     case Client.get(conn.params["client_id"]) do
       {:ok, client} ->
@@ -27,6 +28,7 @@ defmodule CPub.Web.Authorization.Utils do
   @doc """
   Returns a valid redirect_uri for given connection and client/authorization.
   """
+  @spec get_redirect_uri(Plug.Conn.t(), Client.t()) :: {:ok, URI.t()} | {:error, any, any}
   def get_redirect_uri(%Plug.Conn{} = conn, %Client{} = client) do
     case Client.get_redirect_uri(client, conn.params) do
       {:ok, redirect_uri} ->
@@ -40,6 +42,7 @@ defmodule CPub.Web.Authorization.Utils do
   @doc """
   Returns a valid scope for given connection and client
   """
+  @spec get_scope(Plug.Conn.t(), Client.t()) :: {:ok, [atom]} | {:error, any, any}
   def get_scope(%Plug.Conn{} = conn, %Client{} = client) do
     with {:ok, scope} <- Scope.parse(Access.get(conn.params, "scope", Scope.default())),
          true <- Scope.scope_subset?(scope, client.scope) do
@@ -53,6 +56,7 @@ defmodule CPub.Web.Authorization.Utils do
   @doc """
   Returns OAuth 2.0 request state from connection
   """
+  @spec get_state(Plug.Conn.t()) :: {:ok, String.t()}
   def get_state(%Plug.Conn{} = conn) do
     {:ok, conn.params["state"]}
   end

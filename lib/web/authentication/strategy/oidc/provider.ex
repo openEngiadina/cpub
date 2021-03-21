@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -35,6 +35,35 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
 
   alias Ueberauth.Auth.{Credentials, Extra}
 
+  @spec handle_request!(Plug.Conn.t()) :: Plug.Conn.t()
+  def handle_request!(%Plug.Conn{} = conn) do
+    with {:ok, config} <- get_openid_config(conn),
+         client <- oauth_client(conn, config) do
+      redirect!(conn, OAuth2.Client.authorize_url!(client))
+    else
+      {:error, err} ->
+        set_errors!(conn, [error("oidc", err)])
+    end
+  end
+
+  @spec handle_callback!(Plug.Conn.t()) :: Plug.Conn.t()
+  def handle_callback!(%Plug.Conn{} = conn) do
+    with {:ok, config} <- get_openid_config(conn),
+         client <- oauth_client(conn, config),
+         {:ok, client} <- OAuthClient.get_token(client, code: conn.params["code"]),
+         {:ok, id_token} <- verify_id_token(config, client) do
+      conn
+      |> put_private(:ueberauth_oidc_oauth_client, client)
+      |> put_private(:ueberauth_oidc_id_token, id_token)
+    else
+      _ ->
+        set_errors!(conn, [error("oidc", "could not get access token")])
+    end
+  rescue
+    _ ->
+      set_errors!(conn, [error("oidc", "could not get access token")])
+  end
+
   # helpers for accessing configuration
   defp provider(conn), do: Keyword.get(options(conn), :provider)
   defp client_id(conn), do: Keyword.get(options(conn), :client_id)
@@ -46,7 +75,8 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   defp jwks_uri(config), do: config["jwks_uri"]
 
   # always add the openid scope
-  defp scope(conn) do
+  @spec scope(Plug.Conn.t()) :: String.t()
+  defp scope(%Plug.Conn{} = conn) do
     (Keyword.get(options(conn), :scope, []) ++ ["openid"])
     |> MapSet.new()
     |> Enum.join(" ")
@@ -55,7 +85,8 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   @openid_configuration_endpoint ".well-known/openid-configuration"
 
   # Get configuration from OpenID configuration path
-  defp get_openid_config(conn) do
+  @spec get_openid_config(Plug.Conn.t()) :: {:ok, map} | {:error, any}
+  defp get_openid_config(%Plug.Conn{} = conn) do
     uri =
       (provider(conn) <> "/")
       |> URI.merge(@openid_configuration_endpoint)
@@ -72,7 +103,8 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
     end
   end
 
-  defp oauth_client(conn, config) do
+  @spec oauth_client(Plug.Conn.t(), map) :: OAuth2.Client.t()
+  defp oauth_client(%Plug.Conn{} = conn, config) do
     [
       authorize_url: authorization_endpoint(config),
       token_url: token_endpoint(config),
@@ -86,22 +118,12 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
     |> OAuth2.Client.put_serializer("application/json", Jason)
   end
 
-  def handle_request!(%Plug.Conn{} = conn) do
-    with {:ok, config} <- get_openid_config(conn),
-         client <- oauth_client(conn, config) do
-      conn
-      |> redirect!(OAuth2.Client.authorize_url!(client))
-    else
-      {:error, err} ->
-        conn
-        |> set_errors!([error("oidc", err)])
-    end
-  end
-
   # the subject identifier from the id_token is guaranteed to be a locally unique identifier
-  def uid(conn), do: conn.private.ueberauth_oidc_id_token["sub"]
+  @spec uid(Plug.Conn.t()) :: String.t()
+  def uid(%Plug.Conn{} = conn), do: conn.private.ueberauth_oidc_id_token["sub"]
 
-  def extra(conn) do
+  @spec extra(Plug.Conn.t()) :: Extra.t()
+  def extra(%Plug.Conn{} = conn) do
     %Extra{
       raw_info: %{
         provider: provider(conn),
@@ -111,7 +133,8 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
     }
   end
 
-  def credentials(conn) do
+  @spec credentials(Plug.Conn.t()) :: Credentials.t()
+  def credentials(%Plug.Conn{} = conn) do
     client = conn.private.ueberauth_oidc_oauth_client
 
     %Credentials{
@@ -123,35 +146,20 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
     }
   end
 
-  def handle_callback!(%Plug.Conn{} = conn) do
-    with {:ok, config} <- get_openid_config(conn),
-         client <- oauth_client(conn, config),
-         {:ok, client} <- OAuthClient.get_token(client, code: conn.params["code"]),
-         {:ok, id_token} <- verify_id_token(config, client) do
-      conn
-      |> put_private(:ueberauth_oidc_oauth_client, client)
-      |> put_private(:ueberauth_oidc_id_token, id_token)
-    else
-      _ ->
-        conn
-        |> set_errors!([error("oidc", "could not get access token")])
-    end
-  rescue
-    _ ->
-      conn
-      |> set_errors!([error("oidc", "could not get access token")])
-  end
-
   # parse a Joken.Signer from the keys at the jwks endpoint
+  @spec parse_signer(map) :: {:ok, Joken.Signer.t()} | {:error, any}
   defp parse_signer(key) do
-    # the alg key is optional (!?!) default to RSA256 if none provided. This is not nice, but seems to be what other projects do as well (https://github.com/spring-projects/spring-security-oauth/issues/1097)
+    # the alg key is optional (!?!) default to RSA256 if none provided.
+    # This is not nice, but seems to be what other projects do as well
+    # (https://github.com/spring-projects/spring-security-oauth/issues/1097)
     {:ok, Joken.Signer.create(key["alg"] || "RS256", key)}
   rescue
-    err ->
-      {:error, err}
+    error ->
+      {:error, error}
   end
 
   # fetch keys from jwks_uri endpoint and return matching key as Jose.Signer
+  @spec get_signer(map, map) :: {:ok, Joken.Signer.t()} | {:error, any}
   defp get_signer(config, kid) do
     headers = [{"Content-Type", "application/json"}]
 
@@ -169,6 +177,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.Provider do
   end
 
   # verify the id_token
+  @spec verify_id_token(map, map) :: {:ok, Joken.claims()} | {:error, any}
   defp verify_id_token(config, client) do
     with jwt <- client.token.other_params["id_token"],
          {:ok, headers} <- Joken.peek_header(jwt),

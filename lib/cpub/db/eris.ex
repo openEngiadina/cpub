@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -15,6 +16,7 @@ defmodule CPub.ERIS do
     @moduledoc """
     An encrypted block.
     """
+
     use Memento.Table,
       attributes: [:ref, :data],
       type: :set
@@ -24,29 +26,29 @@ defmodule CPub.ERIS do
     @moduledoc """
     A mnesia transaction that is created when encoding/decoding ERIS content.
     """
+
     defstruct []
 
     @doc """
     Returns a new transaction.
     """
-    def new do
-      %Transaction{}
-    end
+    def new, do: %Transaction{}
 
     defimpl ERIS.BlockStorage, for: __MODULE__ do
       def put(transaction, data) do
         ref = ERIS.Crypto.blake2b(data)
-        Memento.Query.write(%Block{ref: ref, data: data})
+        _ = Memento.Query.write(%Block{ref: ref, data: data})
+
         {:ok, transaction}
       end
 
       def get(_, ref) do
         case Memento.Query.read(Block, ref) do
-          nil ->
-            {:error, :eris_block_not_found}
-
           %Block{data: data} ->
             {:ok, data}
+
+          nil ->
+            {:error, :eris_block_not_found}
         end
       end
     end
@@ -55,6 +57,7 @@ defmodule CPub.ERIS do
   @doc """
   Encode some data using ERIS and persist block to database.any()
   """
+  @spec put(FragmentGraph.t() | String.t()) :: {:ok, ERIS.ReadCapability.t()}
   def put(%FragmentGraph{} = fg) do
     fg
     |> FragmentGraph.CSexp.encode()
@@ -65,15 +68,14 @@ defmodule CPub.ERIS do
     DB.transaction(fn ->
       transaction = Transaction.new()
 
-      with {read_capability, _} <- ERIS.encode(data, transaction) do
-        read_capability
-      end
+      with {read_capability, _} <- ERIS.encode(data, transaction), do: read_capability
     end)
   end
 
   @doc """
   Decode ERIS encoded content given a read capability.
   """
+  @spec get(ERIS.ReadCapability.t()) :: {:ok, {:ok, String.t()}}
   def get(read_capability) do
     DB.transaction(fn ->
       transaction = Transaction.new()
@@ -82,6 +84,8 @@ defmodule CPub.ERIS do
     end)
   end
 
+  @spec get_rdf(String.t() | ERIS.ReadCapability.t() | {:ok, ERIS.ReadCapability.t()}) ::
+          :ok | {:ok, FragmentGraph.t()} | {:error, any}
   def get_rdf(urn) when is_binary(urn) do
     urn
     |> ERIS.ReadCapability.parse()
@@ -96,7 +100,7 @@ defmodule CPub.ERIS do
 
       case ERIS.decode(read_capability, transaction) do
         {:ok, data} ->
-          data |> FragmentGraph.CSexp.decode(ERIS.ReadCapability.to_string(read_capability))
+          FragmentGraph.CSexp.decode(data, ERIS.ReadCapability.to_string(read_capability))
 
         error ->
           DB.abort(error)

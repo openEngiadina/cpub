@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -8,26 +8,31 @@ defmodule CPub.Web.Authorization.AuthorizationController do
   Implements the OAuth 2.0 Authorization Endpoint
   (https://tools.ietf.org/html/rfc6749#section-3.1).
   """
+
   use CPub.Web, :controller
 
-  action_fallback CPub.Web.Authorization.FallbackController
+  import CPub.Web.Authorization.Utils
 
   alias CPub.User
 
   alias CPub.Web.Authorization
-  import CPub.Web.Authorization.Utils
 
   plug :fetch_flash
 
-  defp set_oauth_redirect_on_error(%Plug.Conn{} = conn, _opts),
-    do: assign(conn, :oauth_redirect_on_error, true)
+  action_fallback CPub.Web.Authorization.FallbackController
 
   # allow `FallbackController` to redirect to redirect_uri with error
   plug :set_oauth_redirect_on_error
 
+  @spec set_oauth_redirect_on_error(Plug.Conn.t(), Plug.opts()) :: Plug.Conn.t()
+  defp set_oauth_redirect_on_error(%Plug.Conn{} = conn, _opts) do
+    assign(conn, :oauth_redirect_on_error, true)
+  end
+
   @doc """
   Check what OAuth 2.0 flow we are in and delegate.
   """
+  @spec authorize(Plug.Conn.t(), map) :: Plug.Conn.t()
   def authorize(%Plug.Conn{} = conn, params) do
     case Map.get(conn.params, "response_type") do
       "code" ->
@@ -39,14 +44,10 @@ defmodule CPub.Web.Authorization.AuthorizationController do
   end
 
   # Display a interface where user is asked to accept or deny the authorization request.
+  @spec authorize(atom, Plug.Conn.t(), map) :: Plug.Conn.t()
   defp authorize(
          response_type,
-         %Plug.Conn{
-           method: "GET",
-           assigns: %{
-             session: session
-           }
-         } = conn,
+         %Plug.Conn{method: "GET", assigns: %{session: session}} = conn,
          _params
        ) do
     with {:ok, user} <- User.get_by_id(session.user),
@@ -55,8 +56,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
            get_redirect_uri(fetch_query_params(conn), client),
          {:ok, scope} <- get_scope(conn, client),
          {:ok, state} <- get_state(conn) do
-      conn
-      |> render("authorize.html", %{
+      render(conn, "authorize.html", %{
         client: client,
         oauth_params: %{
           client_id: client.id,
@@ -73,10 +73,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
   # request accepted
   defp authorize(
          :code,
-         %Plug.Conn{
-           method: "POST",
-           assigns: %{session: session}
-         } = conn,
+         %Plug.Conn{method: "POST", assigns: %{session: session}} = conn,
          %{"request_accepted" => _params}
        ) do
     with {:ok, user} <- User.get_by_id(session.user),
@@ -89,10 +86,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
         redirect_uri
         |> Map.put(
           :query,
-          URI.encode_query(%{
-            code: authorization.authorization_code,
-            state: state
-          })
+          URI.encode_query(%{code: authorization.authorization_code, state: state})
         )
         |> URI.to_string()
 
@@ -104,9 +98,7 @@ defmodule CPub.Web.Authorization.AuthorizationController do
   # request denied
   defp authorize(
          _,
-         %Plug.Conn{
-           method: "POST"
-         } = _conn,
+         %Plug.Conn{method: "POST"} = _conn,
          %{"request_denied" => _params}
        ) do
     {:error, :access_denied, "access denied"}
@@ -118,14 +110,14 @@ defmodule CPub.Web.Authorization.AuthorizationController do
          %Plug.Conn{method: "GET"} = conn,
          _params
        ) do
-    # get and validate all required field so that user is not sent to login if request is invalid in first place
+    # get and validate all required field so that user is not sent to login
+    # if request is invalid in first place
     with {:ok, client} <- get_client(conn),
          {:ok, _redirect_uri} <-
            get_redirect_uri(fetch_query_params(conn), client),
          {:ok, _scope} <- get_scope(conn, client),
          {:ok, _state} <- get_state(conn) do
-      conn
-      |> redirect(
+      redirect(conn,
         to:
           Routes.authentication_session_path(conn, :login, %{
             "on_success" =>

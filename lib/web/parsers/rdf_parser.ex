@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -15,7 +16,7 @@ defmodule CPub.Web.RDFParser do
 
   @doc false
   @impl Plug.Parsers
-  @spec init(keyword) :: Plug.opts()
+  @spec init(Plug.opts()) :: Plug.opts()
   def init(opts), do: opts
 
   @doc false

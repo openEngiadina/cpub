@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -19,16 +19,17 @@ defmodule CPub.Web.Authorization.AuthorizationPlug do
 
   alias CPub.Web.Authorization
 
+  @spec init(Plug.opts()) :: Plug.opts()
   def init(opts), do: opts
 
+  @spec call(Plug.Conn.t(), Plug.opts()) :: Plug.Conn.t()
   def call(%Plug.Conn{} = conn, _opts) do
     case fetch_token_from_header(conn) do
       {:ok, access_token} ->
         with {:ok, token} <- Authorization.Token.get(access_token),
              {:ok, authorization} <- Authorization.get(token.authorization),
              false <- Authorization.Token.expired?(token) do
-          conn
-          |> assign(:authorization, authorization)
+          assign(conn, :authorization, authorization)
         else
           _ ->
             # If token is invalid or expired then halt the connection and display error

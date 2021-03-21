@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -10,8 +10,6 @@ defmodule CPub.Web.Authorization.TokenController do
 
   use CPub.Web, :controller
 
-  action_fallback CPub.Web.Authorization.FallbackController
-
   import CPub.Web.Authorization.Utils
 
   alias CPub.User
@@ -19,26 +17,9 @@ defmodule CPub.Web.Authorization.TokenController do
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.{Scope, Token}
 
-  defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code, client: client}) do
-    with {:ok, authorization} <- Authorization.get_by_code(conn.params["code"]),
-         true <- authorization.client == client.id do
-      {:ok, authorization}
-    else
-      _ ->
-        {:error, :invalid_grant, "invalid code"}
-    end
-  end
+  action_fallback CPub.Web.Authorization.FallbackController
 
-  defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :refresh_token}) do
-    case Authorization.get_by_refresh_token(conn.params["refresh_token"]) do
-      {:ok, authorization} ->
-        {:ok, authorization}
-
-      _ ->
-        {:error, :invalid_grant, "invalid refresh token"}
-    end
-  end
-
+  @spec token(Plug.Conn.t(), map) :: Plug.Conn.t() | {:error, any, any}
   def token(%Plug.Conn{} = conn, %{} = _params) do
     case Map.get(conn.params, "grant_type") do
       "authorization_code" ->
@@ -62,10 +43,8 @@ defmodule CPub.Web.Authorization.TokenController do
         end
 
       "refresh_token" ->
-        with {:ok, authorization} <-
-               get_authorization(conn, %{grant_type: :refresh_token}),
-             {:ok, token} <-
-               Token.refresh(authorization) do
+        with {:ok, authorization} <- get_authorization(conn, %{grant_type: :refresh_token}),
+             {:ok, token} <- Token.refresh(authorization) do
           conn
           |> put_status(:ok)
           |> put_view(JSONView)
@@ -104,6 +83,27 @@ defmodule CPub.Web.Authorization.TokenController do
 
       _ ->
         {:error, :unsupported_grant_type, "unsupported grant_type."}
+    end
+  end
+
+  @spec get_authorization(Plug.Conn.t(), map) :: {:ok, Authorization.t()} | {:error, any, any}
+  defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code, client: client}) do
+    with {:ok, authorization} <- Authorization.get_by_code(conn.params["code"]),
+         true <- authorization.client == client.id do
+      {:ok, authorization}
+    else
+      _ ->
+        {:error, :invalid_grant, "invalid code"}
+    end
+  end
+
+  defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :refresh_token}) do
+    case Authorization.get_by_refresh_token(conn.params["refresh_token"]) do
+      {:ok, authorization} ->
+        {:ok, authorization}
+
+      _ ->
+        {:error, :invalid_grant, "invalid refresh token"}
     end
   end
 end

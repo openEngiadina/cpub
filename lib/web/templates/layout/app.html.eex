@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,minimal-ui" />
     <title>
-        <%= CPub.Config.instance[:name] %>
+      <%= CPub.Config.instance[:name] %>
     </title>
     <style>
      body {
@@ -238,9 +238,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
     </style>
   </head>
   <body>
-      <div class="container">
-          <h1><%= CPub.Config.instance[:name] %></h1>
-          <%= @inner_content %>
+    <div class="container">
+      <h1><%= CPub.Config.instance[:name] %></h1>
+      <%= @inner_content %>
     </div>
   </body>
 </html>

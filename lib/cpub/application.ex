@@ -52,6 +52,7 @@ defmodule CPub.Application do
     ]
   end
 
+  @dialyzer {:nowarn_function, http_children: 2}
   defp http_children(_, :test), do: http_children(Tesla.Adapter.Gun, nil)
 
   defp http_children(Tesla.Adapter.Gun, _) do

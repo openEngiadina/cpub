@@ -12,13 +12,9 @@ defmodule RDF.JSON.Decoder do
   @type object :: %{String.t() => String.t()}
 
   @impl Serialization.Decoder
-  @spec decode(iodata, keyword) ::
-          {:ok, Graph.t()} | {:error, Jason.DecodeError.t()}
+  @spec decode(iodata, keyword) :: {:ok, Graph.t()} | {:error, Jason.DecodeError.t()}
   def decode(content, opts \\ []) do
-    with {:ok, json_object} <- Jason.decode(content),
-         ok_graph <- to_rdf(json_object, opts) do
-      ok_graph
-    end
+    with {:ok, json_object} <- Jason.decode(content), do: to_rdf(json_object, opts)
   end
 
   @spec to_rdf(%{String.t() => %{String.t() => [object]}}, keyword) :: {:ok, Graph.t()}
@@ -52,8 +48,7 @@ defmodule RDF.JSON.Decoder do
     end
   end
 
-  @spec subject_object_to_triples(Statement.subject(), %{String.t() => object}) ::
-          [Triple.t()]
+  @spec subject_object_to_triples(Statement.subject(), %{String.t() => object}) :: [Triple.t()]
   defp subject_object_to_triples(subject, subject_object) do
     Enum.reduce(subject_object, [], fn {predicate, value_array}, triples ->
       triples ++ value_array_to_triples(subject, IRI.new!(predicate), value_array)
