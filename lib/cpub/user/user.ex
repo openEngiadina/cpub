@@ -24,18 +24,16 @@ defmodule CPub.User do
 
   alias Memento.Query
 
-  @type username :: atom | String.t() | FragmentGraph.FragmentReference.t()
-
   @type t :: %__MODULE__{
           id: String.t(),
-          username: username,
+          username: String.t(),
           profile: FragmentGraph.t(),
           inbox: IRI.t(),
           outbox: IRI.t()
         }
 
   # don't check if user already exists, just write.
-  @spec create!(username) :: t
+  @spec create!(String.t()) :: t
   def create!(username) do
     with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put(),
          inbox <- DB.Set.new(),
@@ -57,7 +55,7 @@ defmodule CPub.User do
     end
   end
 
-  @spec create(username) :: {:ok, t} | {:error, any}
+  @spec create(String.t()) :: {:ok, t} | {:error, any}
   def create(username) do
     DB.transaction(fn ->
       case Query.select(__MODULE__, {:==, :username, username}) do
@@ -70,7 +68,7 @@ defmodule CPub.User do
     end)
   end
 
-  @spec default_profile(username) :: FragmentGraph.t()
+  @spec default_profile(String.t()) :: FragmentGraph.t()
   defp default_profile(username) do
     FragmentGraph.new()
     |> FragmentGraph.add(RDF.type(), AS.Person)
@@ -92,7 +90,7 @@ defmodule CPub.User do
   @doc """
   Get a single user by username.
   """
-  @spec get(username) :: {:ok, t} | {:error, any}
+  @spec get(String.t()) :: {:ok, t} | {:error, any}
   def get(username) do
     DB.transaction(fn ->
       Query.select(__MODULE__, {:==, :username, username})
