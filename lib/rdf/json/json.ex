@@ -4,7 +4,8 @@
 
 defmodule RDF.JSON do
   @moduledoc """
-  `RDF.JSON` provides support for reading and writing the RDF 1.1 JSON Alternate Serialization (RDF/JSON) format.
+  `RDF.JSON` provides support for reading and writing the RDF 1.1 JSON Alternate
+  Serialization (RDF/JSON) format.
 
   see <https://www.w3.org/TR/rdf-json/>
   """

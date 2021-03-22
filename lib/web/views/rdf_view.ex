@@ -10,6 +10,16 @@ defmodule CPub.Web.RDFView do
   use CPub.Web, :view
 
   @spec render(String.t(), map) :: String.t() | map
+  def render("show.jsonld", %{data: %RDF.FragmentGraph{} = data}) do
+    data
+    |> RDF.FragmentGraph.description(data.base_subject)
+    |> JSON.LD.Encoder.encode!()
+  end
+
+  def render("show.jsonld", %{data: data}) do
+    JSON.LD.Encoder.encode!(data)
+  end
+
   def render("show.json", %{data: data}) do
     RDF.JSON.Encoder.from_rdf!(data)
   end

@@ -9,7 +9,6 @@ defmodule CPub.Web.JSONView do
 
   use CPub.Web, :view
 
-  def render("show.json", %{data: data}) do
-    data
-  end
+  @spec render(String.t(), map) :: String.t() | map
+  def render("show.json", %{data: data}), do: data
 end
