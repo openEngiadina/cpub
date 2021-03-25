@@ -12,6 +12,7 @@ defmodule CPub.Web.RDFParser do
 
   import RDF.Sigils
 
+  alias RDF.JSON.DocumentLoader
   alias RDF.Turtle
 
   @doc false
@@ -49,7 +50,7 @@ defmodule CPub.Web.RDFParser do
 
   def parse(%Plug.Conn{} = conn, "application", "ld+json", _params, _opts) do
     with {:ok, body, conn} <- Plug.Conn.read_body(conn),
-         {:ok, data} <- JSON.LD.Decoder.decode(body, base_iri: ~I<http://base-iri.dummy/>),
+         {:ok, data} <- JSON.LD.Decoder.decode(body, document_loader: DocumentLoader.CPub),
            skolemized_graph <- RDF.Skolem.skolemize_graph(data) do
       {:ok, %{graph: skolemized_graph}, conn}
     else
