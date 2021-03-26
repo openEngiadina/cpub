@@ -32,7 +32,11 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 # Set up mime-type for RDF/Turtle
-config :mime, :types, %{"text/turtle" => ["ttl"], "application/rdf+json" => ["rj"]}
+config :mime, :types, %{
+  "text/turtle" => ["ttl"],
+  "application/rdf+json" => ["rj"],
+  "application/ld+json" => ["jsonld"]
+}
 
 # Default prefixes for RDF
 config :rdf,

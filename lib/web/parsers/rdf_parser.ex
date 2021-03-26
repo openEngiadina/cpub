@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -11,6 +12,7 @@ defmodule CPub.Web.RDFParser do
 
   import RDF.Sigils
 
+  alias RDF.JSON.DocumentLoader
   alias RDF.Turtle
 
   @doc false
@@ -39,6 +41,17 @@ defmodule CPub.Web.RDFParser do
     with {:ok, body, conn} <- Plug.Conn.read_body(conn),
          {:ok, data} <- RDF.JSON.Decoder.decode(body, base_iri: ~I<http://base-iri.dummy/>),
          skolemized_graph <- RDF.Skolem.skolemize_graph(data) do
+      {:ok, %{graph: skolemized_graph}, conn}
+    else
+      _ ->
+        {:next, conn}
+    end
+  end
+
+  def parse(%Plug.Conn{} = conn, "application", "ld+json", _params, _opts) do
+    with {:ok, body, conn} <- Plug.Conn.read_body(conn),
+         {:ok, data} <- JSON.LD.Decoder.decode(body, document_loader: DocumentLoader.CPub),
+           skolemized_graph <- RDF.Skolem.skolemize_graph(data) do
       {:ok, %{graph: skolemized_graph}, conn}
     else
       _ ->

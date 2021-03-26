@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -9,7 +10,19 @@ defmodule CPub.Web.RDFView do
 
   use CPub.Web, :view
 
+  alias JSON.LD.DocumentLoader
+
   @spec render(String.t(), map) :: String.t() | map
+  def render("show.jsonld", %{data: %RDF.FragmentGraph{} = data}) do
+    data
+    |> RDF.FragmentGraph.description(data.base_subject)
+    |> JSON.LD.Encoder.encode!(document_loader: DocumentLoader.CPub)
+  end
+
+  def render("show.jsonld", %{data: data}) do
+    JSON.LD.Encoder.encode!(data, document_loader: DocumentLoader.CPub)
+  end
+
   def render("show.json", %{data: data}) do
     RDF.JSON.Encoder.from_rdf!(data)
   end

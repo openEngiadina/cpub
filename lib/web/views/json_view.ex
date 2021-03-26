@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -9,7 +10,6 @@ defmodule CPub.Web.JSONView do
 
   use CPub.Web, :view
 
-  def render("show.json", %{data: data}) do
-    data
-  end
+  @spec render(String.t(), map) :: String.t() | map
+  def render("show.json", %{data: data}), do: data
 end
