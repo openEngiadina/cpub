@@ -21,7 +21,7 @@ You are logged in as <%= @user.username %>.
 <%= @client.client_name %> requests access to your account for following scopes:
 
 <p>
-    <%= for scope <- @oauth_params.scope do %> <%= scope %> <% end %>
+  <%= for scope <- @oauth_params.scope do %> <%= scope %> <% end %>
 </p>
 
 <%= form_for @conn, Routes.oauth_server_authorization_path(@conn, :authorize, @oauth_params), [as: "request_accepted"], fn f -> %>

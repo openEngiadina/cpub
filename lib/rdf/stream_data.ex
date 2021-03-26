@@ -1,4 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -36,7 +37,11 @@ defmodule RDF.StreamData do
   def iri do
     scheme = one_of([constant("http"), constant("https")])
     host = string(:alphanumeric, max_length: 50)
-    path = map(list_of(string(:alphanumeric, max_length: 20), max_length: 6), &Enum.join(&1, "/"))
+
+    path =
+      string(:alphanumeric, max_length: 20)
+      |> list_of(max_length: 6)
+      |> map(&Enum.join(&1, "/"))
 
     {scheme, host, path}
     |> tuple()
@@ -45,21 +50,15 @@ defmodule RDF.StreamData do
 
   @spec subject :: StreamData.t(Statement.subject())
   @dialyzer {:nowarn_function, subject: 0}
-  def subject do
-    one_of([iri(), bnode()])
-  end
+  def subject, do: one_of([iri(), bnode()])
 
   @spec object :: StreamData.t(Statement.object())
   @dialyzer {:nowarn_function, object: 0}
-  def object do
-    one_of([iri(), bnode(), literal()])
-  end
+  def object, do: one_of([iri(), bnode(), literal()])
 
   @spec predicate :: StreamData.t(Statement.predicate())
   @dialyzer {:nowarn_function, predicate: 0}
-  def predicate do
-    iri()
-  end
+  def predicate, do: iri()
 
   @spec triple :: StreamData.t(Triple.t())
   @dialyzer {:nowarn_function, triple: 0}
@@ -90,20 +89,6 @@ defmodule RDF.StreamData do
     |> map(&Graph.new/1)
   end
 
-  defp add_statements_to_fg(fg, statements) do
-    statements
-    |> Enum.reduce(fg, fn {p, o}, fg ->
-      FragmentGraph.add(fg, p, o)
-    end)
-  end
-
-  defp add_fragment_statements_to_fg(fg, fragment_statements) do
-    fragment_statements
-    |> Enum.reduce(fg, fn {fid, p, o}, fg ->
-      FragmentGraph.add_fragment_statement(fg, fid, p, o)
-    end)
-  end
-
   @spec fragment_graph :: StreamData.t(FragmentGraph.t())
   @dialyzer {:nowarn_function, fragment_graph: 0}
   def fragment_graph do
@@ -119,6 +104,18 @@ defmodule RDF.StreamData do
       |> add_statements_to_fg(statements)
       |> add_fragment_statements_to_fg(fragment_statements)
       |> FragmentGraph.finalize()
+    end)
+  end
+
+  @spec add_statements_to_fg(FragmentGraph.t(), [Statement.t()]) :: FragmentGraph.t()
+  defp add_statements_to_fg(fg, statements) do
+    Enum.reduce(statements, fg, fn {p, o}, fg -> FragmentGraph.add(fg, p, o) end)
+  end
+
+  @spec add_fragment_statements_to_fg(FragmentGraph.t(), [Statement.t()]) :: FragmentGraph.t()
+  defp add_fragment_statements_to_fg(fg, fragment_statements) do
+    Enum.reduce(fragment_statements, fg, fn {fid, p, o}, fg ->
+      FragmentGraph.add_fragment_statement(fg, fid, p, o)
     end)
   end
 end

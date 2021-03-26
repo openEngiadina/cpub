@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -11,10 +11,6 @@ defmodule CPub.Web.Authorization.Client do
   A client holds some metadata such as a human readable name (`:client_name`)
   and the authorization scopes (`:scopes`) the client can request.
   """
-
-  alias CPub.DB
-
-  alias CPub.Web.Authorization
 
   use Memento.Table,
     attributes: [
@@ -37,14 +33,22 @@ defmodule CPub.Web.Authorization.Client do
     ],
     type: :set
 
-  defp random_secret do
-    :crypto.strong_rand_bytes(32)
-    |> Base.encode32(padding: false)
-  end
+  alias CPub.DB
+
+  alias CPub.Web.Authorization
+
+  @type t :: %__MODULE__{
+          id: String.t(),
+          redirect_uris: [String.t()],
+          client_name: String.t(),
+          scope: [String.t()],
+          client_secret: String.t()
+        }
 
   @doc """
   Create a new OAuth 2.0 client
   """
+  @spec create(map) :: {:ok, t} | {:error, any}
   def create(attrs) do
     DB.transaction(fn ->
       with {:ok, scope} <- Authorization.Scope.parse(Map.get(attrs, "scope")),
@@ -68,19 +72,11 @@ defmodule CPub.Web.Authorization.Client do
   @doc """
   Get a client by `id`.
   """
+  @spec get(String.t()) :: {:ok, t} | {:error, any}
   def get(id) do
     DB.transaction(fn ->
       Memento.Query.read(__MODULE__, id)
     end)
-  end
-
-  # Check if redirect uri is valid for client
-  defp redirect_uri_valid?(uri, %__MODULE__{} = client) do
-    if uri in client.redirect_uris do
-      {:ok, URI.parse(uri)}
-    else
-      :error
-    end
   end
 
   @doc """
@@ -92,9 +88,26 @@ defmodule CPub.Web.Authorization.Client do
   If `params` does not contain a `redirect_uri` the first uri from
   client.redirect_uris will be used.
   """
+  @spec get_redirect_uri(t, map) :: {:ok, URI.t()} | :error
   def get_redirect_uri(%__MODULE__{} = client, %{} = params) do
     params
     |> Map.get("redirect_uri", client.redirect_uris |> List.first())
     |> redirect_uri_valid?(client)
+  end
+
+  # Check if redirect uri is valid for client
+  @spec redirect_uri_valid?(String.t(), t) :: {:ok, URI.t()} | :error
+  defp redirect_uri_valid?(uri, %__MODULE__{} = client) do
+    if uri in client.redirect_uris do
+      {:ok, URI.parse(uri)}
+    else
+      :error
+    end
+  end
+
+  @spec random_secret :: String.t()
+  defp random_secret do
+    :crypto.strong_rand_bytes(32)
+    |> Base.encode32(padding: false)
   end
 end

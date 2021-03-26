@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -32,6 +32,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.OAuth2.Strategy.PublicAuthCode d
   Retrieve an access token given the specified validation code.
   """
   @impl true
+  @dialyzer {:nowarn_function, get_token: 3}
   def get_token(%Client{client_secret: nil} = client, params, headers) do
     {code, params} = Keyword.pop(params, :code, client.params["code"])
 
@@ -48,7 +49,7 @@ defmodule CPub.Web.Authentication.Strategy.OIDC.OAuth2.Strategy.PublicAuthCode d
     |> put_headers(headers)
   end
 
-  def get_token(client, params, headers) do
+  def get_token(%Client{} = client, params, headers) do
     {code, params} = Keyword.pop(params, :code, client.params["code"])
 
     unless code do

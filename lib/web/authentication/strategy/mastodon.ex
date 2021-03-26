@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -26,10 +26,56 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon do
   # TODO this should idenitfy the instance
   @default_client_name "CPub"
 
+  @spec handle_request!(Plug.Conn.t()) :: Plug.Conn.t()
+  def handle_request!(%Plug.Conn{} = conn) do
+    site = conn.params["site"]
+
+    if is_nil(site) do
+      set_errors!(conn, error("mastodon_no_site_given", "no site given"))
+    else
+      # encode the site in the OAuth 2.0 state parameter
+      state = Phoenix.Token.encrypt(conn, "ueberauth.mastodon", site)
+
+      case get_client(conn, site) do
+        {:ok, client} ->
+          Ueberauth.run_request(
+            conn,
+            strategy_name(conn),
+            {Instance,
+             [
+               site: site,
+               client_id: client.client_id,
+               client_secret: client.client_secret,
+               oauth_request_params: %{state: state, scope: "read:accounts"}
+             ]}
+          )
+
+        _ ->
+          set_errors!(conn, error("mastodon_no_client", "failed to create client"))
+      end
+    end
+  end
+
+  # Get or create a suitable client for the site.
+  @spec get_client(Plug.Conn.t(), URI.t() | String.t()) ::
+          {:ok, OAuthClient.t()} | {:error, any}
+  defp get_client(%Plug.Conn{} = conn, site) do
+    case OAuthClient.get(site) do
+      {:ok, client} ->
+        {:ok, client}
+
+      _ ->
+        create_client(conn, site)
+    end
+  end
+
   # Create a client by using the apps endpoint
-  defp create_client(conn, site) do
+  @spec create_client(Plug.Conn.t(), URI.t() | String.t()) ::
+          {:ok, OAuthClient.t()} | {:error, any}
+  defp create_client(%Plug.Conn{} = conn, site) do
     url =
-      URI.merge(site, @register_client_endpoint)
+      site
+      |> URI.merge(@register_client_endpoint)
       |> URI.to_string()
 
     headers = [{"Content-Type", "application/json"}]
@@ -52,62 +98,14 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon do
     end
   end
 
-  # Get or create a suitable client for the site.
-  defp get_client(conn, site) do
-    case OAuthClient.get(site) do
-      {:ok, client} ->
-        {:ok, client}
-
-      _ ->
-        create_client(conn, site)
-    end
-  end
-
-  def handle_request!(%Plug.Conn{} = conn) do
-    site = conn.params["site"]
-
-    if is_nil(site) do
-      conn
-      |> set_errors!(error("mastodon_no_site_given", "no site given"))
-    else
-      # encode the site in the OAuth 2.0 state parameter
-      state = Phoenix.Token.encrypt(conn, "ueberauth.mastodon", site)
-
-      case get_client(conn, site) do
-        {:ok, client} ->
-          conn
-          |> Ueberauth.run_request(
-            strategy_name(conn),
-            {Instance,
-             [
-               site: site,
-               client_id: client.client_id,
-               client_secret: client.client_secret,
-               oauth_request_params: %{state: state, scope: "read:accounts"}
-             ]}
-          )
-
-        _ ->
-          conn
-          |> set_errors!(error("mastodon_no_client", "failed to create client"))
-      end
-    end
-  end
-
-  defp replace_strategy(%Plug.Conn{assigns: %{ueberauth_auth: auth}} = conn) do
-    conn
-    |> assign(:ueberauth_auth, %{auth | strategy: __MODULE__})
-  end
-
-  defp replace_strategy(conn), do: conn
-
+  @spec handle_callback!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_callback!(%Plug.Conn{} = conn) do
     # extract the site from the state param
     with {:ok, site} <-
            Phoenix.Token.decrypt(conn, "ueberauth.mastodon", conn.params["state"]),
          {:ok, client} <- get_client(conn, site) do
-      conn
-      |> Ueberauth.run_callback(
+      Ueberauth.run_callback(
+        conn,
         strategy_name(conn),
         {Instance,
          [
@@ -121,4 +119,11 @@ defmodule CPub.Web.Authentication.Strategy.Mastodon do
       |> replace_strategy()
     end
   end
+
+  @spec replace_strategy(Plug.Conn.t()) :: Plug.Conn.t()
+  defp replace_strategy(%Plug.Conn{assigns: %{ueberauth_auth: auth}} = conn) do
+    assign(conn, :ueberauth_auth, %{auth | strategy: __MODULE__})
+  end
+
+  defp replace_strategy(conn), do: conn
 end

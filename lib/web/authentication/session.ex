@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -13,17 +13,24 @@ defmodule CPub.Web.Authentication.Session do
   `CPub.Web.Authorization`.
   """
 
-  alias CPub.DB
-  alias CPub.User
-
   use Memento.Table,
     attributes: [:id, :user, :last_activity],
     index: [:user],
     type: :set
 
+  alias CPub.DB
+  alias CPub.User
+
+  @type t :: %__MODULE__{
+          id: String.t(),
+          user: String.t(),
+          last_activity: DateTime.t()
+        }
+
   @doc """
   Create a new session for a user.
   """
+  @spec create(User.t()) :: {:ok, t} | {:error, any}
   def create(%User{} = user) do
     DB.transaction(fn ->
       %__MODULE__{
@@ -38,6 +45,7 @@ defmodule CPub.Web.Authentication.Session do
   @doc """
   Get a session by id.
   """
+  @spec get_by_id(String.t()) :: {:ok, t} | {:error, any}
   def get_by_id(id) do
     DB.transaction(fn ->
       Memento.Query.read(__MODULE__, id)
@@ -47,6 +55,7 @@ defmodule CPub.Web.Authentication.Session do
   @doc """
   Delete a session.
   """
+  @spec delete(String.t()) :: {:ok, t} | {:error, any}
   def delete(id) do
     DB.transaction(fn ->
       Memento.Query.delete(__MODULE__, id)

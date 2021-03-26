@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -15,7 +15,6 @@ defmodule CPub.Web.FallbackController do
   @type error_tuple :: {:error, String.Chars.t() | atom}
 
   @spec call(Plug.Conn.t(), error_tuple) :: Plug.Conn.t()
-
   def call(%Plug.Conn{} = conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)

@@ -17,7 +17,7 @@ defmodule CPub.Web.RDFParser do
 
   @doc false
   @impl Plug.Parsers
-  @spec init(keyword) :: Plug.opts()
+  @spec init(Plug.opts()) :: Plug.opts()
   def init(opts), do: opts
 
   @doc false

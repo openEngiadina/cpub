@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -12,33 +12,15 @@ defmodule CPub.Web.Authentication.SessionController do
 
   alias CPub.User
 
-  alias CPub.Web.Authentication.{OAuthClient, Session}
+  alias CPub.Web.Authentication.OAuthClient
+  alias CPub.Web.Authentication.Session
 
   action_fallback CPub.Web.FallbackController
 
-  # Store a note in the session on where the user should be redirect when authentication succeeds.
-  defp store_authentication_cb(conn) do
-    cb =
-      conn.params["on_success"] ||
-        get_session(conn, :authentication_cb) ||
-        Routes.authentication_session_path(conn, :show)
-
-    conn
-    |> put_session(:authentication_cb, cb)
-  end
-
-  # Redirect to authentication "on success" calback
-  defp authentication_success(conn) do
-    cb = get_session(conn, :authentication_cb) || Routes.authentication_session_path(conn, :show)
-
-    conn
-    |> delete_session(:authentication_cb)
-    |> redirect(to: cb)
-  end
-
+  @spec login(Plug.Conn.t(), map) :: Plug.Conn.t()
   def login(%Plug.Conn{assigns: %{session: _session}} = conn, _params) do
     conn
-    |> store_authentication_cb()
+    |> store_authentication_callback()
     |> authentication_success()
   end
 
@@ -50,22 +32,21 @@ defmodule CPub.Web.Authentication.SessionController do
 
   def login(%Plug.Conn{method: "GET"} = conn, _params) do
     conn
-    |> store_authentication_cb()
+    |> store_authentication_callback()
     |> render_login()
   end
 
   @doc """
-  Try and figure out if credential is a username, a Fediverse server or an other useable identifier and dispatch the proper provider.
+  Try and figure out if credential is a username, a Fediverse server or an other
+  useable identifier and dispatch the proper provider.
   """
   def login(%Plug.Conn{method: "POST"} = conn, %{"credential" => credential}) do
     uri = URI.parse(credential)
 
     if uri.scheme == "https" do
-      conn
-      |> login(%{site: credential})
+      login(conn, %{site: credential})
     else
-      conn
-      |> login(%{username: credential})
+      login(conn, %{username: credential})
     end
   end
 
@@ -74,66 +55,54 @@ defmodule CPub.Web.Authentication.SessionController do
          {:ok, registration} <- User.Registration.get_user_registration(user) do
       case registration.provider do
         :internal ->
-          conn
-          |> redirect(
-            to:
-              Routes.authentication_provider_path(conn, :request, "internal", %{
-                username: username
-              })
-          )
+          params = %{username: username}
+          path = Routes.authentication_provider_path(conn, :request, "internal", params)
+
+          redirect(conn, to: path)
 
         :oidc ->
-          conn
-          |> redirect(
-            to:
-              Routes.authentication_provider_path(conn, :request, "oidc", %{
-                site: registration.site
-              })
-          )
+          params = %{site: registration.site}
+          path = Routes.authentication_provider_path(conn, :request, "oidc", params)
+
+          redirect(conn, to: path)
 
         :mastodon ->
-          conn
-          |> redirect(
-            to:
-              Routes.authentication_provider_path(conn, :request, "mastodon", %{
-                site: registration.site
-              })
-          )
+          params = %{site: registration.site}
+          path = Routes.authentication_provider_path(conn, :request, "mastodon", params)
+
+          redirect(conn, to: path)
       end
     else
       _ ->
         # if user does not exist still forward to local login
-        conn
-        |> redirect(
-          to: Routes.authentication_provider_path(conn, :request, "local", %{username: username})
-        )
+        params = %{username: username}
+        path = Routes.authentication_provider_path(conn, :request, "internal", params)
+
+        redirect(conn, to: path)
     end
   end
 
   def login(%Plug.Conn{method: "POST"} = conn, %{site: site}) do
-    conn
-    |> redirect(
-      to:
-        Routes.authentication_provider_path(conn, :request, "mastodon", %{
-          site: site
-        })
-    )
+    params = %{site: site}
+    path = Routes.authentication_provider_path(conn, :request, "mastodon", params)
+
+    redirect(conn, to: path)
   end
 
+  @spec render_login(Plug.Conn.t()) :: Plug.Conn.t()
   def render_login(%Plug.Conn{} = conn) do
     with {:ok, clients} <- OAuthClient.get_displayable() do
-      conn
-      |> render("login.html",
+      render(conn, "login.html",
         callback_url: Routes.authentication_session_path(conn, :login),
         clients: clients
       )
     end
   end
 
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
     with {:ok, user} <- User.get_by_id(session.user) do
-      conn
-      |> render("show.html",
+      render(conn, "show.html",
         logout_url: Routes.authentication_session_path(conn, :logout),
         username: user.username
       )
@@ -141,12 +110,12 @@ defmodule CPub.Web.Authentication.SessionController do
   end
 
   def show(%Plug.Conn{} = conn, _params) do
-    conn
-    |> redirect(to: Routes.authentication_session_path(conn, :login))
+    redirect(conn, to: Routes.authentication_session_path(conn, :login))
   end
 
+  @spec logout(Plug.Conn.t(), map) :: Plug.Conn.t()
   def logout(%Plug.Conn{assigns: %{session: session}} = conn, _params) do
-    Session.delete(session.id)
+    _ = Session.delete(session.id)
 
     conn
     |> clear_session()
@@ -159,16 +128,38 @@ defmodule CPub.Web.Authentication.SessionController do
     |> authentication_success()
   end
 
-  @doc """
-  Create a session, put it in browser session and redirect to the `on_success` param.
-
-  This is usually the last authentication step.
-  """
+  # Create a session, put it in browser session and redirect to the `on_success`
+  # param. This is usually the last authentication step.
+  @spec create_session(Plug.Conn.t(), User.t()) :: Plug.Conn.t()
   def create_session(%Plug.Conn{} = conn, %User{} = user) do
     with {:ok, session} <- Session.create(user) do
       conn
       |> put_session(:session_id, session.id)
       |> authentication_success()
     end
+  end
+
+  # Store a note in the session on where the user should be redirect when
+  # authentication succeeds.
+  @spec store_authentication_callback(Plug.Conn.t()) :: Plug.Conn.t()
+  defp store_authentication_callback(conn) do
+    callback =
+      conn.params["on_success"] ||
+        get_session(conn, :authentication_callback) ||
+        Routes.authentication_session_path(conn, :show)
+
+    put_session(conn, :authentication_callback, callback)
+  end
+
+  # Redirect to authentication "on success" callback.
+  @spec authentication_success(Plug.Conn.t()) :: Plug.Conn.t()
+  defp authentication_success(conn) do
+    callback =
+      get_session(conn, :authentication_callback) ||
+        Routes.authentication_session_path(conn, :show)
+
+    conn
+    |> delete_session(:authentication_callback)
+    |> redirect(to: callback)
   end
 end

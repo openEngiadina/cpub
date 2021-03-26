@@ -13,11 +13,6 @@ defmodule CPub.Web.Authentication.OAuthClient do
   authorization to access resources on CPub.
   """
 
-  alias CPub.DB
-  alias CPub.Web.Authentication.OAuthRequest
-
-  alias OAuth2.{AccessToken, Client, Error, Response}
-
   use Memento.Table,
     attributes: [
       # The site of the identity provider (in OIDC lingo: issuer)
@@ -35,6 +30,20 @@ defmodule CPub.Web.Authentication.OAuthClient do
     ],
     type: :set
 
+  alias CPub.DB
+  alias CPub.Web.Authentication.OAuthRequest
+
+  alias OAuth2.{AccessToken, Client, Error, Response}
+
+  @type t :: %__MODULE__{
+          site: String.t(),
+          provider: String.t(),
+          client_id: String.t(),
+          client_secret: String.t(),
+          display_name: String.t()
+        }
+
+  @spec create(map) :: {:ok, t} | {:error, any}
   def create(attrs) do
     DB.transaction(fn ->
       %__MODULE__{
@@ -51,11 +60,12 @@ defmodule CPub.Web.Authentication.OAuthClient do
   @doc """
   Get the `OAuthClient` for the given site.
   """
+  @spec get(String.t()) :: {:ok, t} | {:error, any}
   def get(site) do
     DB.transaction(fn ->
       case Memento.Query.read(__MODULE__, site) do
         nil ->
-          DB.abort(:not_found)
+          _ = DB.abort(:not_found)
 
         client ->
           client
@@ -66,6 +76,7 @@ defmodule CPub.Web.Authentication.OAuthClient do
   @doc """
   Returns list of Clients with display name.
   """
+  @spec get_displayable :: {:ok, [t]} | {:error, any}
   def get_displayable do
     DB.transaction(fn ->
       Memento.Query.select(__MODULE__, {:!=, :display_name, nil})
@@ -89,6 +100,7 @@ defmodule CPub.Web.Authentication.OAuthClient do
     end
   end
 
+  @spec token_url(Client.t(), Client.params(), Client.headers()) :: {Client.t(), String.t()}
   defp token_url(client, params, headers) do
     client
     |> token_post_header()
@@ -96,12 +108,14 @@ defmodule CPub.Web.Authentication.OAuthClient do
     |> to_url(:token_url)
   end
 
+  @spec token_post_header(Client.t()) :: Client.t()
   defp token_post_header(%Client{token_method: :post} = client) do
     Client.put_header(client, "content-type", "application/x-www-form-urlencoded")
   end
 
   defp token_post_header(%Client{} = client), do: client
 
+  @spec to_url(Client.t(), atom | String.t()) :: {Client.t(), String.t()}
   defp to_url(%Client{token_method: :post} = client, :token_url) do
     {client, endpoint(client, client.token_url)}
   end
@@ -113,6 +127,7 @@ defmodule CPub.Web.Authentication.OAuthClient do
     {client, url}
   end
 
+  @spec endpoint(Client.t(), String.t()) :: String.t()
   defp endpoint(client, <<"/"::utf8, _::binary>> = endpoint), do: "#{client.site}#{endpoint}"
   defp endpoint(_client, endpoint), do: endpoint
 end

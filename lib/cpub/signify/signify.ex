@@ -9,19 +9,25 @@ defmodule CPub.Signify do
   Signatures for content-addressed content using an RDF vocabulary.
   """
 
-  alias CPub.DB
-  alias CPub.Signify
+  use RDF.Vocabulary.Namespace
 
   alias RDF.FragmentGraph
 
-  use RDF.Vocabulary.Namespace
+  alias CPub.DB
+  alias CPub.Signify
+
+  alias :monocypher, as: Monocypher
 
   defvocab(NS,
     base_iri: "http://purl.org/signify#",
     file: "rdf-signify.ttl"
   )
 
-  alias :monocypher, as: Monocypher
+  @type t :: %{
+          :id => String.t(),
+          required(:message) => String.t(),
+          required(:public_key) => String.t()
+        }
 
   defmodule Signature do
     @moduledoc """
@@ -32,7 +38,23 @@ defmodule CPub.Signify do
       index: [:message],
       type: :set
 
-    defp insert!(fg, public_key, message) do
+    @doc """
+    Verify signature and add to index if valid.
+    """
+    @dialyzer {:nowarn_function, insert: 1}
+    @spec insert(FragmentGraph.t()) :: {:ok, any} | :invalid_signature
+    def insert(%FragmentGraph{} = fg) do
+      case CPub.Signify.verify(fg) do
+        {:ok, %{message: message, public_key: public_key}} ->
+          insert!(fg, public_key, RDF.IRI.to_string(message))
+
+        {:error, _} ->
+          :invalid_signature
+      end
+    end
+
+    @spec insert!(FragmentGraph.t(), String.t(), String.t()) :: {:ok, any} | {:error, any}
+    def insert!(fg, public_key, message) do
       DB.transaction(fn ->
         with {:ok, read_capability} <- CPub.ERIS.put(fg),
              {:ok, message_read_capability} <- ERIS.ReadCapability.parse(message) do
@@ -50,19 +72,6 @@ defmodule CPub.Signify do
             DB.abort(:can_not_insert_signature)
         end
       end)
-    end
-
-    @doc """
-    Verify signature and add to index if valid.
-    """
-    def insert(%FragmentGraph{} = fg) do
-      case CPub.Signify.verify(fg) do
-        {:ok, %{message: message, public_key: public_key}} ->
-          insert!(fg, public_key, RDF.IRI.to_string(message))
-
-        _ ->
-          :invalid_signature
-      end
     end
   end
 
@@ -148,7 +157,7 @@ defmodule CPub.Signify do
   @doc """
   Verify signature in the `RDF.FragmentGraph` `fg`.
   """
-  @spec verify(FragmentGraph.t()) :: {:ok, FragmentGraph.t()} | {:error, atom()}
+  @spec verify(FragmentGraph.t()) :: {:ok, t} | {:error, atom}
   def verify(%FragmentGraph{} = fg) do
     signature_type = RDF.IRI.new(NS.Signature)
 

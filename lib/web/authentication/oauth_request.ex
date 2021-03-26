@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
 # SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -11,7 +12,7 @@ defmodule CPub.Web.Authentication.OAuthRequest do
 
   alias CPub.HTTP
 
-  alias OAuth2.{Client, Error, Response}
+  alias OAuth2.{AccessToken, Client, Error, Response}
 
   require Logger
 
@@ -31,7 +32,7 @@ defmodule CPub.Web.Authentication.OAuthRequest do
 
     if Application.get_env(:oauth2, :debug) do
       Logger.debug("""
-        OAuth2 Provider Request
+        OAuth2 Provider Request (CPub)
         url: #{inspect(url)}
         method: #{inspect(method)}
         headers: #{inspect(req_headers)}
@@ -78,6 +79,8 @@ defmodule CPub.Web.Authentication.OAuthRequest do
     end
   end
 
+  @spec process_body(Client.t(), non_neg_integer, Client.headers(), any) ::
+          {:ok, Response.t()} | {:error, Response.t()}
   defp process_body(client, status, headers, body) when is_binary(body) do
     response = Response.new(client, status, headers, body)
 
@@ -87,6 +90,7 @@ defmodule CPub.Web.Authentication.OAuthRequest do
     end
   end
 
+  @spec process_url(Client.t(), String.t()) :: String.t()
   defp process_url(client, url) do
     case String.downcase(url) do
       <<"http://"::utf8, _::binary>> -> url
@@ -95,19 +99,23 @@ defmodule CPub.Web.Authentication.OAuthRequest do
     end
   end
 
+  @spec process_params(String.t(), map | nil) :: String.t()
   defp process_params(url, nil), do: url
   defp process_params(url, params), do: "#{url}?#{URI.encode_query(params)}"
 
+  @spec req_headers(Client.t(), Client.headers()) :: Client.headers()
   defp req_headers(%Client{token: nil} = client, headers), do: headers ++ client.headers
 
   defp req_headers(%Client{token: token} = client, headers) do
     [authorization_header(token) | headers] ++ client.headers
   end
 
+  @spec authorization_header(AccessToken.t()) :: {String.t(), String.t()}
   defp authorization_header(token) do
     {"authorization", "#{token.token_type} #{token.access_token}"}
   end
 
+  @spec encode_request_body(any, String.t(), module | nil) :: String.t()
   defp encode_request_body("", _, _), do: ""
   defp encode_request_body([], _, _), do: ""
 
@@ -118,6 +126,7 @@ defmodule CPub.Web.Authentication.OAuthRequest do
   defp encode_request_body(body, _mime, nil), do: body
   defp encode_request_body(body, _mime, serializer), do: serializer.encode!(body)
 
+  @spec process_request_headers(Client.headers(), String.t()) :: Client.headers()
   defp process_request_headers(headers, content_type) do
     case List.keyfind(headers, "accept", 0) do
       {"accept", _} -> headers

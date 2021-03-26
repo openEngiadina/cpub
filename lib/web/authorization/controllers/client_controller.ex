@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
-# SPDX-FileCopyrightText: 2020 rustra <rustra@disroot.org>
+# SPDX-FileCopyrightText: 2020-2021 pukkamustard <pukkamustard@posteo.net>
+# SPDX-FileCopyrightText: 2020-2021 rustra <rustra@disroot.org>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -9,6 +9,7 @@ defmodule CPub.Web.Authorization.ClientController do
 
   See also [RFC 7591: OAuth 2.0 Dynamic Client Registration Protocol](https://tools.ietf.org/html/rfc7591)
   """
+
   use CPub.Web, :controller
 
   alias CPub.Web.Authorization.Client
@@ -20,9 +21,7 @@ defmodule CPub.Web.Authorization.ClientController do
   """
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(%Plug.Conn{body_params: body} = conn, _params) do
-    attrs =
-      body
-      |> Map.take(["client_name", "redirect_uris", "scope"])
+    attrs = Map.take(body, ["client_name", "redirect_uris", "scope"])
 
     with {:ok, client} <- Client.create(attrs) do
       conn
