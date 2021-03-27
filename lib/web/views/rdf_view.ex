@@ -13,6 +13,7 @@ defmodule CPub.Web.RDFView do
   alias JSON.LD.DocumentLoader
 
   @spec render(String.t(), map) :: String.t() | map
+  @dialyzer {:nowarn_function, render: 2}
   def render("show.jsonld", %{data: %RDF.FragmentGraph{} = data}) do
     data
     |> RDF.FragmentGraph.description(data.base_subject)
