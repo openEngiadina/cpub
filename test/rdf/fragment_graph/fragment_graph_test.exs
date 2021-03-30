@@ -84,6 +84,25 @@ defmodule RDF.FragmentGraphTest do
       fg =
         FragmentGraph.new(EX.Foo)
         |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Bar)
+        |> FragmentGraph.add_fragment_statement("abc", EX.p(), EX.Foo2)
+
+      triple1 = RDF.Triple.new(~I<http://example.com/Foo#abc>, RDF.type(), EX.Bar)
+      triple2 = RDF.Triple.new(~I<http://example.com/Foo#abc>, EX.p(), EX.Foo2)
+
+      assert triple1 in RDF.Data.statements(fg)
+      assert triple2 in RDF.Data.statements(fg)
+
+      fg_deleted =
+        fg
+        |> FragmentGraph.delete_fragment_statement("abc", RDF.type(), EX.Bar)
+
+      assert triple2 in RDF.Data.statements(fg_deleted)
+    end
+
+    test "deletes a fragment statement so that there are no longer any statements for fragment" do
+      fg =
+        FragmentGraph.new(EX.Foo)
+        |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Bar)
 
       triple = RDF.Triple.new(~I<http://example.com/Foo#abc>, RDF.type(), EX.Bar)
 
