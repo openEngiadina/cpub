@@ -397,17 +397,18 @@ defmodule RDF.FragmentGraph do
         predicate,
         object
       ) do
-    case Map.update(
-           fragment_statements,
-           fragment_identifier,
-           %{},
-           &delete_from_statements(&1, predicate, object, base_subject: fg.base_subject)
-         ) do
-      %{} ->
+    with new_fragment_statements <-
+           Map.update(
+             fragment_statements,
+             fragment_identifier,
+             %{},
+             &delete_from_statements(&1, predicate, object, base_subject: fg.base_subject)
+           ) do
+      if Enum.empty?(new_fragment_statements[fragment_identifier]) do
         %{fg | fragment_statements: Map.delete(fragment_statements, fragment_identifier)}
-
-      new_fragment_statements ->
+      else
         %{fg | fragment_statements: new_fragment_statements}
+      end
     end
   end
 
