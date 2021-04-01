@@ -79,7 +79,7 @@ defmodule CPub.Web.WebFinger do
     [
       %{
         "rel" => @open_id_connect_issuer,
-        "href" => Config.base_url()
+        "href" => "#{Config.base_url()}auth/login"
       }
     ]
   end

@@ -11,8 +11,14 @@ use Mix.Config
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 
+port = System.get_env("PORT") || 4000
+
+config :cpub,
+  namespace: CPub,
+  base_url: System.get_env("BASE_URL") || "http://localhost:#{port}/"
+
 config :cpub, CPub.Web.Endpoint,
-  http: [port: System.get_env("PORT") || 4000],
+  http: [port: port],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
