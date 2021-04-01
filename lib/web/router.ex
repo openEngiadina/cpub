@@ -22,6 +22,15 @@ defmodule CPub.Web.Router do
       json_decoder: Phoenix.json_library()
   end
 
+  pipeline :well_known do
+    plug :accepts, ["json", "jrd+json"]
+
+    plug Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      pass: ["*/*"],
+      json_decoder: Phoenix.json_library()
+  end
+
   pipeline :api do
     plug :accepts, ["jsonld", "rj", "ttl"]
 
@@ -31,14 +40,14 @@ defmodule CPub.Web.Router do
   end
 
   pipeline :browser do
-    plug(:accepts, ["html"])
+    plug :accepts, ["html"]
 
     plug Plug.Parsers,
       parsers: [:urlencoded, :multipart],
       pass: ["*/*"]
 
-    plug(:fetch_session)
-    plug(:fetch_flash)
+    plug :fetch_session
+    plug :fetch_flash
   end
 
   # Authentication (only used to accept/deny an OAuth authorization)
@@ -58,19 +67,19 @@ defmodule CPub.Web.Router do
     pipe_through :session_authentication
 
     # Session
-    get("/login", SessionController, :login)
-    post("/login", SessionController, :login)
-    get("/session", SessionController, :show)
-    post("/logout", SessionController, :logout)
+    get "/login", SessionController, :login
+    post "/login", SessionController, :login
+    get "/session", SessionController, :show
+    post "/logout", SessionController, :logout
 
     # Registration
-    get("/register", RegistrationController, :register)
-    post("/register", RegistrationController, :register)
+    get "/register", RegistrationController, :register
+    post "/register", RegistrationController, :register
 
     # Ueberauth routes for authentication providers
-    get("/:provider", ProviderController, :request)
-    get("/:provider/callback", ProviderController, :callback)
-    post("/:provider/callback", ProviderController, :callback)
+    get "/:provider", ProviderController, :request
+    get "/:provider/callback", ProviderController, :callback
+    post "/:provider/callback", ProviderController, :callback
   end
 
   ## OAuth 2.0 server
@@ -79,15 +88,22 @@ defmodule CPub.Web.Router do
     pipe_through :session_authentication
 
     # Client registration
-    post("/clients", ClientController, :create)
+    post "/clients", ClientController, :create
 
     # Authorization Endpoint
-    get("/authorize", AuthorizationController, :authorize)
-    post("/authorize", AuthorizationController, :authorize)
+    get "/authorize", AuthorizationController, :authorize
+    post "/authorize", AuthorizationController, :authorize
 
     # Token Endpoint
-    post("/token", TokenController, :token)
+    post "/token", TokenController, :token
     # TODO post("/revoke", TokenController, :revoke)
+  end
+
+  # Well-known URIs
+  scope "/.well-known", CPub.Web.WebFinger do
+    pipe_through :well_known
+
+    get "/webfinger", WebFingerController, :resource
   end
 
   scope "/", CPub.Web do
