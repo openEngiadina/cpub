@@ -92,7 +92,7 @@ defmodule CPub.Web.UserController do
 
   @spec get_authorized_user(Plug.Conn.t(), keyword) :: {:ok, User.t()} | {:error, any}
   defp get_authorized_user(
-         %Plug.Conn{assigns: %{authorization: authorization, params: params}},
+         %Plug.Conn{assigns: %{authorization: authorization}, params: params},
          scope: scope
        ) do
     if scope_subset?(scope, authorization.scope) do
