@@ -91,16 +91,21 @@ defmodule CPub.Web.UserController do
   end
 
   @spec get_authorized_user(Plug.Conn.t(), keyword) :: {:ok, User.t()} | {:error, any}
-  defp get_authorized_user(%Plug.Conn{} = conn, scope: scope) do
-    if scope_subset?(scope, conn.assigns.authorization.scope) do
-      with {:ok, user} <- User.get_by_id(conn.assigns.authorization.user),
-           true <- conn.params["user_id"] === user.username do
+  defp get_authorized_user(
+         %Plug.Conn{assigns: %{authorization: authorization, params: params}},
+         scope: scope
+       ) do
+    if scope_subset?(scope, authorization.scope) do
+      with {:ok, user} <- User.get_by_id(authorization.user),
+           true <- params["user_id"] === user.username do
         {:ok, user}
       end
     else
       {:error, :unauthorized}
     end
   end
+
+  defp get_authorized_user(%Plug.Conn{} = _, _), do: {:error, :unauthorized}
 
   # Add a inbox/outbox property to user profile based on current connection.
   @spec add_inbox_outbox(FragmentGraph.t(), Plug.Conn.t()) :: FragmentGraph.t()
