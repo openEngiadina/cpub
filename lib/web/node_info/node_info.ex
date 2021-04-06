@@ -14,13 +14,6 @@ defmodule CPub.Web.NodeInfo do
 
   @type version :: :"2.0" | :"2.1"
 
-  @type software :: %{
-          required(:name) => String.t(),
-          required(:version) => String.t(),
-          optional(:repository) => String.t(),
-          optional(:homepage) => String.t()
-        }
-
   @type protocol ::
           :activitypub
           | :buddycloud
@@ -73,6 +66,13 @@ defmodule CPub.Web.NodeInfo do
           | :wordpress
           | :xmpp
 
+  @type software :: %{
+          required(:name) => String.t(),
+          required(:version) => String.t(),
+          optional(:repository) => String.t(),
+          optional(:homepage) => String.t()
+        }
+
   @type services :: %{
           required(:inbound) => [inbound_service],
           required(:outbound) => [outbound_service]
@@ -97,7 +97,7 @@ defmodule CPub.Web.NodeInfo do
           required(:services) => services,
           required(:openRegistration) => boolean,
           required(:usage) => usage,
-          required(:medadata) => map
+          required(:metadata) => map
         }
 
   @spec get_node_info(String.t()) :: t | :error
