@@ -97,7 +97,7 @@ defmodule CPub.Web.NodeInfo do
           required(:services) => services,
           required(:openRegistration) => boolean,
           required(:usage) => usage,
-          required(:medadata) => map
+          required(:metadata) => map
         }
 
   @spec get_node_info(String.t()) :: t | :error
