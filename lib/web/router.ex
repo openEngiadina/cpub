@@ -100,10 +100,15 @@ defmodule CPub.Web.Router do
   end
 
   # Well-known URIs
-  scope "/.well-known", CPub.Web.WebFinger do
+  scope "/.well-known", CPub.Web do
     pipe_through :well_known
 
-    get "/webfinger", WebFingerController, :resource
+    get "/webfinger", WebFinger.WebFingerController, :resource
+    get "/nodeinfo", NodeInfo.NodeInfoController, :schemas
+  end
+
+  scope "/nodeinfo", CPub.Web.NodeInfo do
+    get "/:version", NodeInfoController, :node_info
   end
 
   scope "/", CPub.Web do
