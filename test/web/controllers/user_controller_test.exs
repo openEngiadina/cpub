@@ -14,6 +14,7 @@ defmodule CPub.Web.UserControllerTest do
   alias CPub.NS.ActivityStreams, as: AS
 
   alias RDF.JSON, as: RDFJSON
+  alias RDF.Turtle, as: RDFTurtle
 
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.Token
@@ -29,7 +30,46 @@ defmodule CPub.Web.UserControllerTest do
   end
 
   describe "show/2" do
-    test "returns user profile", %{conn: conn, user: user} do
+    test "returns user profile in response to application/ld+json", %{conn: conn, user: user} do
+      # The URL used in testing seems to be `http://www.example.com/`
+      _url =
+        ("http://www.example.com" <>
+           Routes.user_path(conn, :show, user.username))
+        |> RDF.IRI.new!()
+
+      response =
+        conn
+        |> put_req_header("accept", "application/ld+json")
+        |> get(Routes.user_path(conn, :show, user.username))
+
+      assert response.status == 200
+
+      assert {:ok, response_rdf} = JSON.LD.Decoder.decode(response.resp_body)
+
+      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
+    end
+
+    test "returns user profile in response to application/activity+json",
+         %{conn: conn, user: user} do
+      # The URL used in testing seems to be `http://www.example.com/`
+      _url =
+        ("http://www.example.com" <>
+           Routes.user_path(conn, :show, user.username))
+        |> RDF.IRI.new!()
+
+      response =
+        conn
+        |> put_req_header("accept", "application/activity+json")
+        |> get(Routes.user_path(conn, :show, user.username))
+
+      assert response.status == 200
+
+      assert {:ok, response_rdf} = JSON.LD.Decoder.decode(response.resp_body)
+
+      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
+    end
+
+    test "returns user profile in response to application/rdf+json", %{conn: conn, user: user} do
       # The URL used in testing seems to be `http://www.example.com/`
       _url =
         ("http://www.example.com" <>
@@ -44,6 +84,25 @@ defmodule CPub.Web.UserControllerTest do
       assert response.status == 200
 
       assert {:ok, response_rdf} = RDFJSON.Decoder.decode(response.resp_body)
+
+      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
+    end
+
+    test "returns user profile in response to text/turtle", %{conn: conn, user: user} do
+      # The URL used in testing seems to be `http://www.example.com/`
+      _url =
+        ("http://www.example.com" <>
+           Routes.user_path(conn, :show, user.username))
+        |> RDF.IRI.new!()
+
+      response =
+        conn
+        |> put_req_header("accept", "text/turtle")
+        |> get(Routes.user_path(conn, :show, user.username))
+
+      assert response.status == 200
+
+      assert {:ok, response_rdf} = RDFTurtle.Decoder.decode(response.resp_body)
 
       {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
@@ -77,8 +136,7 @@ defmodule CPub.Web.UserControllerTest do
       |> put_req_header("content-type", "text/turtle")
       |> post(
         Routes.user_outbox_path(conn, :post_to_outbox, user.username),
-        graph
-        |> RDF.Turtle.write_string!()
+        RDF.Turtle.write_string!(graph)
       )
     end
   end

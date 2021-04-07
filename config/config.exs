@@ -31,11 +31,12 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Set up mime-type for RDF/Turtle
+# Set up mime-type for RDF serialization formats
 config :mime, :types, %{
   "text/turtle" => ["ttl"],
   "application/rdf+json" => ["rj"],
-  "application/ld+json" => ["jsonld"]
+  "application/ld+json" => ["jsonld"],
+  "application/activity+json" => ["jsonld"]
 }
 
 # Default prefixes for RDF
