@@ -1,0 +1,28 @@
+@prefix litepub: <http://litepub.social/ns#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# This is an improvised and incomplete RDF document that describes the terms
+# used in the Litepub JSON-LD context as used in Pleroma.
+#
+# See also:
+# - Litepub repository (https://github.com/litepub/litepub): Seems to be
+#   unmaintained.
+# - Pleroma copy of the Litepub JSON-LD context
+#   (https://git.pleroma.social/pleroma/pleroma/-/blob/develop/priv/static/schemas/litepub-0.1.jsonld).
+#   This contains updates and properties not present in the Litepub repo
+#   version.
+
+litepub:oauthRegistrationEndpoint
+    a rdf:Property ;
+    rdfs:label "OAuth Registration Endpoint" .
+
+# This property is NOT defined in the JSON-LD context used by Pleroma. But it is used.
+litepub:oauthAuthorizationEndpoint
+    a rdf:Property ;
+    rdfs:label "OAuth Authorization Endpoint" .
+
+# This property is NOT defined in the JSON-LD context used by Pleroma. But it is used.
+litepub:oauthTokenEndpoint
+    a rdf:Property ;
+    rdfs:label "OAuth Token Endpoint" .
