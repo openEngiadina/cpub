@@ -49,6 +49,20 @@ as:followers a owl:ObjectProperty .
 
 as:liked a owl:ObjectProperty .
 
+as:endpoints a owl:ObjectProperty .
+
+as:proxyUrl a owl:ObjectProperty .
+
+as:oauthAuthorizationEndpoint a owl:ObjectProperty .
+
+as:oauthTokenEndpoint a owl:ObjectProperty .
+
+as:provideClientKey a owl:ObjectProperty .
+
+as:signClientKey a owl:ObjectProperty .
+
+as:sharedInbox a owl:ObjectProperty .
+
 as:attributedTo a owl:ObjectProperty ;
   rdfs:label "attributedTo"@en;
   rdfs:comment "Identifies an entity to which an object is attributed"@en;
