@@ -40,4 +40,9 @@ defmodule CPub.NS do
     base_iri: "http://www.w3.org/ns/solid/terms#",
     file: "solid.ttl"
   )
+
+  defvocab(Litepub,
+    base_iri: "http://litepub.social/ns#",
+    file: "litepub.ttl"
+  )
 end
