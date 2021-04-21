@@ -46,9 +46,10 @@ defmodule CPub.Web.Authentication.ProviderController do
   end
 
   @spec callback(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def callback(%Plug.Conn{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
+  def callback(%Plug.Conn{assigns: %{ueberauth_failure: %{errors: [error | _]}}} = conn, _params) do
     # go back to session login on failure
-    path = Routes.authentication_session_path(conn, :login, error: "Failed to authenticate.")
+    error_msg = error.message || "Failed to authenticate."
+    path = Routes.authentication_session_path(conn, :login, error: error_msg)
 
     redirect(conn, to: path)
   end

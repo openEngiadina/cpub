@@ -20,10 +20,10 @@ defmodule CPub.Web.Authorization.TokenController do
   action_fallback CPub.Web.Authorization.FallbackController
 
   @spec token(Plug.Conn.t(), map) :: Plug.Conn.t() | {:error, any, any}
-  def token(%Plug.Conn{} = conn, %{} = _params) do
+  def token(%Plug.Conn{} = conn, _params) do
     case Map.get(conn.params, "grant_type") do
       "authorization_code" ->
-        with {:ok, client} <- get_client(conn),
+        with {:ok, %Authorization.Client{} = client} <- get_client(conn),
              # TODO make sure client is authenticated
              # TODO ensure redirect_uri is set
              {:ok, authorization} <-

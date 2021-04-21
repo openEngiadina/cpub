@@ -17,10 +17,10 @@ defmodule CPub.Web.Authorization.Utils do
   @spec get_client(Plug.Conn.t()) :: {:ok, Client.t()} | {:error, any}
   def get_client(%Plug.Conn{} = conn) do
     case Client.get(conn.params["client_id"]) do
-      {:ok, client} ->
+      {:ok, %Client{} = client} ->
         {:ok, client}
 
-      {:error, _} ->
+      _ ->
         {:error, :invalid_request, "invalid client_id"}
     end
   end

@@ -16,10 +16,10 @@ defmodule CPub.Web.Authentication.Strategy.Internal do
   alias Ueberauth.Auth.Extra
 
   @spec uid(Plug.Conn.t()) :: String.t()
-  def uid(%Plug.Conn{private: %User{id: user_id}}), do: user_id
+  def uid(%Plug.Conn{private: %{user: %User{id: user_id}}}), do: user_id
 
   @spec extra(Plug.Conn.t()) :: Extra.t()
-  def extra(%Plug.Conn{private: %User{} = user}), do: %Extra{raw_info: %{user: user}}
+  def extra(%Plug.Conn{private: %{user: %User{} = user}}), do: %Extra{raw_info: %{user: user}}
 
   @spec handle_callback!(Plug.Conn.t()) :: Plug.Conn.t()
   def handle_callback!(%Plug.Conn{} = conn) do
@@ -33,13 +33,13 @@ defmodule CPub.Web.Authentication.Strategy.Internal do
       put_private(conn, :user, user)
     else
       :invalid_password ->
-        set_errors!(conn, [error("invalid_username_password", "invalid username or password")])
+        set_errors!(conn, [error("invalid_username_password", "Invalid username or password.")])
 
       _ ->
         # Compute a Argon hash to prevent timing attacks
         Argon2.no_user_verify()
 
-        set_errors!(conn, [error("invalid_username_password", "invalid username or password")])
+        set_errors!(conn, [error("invalid_username_password", "Invalid username or password.")])
     end
   end
 end

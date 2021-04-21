@@ -99,6 +99,15 @@ defmodule CPub.Web.Router do
     # TODO post("/revoke", TokenController, :revoke)
   end
 
+  ## Mastodon API
+  scope "/api/v1", CPub.Web.Authorization, as: :mastodon_api do
+    pipe_through :json_api
+    pipe_through :session_authentication
+
+    # Client registration
+    post "/apps", ClientController, :create
+  end
+
   # Well-known URIs
   scope "/.well-known", CPub.Web do
     pipe_through :well_known

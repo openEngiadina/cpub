@@ -21,7 +21,11 @@ defmodule CPub.Web.Authorization.ClientController do
   """
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(%Plug.Conn{body_params: body} = conn, _params) do
-    attrs = Map.take(body, ["client_name", "redirect_uris", "scope"])
+    attrs =
+      body
+      |> Map.take(["client_name"])
+      |> Map.put("redirect_uris", List.wrap(body["redirect_uris"]))
+      |> Map.put("scope", body["scope"] || body["scopes"])
 
     with {:ok, client} <- Client.create(attrs) do
       conn
