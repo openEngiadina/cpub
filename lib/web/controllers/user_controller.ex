@@ -16,22 +16,22 @@ defmodule CPub.Web.UserController do
   action_fallback CPub.Web.FallbackController
 
   @doc """
+  Discover the `CPub.User`s profile from authenticated request.
+  """
+  @spec whoami(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def whoami(%Plug.Conn{} = conn, _params) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:read]) do
+      render_user(conn, user)
+    end
+  end
+
+  @doc """
   Show the `CPub.User`s profile.
   """
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(%Plug.Conn{} = conn, %{"id" => username}) do
     with {:ok, user} <- User.get(username) do
-      conn
-      |> put_view(RDFView)
-      |> render(:show,
-        data:
-          user
-          |> User.get_profile()
-          # Add the HTTP inbox/outbox
-          |> add_inbox_outbox(conn)
-          # Replace the base subject of the profile object with the request URL
-          |> FragmentGraph.set_base_subject(request_url(conn))
-      )
+      render_user(conn, user)
     end
   end
 
@@ -92,36 +92,43 @@ defmodule CPub.Web.UserController do
 
   @spec get_authorized_user(Plug.Conn.t(), keyword) :: {:ok, User.t()} | {:error, any}
   defp get_authorized_user(
-         %Plug.Conn{assigns: %{authorization: authorization}, params: params},
+         %Plug.Conn{assigns: %{authorization: authorization}},
          scope: scope
        ) do
-    if scope_subset?(scope, authorization.scope) do
-      with {:ok, user} <- User.get_by_id(authorization.user),
-           true <- params["user_id"] === user.username do
-        {:ok, user}
-      end
+    with true <- scope_subset?(scope, authorization.scope),
+         {:ok, user} <- User.get_by_id(authorization.user) do
+      {:ok, user}
     else
-      {:error, :unauthorized}
+      _ ->
+        {:error, :unauthorized}
     end
   end
 
   defp get_authorized_user(%Plug.Conn{} = _, _), do: {:error, :unauthorized}
 
   # Add a inbox/outbox property to user profile based on current connection.
-  @spec add_inbox_outbox(FragmentGraph.t(), Plug.Conn.t()) :: FragmentGraph.t()
-  defp add_inbox_outbox(profile, conn) do
-    profile
-    |> FragmentGraph.add(
-      LDP.inbox(),
-      conn
-      |> Routes.user_inbox_url(:get_inbox, conn.params["id"])
-      |> RDF.iri()
-    )
-    |> FragmentGraph.add(
-      AS.outbox(),
-      conn
-      |> Routes.user_outbox_url(:get_outbox, conn.params["id"])
-      |> RDF.iri()
+  @spec add_inbox_outbox(User.t(), Plug.Conn.t()) :: FragmentGraph.t()
+  defp add_inbox_outbox(user, conn) do
+    user_inbox_iri = Routes.user_inbox_url(conn, :get_inbox, user.username) |> RDF.iri()
+    user_outbox_iri = Routes.user_outbox_url(conn, :get_outbox, user.username) |> RDF.iri()
+
+    user
+    |> User.get_profile()
+    |> FragmentGraph.add(LDP.inbox(), user_inbox_iri)
+    |> FragmentGraph.add(AS.outbox(), user_outbox_iri)
+  end
+
+  @spec render_user(Plug.Conn.t(), User.t()) :: Plug.Conn.t()
+  defp render_user(%Plug.Conn{} = conn, %User{} = user) do
+    conn
+    |> put_view(RDFView)
+    |> render(:show,
+      data:
+        user
+        # Add the HTTP inbox/outbox
+        |> add_inbox_outbox(conn)
+        # Replace the base subject of the profile object with the request URL
+        |> FragmentGraph.set_base_subject(request_url(conn))
     )
   end
 end

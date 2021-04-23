@@ -27,7 +27,7 @@ defmodule CPub.Web.FallbackController do
     |> text("Bad request")
   end
 
-  def call(%Plug.Conn{} = conn, {:error, :unahtorized}) do
+  def call(%Plug.Conn{} = conn, {:error, :unauthorized}) do
     conn
     |> put_status(:unauthorized)
     |> text("Unauthorized")

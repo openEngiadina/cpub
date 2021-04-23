@@ -29,6 +29,27 @@ defmodule CPub.Web.UserControllerTest do
     end
   end
 
+  describe "whoami/2" do
+    test "returns user profile for authenticated request", %{conn: conn, user: user, token: token} do
+      response =
+        conn
+        |> put_req_header("authorization", "Bearer " <> token.access_token)
+        |> get(Routes.user_path(conn, :whoami))
+
+      assert response.status == 200
+
+      assert {:ok, _response_rdf} = Jason.decode(response.resp_body)
+
+      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
+    end
+
+    test "returns 404 for unauthenticated request", %{conn: conn} do
+      response = get(conn, Routes.user_path(conn, :whoami))
+
+      assert response.status == 401
+    end
+  end
+
   describe "show/2" do
     test "returns user profile in response to application/ld+json", %{conn: conn, user: user} do
       # The URL used in testing seems to be `http://www.example.com/`
