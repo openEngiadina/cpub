@@ -69,9 +69,9 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         })
 
       assert %{
-               "access_token" => access_token,
-               "expires_in" => expires_in,
-               "refresh_token" => refresh_token
+               "access_token" => _access_token,
+               "expires_in" => _expires_in,
+               "refresh_token" => _refresh_token
              } = json_response(initial_response, 200)
 
       second_response =
@@ -126,11 +126,11 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
 
       assert %{
                "access_token" => access_token,
-               "expires_in" => expires_in,
-               "refresh_token" => refresh_token
+               "expires_in" => _expires_in,
+               "refresh_token" => _refresh_token
              } = json_response(response, 200)
 
-      assert {:ok, token} = Token.get(access_token)
+      assert {:ok, _token} = Token.get(access_token)
     end
   end
 end
