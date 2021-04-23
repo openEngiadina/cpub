@@ -17,7 +17,16 @@ defmodule CPub.Web.RDFView do
   def render("show.jsonld", %{data: %RDF.FragmentGraph{} = data}) do
     data
     |> RDF.FragmentGraph.description(data.base_subject)
-    |> JSON.LD.Encoder.encode!(document_loader: DocumentLoader.CPub)
+    |> JSON.LD.Encoder.encode!(
+      expand_context: %{"@context" => "https://www.w3.org/ns/activitystreams#"},
+      document_loader: DocumentLoader.CPub
+    )
+    |> Jason.decode!()
+    |> JSON.LD.compact(
+      %{"@context" => "https://www.w3.org/ns/activitystreams#"},
+      document_loader: DocumentLoader.CPub
+    )
+    |> Jason.encode!()
   end
 
   def render("show.jsonld", %{data: data}) do

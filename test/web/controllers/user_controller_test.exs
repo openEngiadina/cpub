@@ -44,7 +44,7 @@ defmodule CPub.Web.UserControllerTest do
 
       assert response.status == 200
 
-      assert {:ok, response_rdf} = JSON.LD.Decoder.decode(response.resp_body)
+      assert {:ok, _response_rdf} = Jason.decode(response.resp_body)
 
       {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
@@ -64,7 +64,7 @@ defmodule CPub.Web.UserControllerTest do
 
       assert response.status == 200
 
-      assert {:ok, response_rdf} = JSON.LD.Decoder.decode(response.resp_body)
+      assert {:ok, _response_rdf} = Jason.decode(response.resp_body)
 
       {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
@@ -83,7 +83,7 @@ defmodule CPub.Web.UserControllerTest do
 
       assert response.status == 200
 
-      assert {:ok, response_rdf} = RDFJSON.Decoder.decode(response.resp_body)
+      assert {:ok, _response_rdf} = RDFJSON.Decoder.decode(response.resp_body)
 
       {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
@@ -102,7 +102,7 @@ defmodule CPub.Web.UserControllerTest do
 
       assert response.status == 200
 
-      assert {:ok, response_rdf} = RDFTurtle.Decoder.decode(response.resp_body)
+      assert {:ok, _response_rdf} = RDFTurtle.Decoder.decode(response.resp_body)
 
       {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
