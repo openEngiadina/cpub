@@ -29,7 +29,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
   end
 
   describe "token/2 with :authorizaiton_code" do
-    test "returns a valid token", %{
+    test "returns a valid token with client_id", %{
       conn: conn,
       authorization: authorization,
       client: client
@@ -39,7 +39,8 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
           code: authorization.authorization_code,
-          client_id: client.id
+          client_id: client.id,
+          redirect_uri: "http://example.com/"
         })
 
       assert %{
@@ -55,6 +56,41 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
       assert refresh_token == authorization.refresh_token
     end
 
+    test "returns a valid token without client_id", %{conn: conn, authorization: authorization} do
+      response =
+        conn
+        |> post(Routes.oauth_server_token_path(conn, :token), %{
+          grant_type: "authorization_code",
+          code: authorization.authorization_code,
+          redirect_uri: "http://example.com/"
+        })
+
+      assert %{
+               "access_token" => access_token,
+               "expires_in" => expires_in,
+               "refresh_token" => refresh_token
+             } = json_response(response, 200)
+
+      assert {:ok, token} = Token.get(access_token)
+
+      assert expires_in == Token.valid_for()
+      assert access_token == token.access_token
+      assert refresh_token == authorization.refresh_token
+    end
+
+    test "rejects a mismatch redirect uri", %{conn: conn, authorization: authorization} do
+      response =
+        conn
+        |> post(Routes.oauth_server_token_path(conn, :token), %{
+          grant_type: "authorization_code",
+          code: authorization.authorization_code,
+          redirect_uri: "http://example.org/"
+        })
+
+      assert %{"error" => "redirect_uri_masmatch", "error_description" => "redirect URI mismatch"} =
+               json_response(response, 400)
+    end
+
     test "rejects an already used access code", %{
       conn: conn,
       authorization: authorization,
@@ -65,7 +101,8 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
           code: authorization.authorization_code,
-          client_id: client.id
+          client_id: client.id,
+          redirect_uri: "http://example.com/"
         })
 
       assert %{
@@ -82,7 +119,8 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
           client_id: client.id
         })
 
-      assert %{"error" => "invalid_grant"} = json_response(second_response, 400)
+      assert %{"error" => "code_used", "error_description" => "used code"} =
+               json_response(second_response, 400)
     end
   end
 

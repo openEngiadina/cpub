@@ -15,7 +15,7 @@ defmodule CPub.Web.Authorization.TokenController do
   alias CPub.User
 
   alias CPub.Web.Authorization
-  alias CPub.Web.Authorization.{Scope, Token}
+  alias CPub.Web.Authorization.{Client, Scope, Token}
 
   action_fallback CPub.Web.Authorization.FallbackController
 
@@ -23,23 +23,45 @@ defmodule CPub.Web.Authorization.TokenController do
   def token(%Plug.Conn{} = conn, _params) do
     case Map.get(conn.params, "grant_type") do
       "authorization_code" ->
-        with {:ok, %Authorization.Client{} = client} <- get_client(conn),
-             # TODO make sure client is authenticated
-             # TODO ensure redirect_uri is set
-             {:ok, authorization} <-
-               get_authorization(conn, %{grant_type: :authorization_code, client: client}),
-             {:ok, token} <- Token.create(authorization) do
-          conn
-          |> put_status(:ok)
-          |> put_view(JSONView)
-          |> render(:show,
-            data: %{
-              access_token: token.access_token,
-              token_type: "bearer",
-              expires_in: Token.valid_for(),
-              refresh_token: authorization.refresh_token
-            }
-          )
+        case get_client(conn) do
+          {:ok, %Client{} = client} ->
+            with {:ok, authorization} <-
+                   get_authorization(conn, %{grant_type: :authorization_code, client: client}),
+                 {:ok, false} <- check_code_used(authorization),
+                 {:ok, true} <- check_redirect_uri(conn, client),
+                 {:ok, token} <- Token.create(authorization) do
+              conn
+              |> put_status(:ok)
+              |> put_view(JSONView)
+              |> render(:show,
+                data: %{
+                  access_token: token.access_token,
+                  token_type: "bearer",
+                  expires_in: Token.valid_for(),
+                  refresh_token: authorization.refresh_token
+                }
+              )
+            end
+
+          {:error, _, _} ->
+            with {:ok, authorization} <-
+                   get_authorization(conn, %{grant_type: :authorization_code}),
+                 {:ok, false} <- check_code_used(authorization),
+                 {:ok, %Client{} = client} <- Client.get(authorization.client),
+                 {:ok, true} <- check_redirect_uri(conn, client),
+                 {:ok, token} <- Token.create(authorization) do
+              conn
+              |> put_status(:ok)
+              |> put_view(JSONView)
+              |> render(:show,
+                data: %{
+                  access_token: token.access_token,
+                  token_type: "bearer",
+                  expires_in: Token.valid_for(),
+                  refresh_token: authorization.refresh_token
+                }
+              )
+            end
         end
 
       "refresh_token" ->
@@ -97,6 +119,16 @@ defmodule CPub.Web.Authorization.TokenController do
     end
   end
 
+  defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :authorization_code}) do
+    case Authorization.get_by_code(conn.params["code"]) do
+      {:ok, authorization} ->
+        {:ok, authorization}
+
+      _ ->
+        {:error, :invalid_grant, "invalid code"}
+    end
+  end
+
   defp get_authorization(%Plug.Conn{} = conn, %{grant_type: :refresh_token}) do
     case Authorization.get_by_refresh_token(conn.params["refresh_token"]) do
       {:ok, authorization} ->
@@ -104,6 +136,21 @@ defmodule CPub.Web.Authorization.TokenController do
 
       _ ->
         {:error, :invalid_grant, "invalid refresh token"}
+    end
+  end
+
+  @spec check_code_used(Authorization.t()) :: {:ok, bool} | {:error, atom, String.t()}
+  defp check_code_used(%Authorization{code_used: false}), do: {:ok, false}
+  defp check_code_used(%Authorization{code_used: true}), do: {:error, :code_used, "used code"}
+
+  @spec check_redirect_uri(Plug.Conn.t(), Client.t()) :: {:ok, bool} | {:error, atom, String.t()}
+  defp check_redirect_uri(%Plug.Conn{} = conn, %Client{} = client) do
+    case conn.params["redirect_uri"] in client.redirect_uris do
+      true ->
+        {:ok, true}
+
+      false ->
+        {:error, :redirect_uri_masmatch, "redirect URI mismatch"}
     end
   end
 end

@@ -14,7 +14,7 @@ defmodule CPub.Web.Authorization.Utils do
   @doc """
   Returns the `CPub.Web.Authorization.Client` associated with the connection.
   """
-  @spec get_client(Plug.Conn.t()) :: {:ok, Client.t()} | {:error, any}
+  @spec get_client(Plug.Conn.t()) :: {:ok, Client.t()} | {:error, any, any}
   def get_client(%Plug.Conn{} = conn) do
     case Client.get(conn.params["client_id"]) do
       {:ok, %Client{} = client} ->
