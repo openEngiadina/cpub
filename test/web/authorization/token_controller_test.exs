@@ -29,7 +29,37 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
   end
 
   describe "token/2 with :authorizaiton_code" do
-    test "returns a valid token with client_id", %{
+    test "returns a valid token with client_id in authoriation header", %{
+      conn: conn,
+      authorization: authorization,
+      client: client
+    } do
+      response =
+        conn
+        |> put_req_header(
+          "authorization",
+          "Basic " <> Base.encode64("#{client.id}:client_secret")
+        )
+        |> post(Routes.oauth_server_token_path(conn, :token), %{
+          grant_type: "authorization_code",
+          code: authorization.authorization_code,
+          redirect_uri: "http://example.com/"
+        })
+
+      assert %{
+               "access_token" => access_token,
+               "expires_in" => expires_in,
+               "refresh_token" => refresh_token
+             } = json_response(response, 200)
+
+      assert {:ok, token} = Token.get(access_token)
+
+      assert expires_in == Token.valid_for()
+      assert access_token == token.access_token
+      assert refresh_token == authorization.refresh_token
+    end
+
+    test "returns a valid token with client_id in params", %{
       conn: conn,
       authorization: authorization,
       client: client
@@ -56,34 +86,17 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
       assert refresh_token == authorization.refresh_token
     end
 
-    test "returns a valid token without client_id", %{conn: conn, authorization: authorization} do
+    test "rejects a mismatch redirect uri", %{
+      conn: conn,
+      authorization: authorization,
+      client: client
+    } do
       response =
         conn
         |> post(Routes.oauth_server_token_path(conn, :token), %{
           grant_type: "authorization_code",
           code: authorization.authorization_code,
-          redirect_uri: "http://example.com/"
-        })
-
-      assert %{
-               "access_token" => access_token,
-               "expires_in" => expires_in,
-               "refresh_token" => refresh_token
-             } = json_response(response, 200)
-
-      assert {:ok, token} = Token.get(access_token)
-
-      assert expires_in == Token.valid_for()
-      assert access_token == token.access_token
-      assert refresh_token == authorization.refresh_token
-    end
-
-    test "rejects a mismatch redirect uri", %{conn: conn, authorization: authorization} do
-      response =
-        conn
-        |> post(Routes.oauth_server_token_path(conn, :token), %{
-          grant_type: "authorization_code",
-          code: authorization.authorization_code,
+          client_id: client.id,
           redirect_uri: "http://example.org/"
         })
 
