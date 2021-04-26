@@ -37,19 +37,13 @@ defmodule CPub.Web.UserController do
     end
   end
 
-  @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def post_to_outbox(%Plug.Conn{} = conn, %{graph: graph}) do
-    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
-         {:ok, {activity_read_cap, _}} <- User.Outbox.post(user, graph) do
-      conn
-      |> put_resp_header("location", ERIS.ReadCapability.to_string(activity_read_cap))
-      |> send_resp(:created, "")
-    end
-  end
-
+  @doc """
+  GET from your inbox to read your latest messages (client-to-server)
+  """
   @spec get_inbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def get_inbox(%Plug.Conn{} = conn, _params) do
+  def get_inbox(%Plug.Conn{} = conn, %{"user_id" => username} = params) do
     with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
+         {:ok, ^username} <- authorize_user(user, params),
          {:ok, inbox} <- User.Inbox.get(user) do
       conn
       |> put_view(RDFView)
@@ -57,9 +51,28 @@ defmodule CPub.Web.UserController do
     end
   end
 
+  @doc """
+  POST to your outbox to send messages to the world (client-to-server)
+  """
+  @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def post_to_outbox(%Plug.Conn{} = conn, %{"user_id" => username, graph: graph} = params) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
+         {:ok, ^username} <- authorize_user(user, params),
+         {:ok, {activity_read_cap, _}} <- User.Outbox.post(user, graph) do
+      conn
+      |> put_resp_header("location", ERIS.ReadCapability.to_string(activity_read_cap))
+      |> send_resp(:created, "")
+    end
+  end
+
+  @doc """
+  GET from someone's outbox to see what messages they've posted (or at least the
+  ones you're authorized to see) (client-to-server and/or server-to-server)
+  """
   @spec get_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def get_outbox(%Plug.Conn{} = conn, _params) do
-    with {:ok, _user} <- get_authorized_user(conn, scope: [:write]),
+  def get_outbox(%Plug.Conn{} = conn, %{"user_id" => username} = params) do
+    with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
+         {:ok, ^username} <- authorize_user(user, params),
          # TODO: get real outbox
          {:ok, outbox} <- {:ok, MapSet.new()} do
       conn
@@ -128,6 +141,10 @@ defmodule CPub.Web.UserController do
   end
 
   defp get_authorized_user(%Plug.Conn{} = _, _), do: {:error, :unauthorized}
+
+  @spec authorize_user(User.t(), map) :: {:ok, String.t()} | {:error, any}
+  defp authorize_user(%User{username: username}, %{"user_id" => username}), do: {:ok, username}
+  defp authorize_user(%User{}, _), do: {:error, :unauthorized}
 
   # Add a inbox/outbox property to user profile based on current connection.
   @spec add_inbox_outbox(User.t(), Plug.Conn.t()) :: FragmentGraph.t()
