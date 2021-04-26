@@ -16,6 +16,7 @@ defmodule CPub.Web.Authorization.TokenController do
 
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.{Client, Scope, Token}
+  alias CPub.Web.UserController
 
   action_fallback CPub.Web.Authorization.FallbackController
 
@@ -26,7 +27,8 @@ defmodule CPub.Web.Authorization.TokenController do
            get_authorization(conn, %{grant_type: :authorization_code, client: client}),
          {:ok, false} <- check_code_used(authorization),
          {:ok, true} <- check_redirect_uri(conn, client),
-         {:ok, token} <- Token.create(authorization) do
+         {:ok, token} <- Token.create(authorization),
+         {:ok, %User{} = user} <- User.get_by_id(authorization.user) do
       conn
       |> put_status(:ok)
       |> put_view(JSONView)
@@ -35,7 +37,9 @@ defmodule CPub.Web.Authorization.TokenController do
           access_token: token.access_token,
           token_type: "bearer",
           expires_in: Token.valid_for(),
-          refresh_token: authorization.refresh_token
+          refresh_token: authorization.refresh_token,
+          # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
+          me: UserController.user_uri(conn, user)
         }
       )
     end
@@ -43,7 +47,8 @@ defmodule CPub.Web.Authorization.TokenController do
 
   def token(%Plug.Conn{} = conn, %{"grant_type" => "refresh_token"}) do
     with {:ok, authorization} <- get_authorization(conn, %{grant_type: :refresh_token}),
-         {:ok, token} <- Token.refresh(authorization) do
+         {:ok, token} <- Token.refresh(authorization),
+         {:ok, %User{} = user} <- User.get_by_id(authorization.user) do
       conn
       |> put_status(:ok)
       |> put_view(JSONView)
@@ -52,7 +57,9 @@ defmodule CPub.Web.Authorization.TokenController do
           access_token: token.access_token,
           token_type: "bearer",
           expires_in: Token.valid_for(),
-          refresh_token: authorization.refresh_token
+          refresh_token: authorization.refresh_token,
+          # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
+          me: UserController.user_uri(conn, user)
         }
       )
     end
@@ -73,7 +80,9 @@ defmodule CPub.Web.Authorization.TokenController do
           access_token: token.access_token,
           token_type: "bearer",
           expires_in: Token.valid_for(),
-          refresh_token: authorization.refresh_token
+          refresh_token: authorization.refresh_token,
+          # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
+          me: UserController.user_uri(conn, user)
         }
       )
     else

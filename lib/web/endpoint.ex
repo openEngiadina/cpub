@@ -6,6 +6,8 @@
 defmodule CPub.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :cpub
 
+  alias CPub.Config
+
   socket "/socket", CPub.Web.UserSocket,
     websocket: true,
     longpoll: false
@@ -61,4 +63,12 @@ defmodule CPub.Web.Endpoint do
     expose_headers: ~w(Location)
 
   plug CPub.Web.Router
+
+  @spec base_path(String.t()) :: String.t()
+  def base_path(path) do
+    Config.base_url()
+    |> URI.parse()
+    |> URI.merge(path)
+    |> to_string
+  end
 end

@@ -13,6 +13,8 @@ defmodule CPub.Web.UserController do
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
 
+  alias CPub.Web.Endpoint
+
   action_fallback CPub.Web.FallbackController
 
   @doc """
@@ -90,6 +92,27 @@ defmodule CPub.Web.UserController do
     )
   end
 
+  @spec user_uri(Plug.Conn.t(), User.t()) :: String.t()
+  def user_uri(%Plug.Conn{} = conn, %User{} = user) do
+    conn
+    |> Routes.user_path(:show, user.username)
+    |> Endpoint.base_path()
+  end
+
+  @spec user_inbox_uri(Plug.Conn.t(), User.t()) :: String.t()
+  def user_inbox_uri(%Plug.Conn{} = conn, %User{} = user) do
+    conn
+    |> Routes.user_inbox_path(:get_inbox, user.username)
+    |> Endpoint.base_path()
+  end
+
+  @spec user_outbox_uri(Plug.Conn.t(), User.t()) :: String.t()
+  def user_outbox_uri(%Plug.Conn{} = conn, %User{} = user) do
+    conn
+    |> Routes.user_outbox_path(:get_outbox, user.username)
+    |> Endpoint.base_path()
+  end
+
   @spec get_authorized_user(Plug.Conn.t(), keyword) :: {:ok, User.t()} | {:error, any}
   defp get_authorized_user(
          %Plug.Conn{assigns: %{authorization: authorization}},
@@ -109,8 +132,8 @@ defmodule CPub.Web.UserController do
   # Add a inbox/outbox property to user profile based on current connection.
   @spec add_inbox_outbox(User.t(), Plug.Conn.t()) :: FragmentGraph.t()
   defp add_inbox_outbox(user, conn) do
-    user_inbox_iri = Routes.user_inbox_url(conn, :get_inbox, user.username) |> RDF.iri()
-    user_outbox_iri = Routes.user_outbox_url(conn, :get_outbox, user.username) |> RDF.iri()
+    user_inbox_iri = conn |> user_inbox_uri(user) |> RDF.iri()
+    user_outbox_iri = conn |> user_outbox_uri(user) |> RDF.iri()
 
     user
     |> User.get_profile()
@@ -127,8 +150,8 @@ defmodule CPub.Web.UserController do
         user
         # Add the HTTP inbox/outbox
         |> add_inbox_outbox(conn)
-        # Replace the base subject of the profile object with the request URL
-        |> FragmentGraph.set_base_subject(request_url(conn))
+        # Replace the base subject of the profile object with the user's URI
+        |> FragmentGraph.set_base_subject(user_uri(conn, user))
     )
   end
 end
