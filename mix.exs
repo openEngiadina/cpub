@@ -97,6 +97,9 @@ defmodule CPub.MixProject do
       # TODO: replace argon2_elixir with argon2i from :monocypher
       {:argon2_elixir, "~> 2.3"},
 
+      # Auxiliary
+      {:con_cache, "~> 1.0"},
+
       # dev & test
       {:stream_data, "~> 0.5"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},

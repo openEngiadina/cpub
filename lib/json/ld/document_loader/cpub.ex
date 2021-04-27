@@ -18,11 +18,19 @@ defmodule JSON.LD.DocumentLoader.CPub do
 
   @spec load(String.t(), Options.t()) :: {:ok, RemoteDocument.t()} | {:error, any}
   def load(url, _options) do
-    headers = [{"Accept", "application/ld+json"}]
+    case ConCache.get(:jsonld_context, url) do
+      nil ->
+        headers = [{"Accept", "application/ld+json"}]
 
-    with {:ok, res} <- HTTP.get(url, headers, []),
-         {:ok, data} <- Jason.decode(res.body) do
-      {:ok, %RemoteDocument{document: data, document_url: url}}
+        with {:ok, res} <- HTTP.get(url, headers, []),
+             {:ok, data} <- Jason.decode(res.body) do
+          :ok = ConCache.put(:jsonld_context, url, data)
+
+          {:ok, %RemoteDocument{document: data, document_url: url}}
+        end
+
+      data ->
+        {:ok, %RemoteDocument{document: data, document_url: url}}
     end
   end
 end

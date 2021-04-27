@@ -35,7 +35,8 @@ defmodule CPub.Application do
         CPub.DB
       ] ++
         task_children() ++
-        http_children(tesla_adapter(), @env)
+        http_children(tesla_adapter(), @env) ++
+        cache_children()
 
     opts = [strategy: :one_for_one, name: CPub.Supervisor]
 
@@ -61,6 +62,10 @@ defmodule CPub.Application do
   end
 
   defp http_children(_, _), do: []
+
+  defp cache_children do
+    [{ConCache, [name: :jsonld_context, ttl_check_interval: false]}]
+  end
 
   defp log_application_info do
     Logger.info("Starting #{@name} (#{@version}; #{@repository})")
