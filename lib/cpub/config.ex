@@ -14,9 +14,6 @@ defmodule CPub.Config do
   @spec base_url :: String.t()
   def base_url, do: get!(:base_url)
 
-  @spec host :: String.t()
-  def host, do: Endpoint.host()
-
   @spec instance :: keyword
   def instance, do: get!(:instance)
 

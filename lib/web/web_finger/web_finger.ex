@@ -24,7 +24,7 @@ defmodule CPub.Web.WebFinger do
 
   @spec account(String.t(), map) :: {:ok, map} | {:error, any}
   def account(account, opts) do
-    host = Config.host()
+    host = URI.parse(Config.base_url()).host
     regex = ~r/^(?<username>[a-z0-9A-Z_\.-]+)@#{host}$/
 
     with %{"username" => username} <- Regex.named_captures(regex, account),
@@ -46,7 +46,9 @@ defmodule CPub.Web.WebFinger do
   end
 
   @spec subject(User.t()) :: String.t()
-  defp subject(%User{} = user), do: "acct:#{user.username}@#{Config.host()}"
+  defp subject(%User{} = user) do
+    "acct:#{user.username}@#{URI.parse(Config.base_url()).host}"
+  end
 
   @spec descriptor_aliases(User.t()) :: [String.t()]
   defp descriptor_aliases(%User{} = user), do: [user_uri(user)]

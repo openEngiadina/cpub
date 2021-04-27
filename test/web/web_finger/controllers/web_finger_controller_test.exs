@@ -14,6 +14,8 @@ defmodule CPub.Web.WebFinger.WebFingerControllerTest do
 
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.Token
+  alias CPub.Web.Endpoint
+  alias CPub.Web.UserController
 
   doctest CPub.Web.WebFinger.WebFingerController
 
@@ -27,14 +29,8 @@ defmodule CPub.Web.WebFinger.WebFingerControllerTest do
 
   describe "resource/2" do
     test "returns account descriptor", %{conn: conn, user: user} do
-      # The URL used in testing seems to be `http://www.example.com/`
-      _url =
-        ("http://www.example.com" <>
-           Routes.user_path(conn, :show, user.username))
-        |> RDF.IRI.new!()
-
-      account = "#{user.username}@#{Config.host()}"
-      user_uri = "#{Config.base_url()}users/#{user.username}"
+      account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
+      user_uri = UserController.user_uri(conn, user)
 
       response =
         conn
@@ -69,15 +65,9 @@ defmodule CPub.Web.WebFinger.WebFingerControllerTest do
     end
 
     test "returns account descriptor with issuer", %{conn: conn, user: user} do
-      # The URL used in testing seems to be `http://www.example.com/`
-      _url =
-        ("http://www.example.com" <>
-           Routes.user_path(conn, :show, user.username))
-        |> RDF.IRI.new!()
-
-      account = "#{user.username}@#{Config.host()}"
-      user_uri = "#{Config.base_url()}users/#{user.username}"
-      auth_login_uri = "#{Config.base_url()}auth/login"
+      account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
+      user_uri = UserController.user_uri(conn, user)
+      auth_login_uri = conn |> Routes.authentication_session_path(:login) |> Endpoint.base_path()
 
       response =
         conn
