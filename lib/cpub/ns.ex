@@ -45,4 +45,12 @@ defmodule CPub.NS do
     base_iri: "http://litepub.social/ns#",
     file: "litepub.ttl"
   )
+
+  def activity_streams_url, do: "https://www.w3.org/ns/activitystreams#"
+  def ldp_url, do: "http://www.w3.org/ns/ldp#"
+  def dc_terms_url, do: "http://purl.org/dc/terms/"
+  def acl_url, do: "http://www.w3.org/ns/auth/acl#"
+  def foaf_url, do: "http://xmlns.com/foaf/0.1/"
+  def solid_url, do: "http://www.w3.org/ns/solid/terms#"
+  def litepub_url, do: "http://litepub.social/ns#"
 end

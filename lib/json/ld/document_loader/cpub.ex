@@ -16,7 +16,19 @@ defmodule JSON.LD.DocumentLoader.CPub do
 
   alias CPub.HTTP
 
+  @litepub_url "http://litepub.social/ns#"
+  @litepub_data %{
+    "@context" => %{
+      "oauthRegistraionEndpoint" => %{"@id" => "as:oauthRegistrationEndpoint", "@type" => "@id"}
+    }
+  }
+
   @spec load(String.t(), Options.t()) :: {:ok, RemoteDocument.t()} | {:error, any}
+  def load(@litepub_url, _options) do
+    # it's a hack as Litepub context URL is unavailable
+    {:ok, %RemoteDocument{document: @litepub_data, document_url: @litepub_url}}
+  end
+
   def load(url, _options) do
     case ConCache.get(:jsonld_context, url) do
       nil ->
