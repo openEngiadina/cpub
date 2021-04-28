@@ -5,7 +5,7 @@
 
 defmodule JSON.LD.Encoder.CPub do
   @moduledoc """
-  JSON-LD encoder which supports `RDF.FragmentGraph`.
+  JSON-LD encoder which supports `RDF.FragmentGraph` and encodes with compaction.
   """
 
   alias JSON.LD.DocumentLoader
@@ -13,12 +13,12 @@ defmodule JSON.LD.Encoder.CPub do
 
   alias CPub.NS
 
-  @spec encode!(RDF.FragmentGraph.t(), Enum.t()) :: String.t()
-  def encode!(%RDF.FragmentGraph{} = data, _opts \\ []) do
+  @spec compact_encode!(Encoder.input() | RDF.FragmentGraph.t()) :: String.t()
+  def compact_encode!(%RDF.FragmentGraph{} = data) do
     {json_ld, properties} =
       data
       |> RDF.Data.descriptions()
-      |> Enum.map(&to_compact_json_ld/1)
+      |> Enum.map(&compact_json_ld/1)
       |> List.pop_at(0)
 
     id = json_ld["id"]
@@ -32,9 +32,15 @@ defmodule JSON.LD.Encoder.CPub do
     Jason.encode!(json_ld)
   end
 
-  @spec to_compact_json_ld(RDF.Description.t()) :: map
-  @dialyzer {:nowarn_function, to_compact_json_ld: 1}
-  defp to_compact_json_ld(%RDF.Description{} = data) do
+  def compact_encode!(data) do
+    data
+    |> compact_json_ld()
+    |> Jason.encode!()
+  end
+
+  @spec compact_json_ld(Encoder.input() | RDF.Description.t()) :: map
+  @dialyzer {:nowarn_function, compact_json_ld: 1}
+  defp compact_json_ld(data) do
     data
     |> Encoder.encode!(
       expand_context: %{"@context" => [NS.activity_streams_url(), NS.litepub_url()]},
