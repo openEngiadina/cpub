@@ -11,7 +11,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
 
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.{Client, Token}
-  alias CPub.Web.UserController
+  alias CPub.Web.Path
 
   doctest CPub.Web.Authorization.TokenController
 
@@ -60,7 +60,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
       assert expires_in == Token.valid_for()
       assert access_token == token.access_token
       assert refresh_token == authorization.refresh_token
-      assert user_uri == UserController.user_uri(conn, user)
+      assert user_uri == Path.user(conn, user)
     end
 
     test "returns a valid token with client_id in params", %{
@@ -90,7 +90,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
       assert expires_in == Token.valid_for()
       assert access_token == token.access_token
       assert refresh_token == authorization.refresh_token
-      assert user_uri == UserController.user_uri(conn, user)
+      assert user_uri == Path.user(conn, user)
     end
 
     test "rejects a mismatch redirect uri", %{
@@ -167,7 +167,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
       assert expires_in == Token.valid_for()
       assert access_token == token.access_token
       assert refresh_token == authorization.refresh_token
-      assert user_uri == UserController.user_uri(conn, user)
+      assert user_uri == Path.user(conn, user)
     end
   end
 
@@ -189,7 +189,7 @@ defmodule CPub.Web.Authorization.TokenControllerTest do
              } = json_response(response, 200)
 
       assert {:ok, _token} = Token.get(access_token)
-      assert user_uri == UserController.user_uri(conn, user)
+      assert user_uri == Path.user(conn, user)
     end
   end
 end

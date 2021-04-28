@@ -18,6 +18,8 @@ defmodule CPub.Web.WebFinger do
   alias CPub.Config
   alias CPub.User
 
+  alias CPub.Web.Path
+
   @open_id_connect_issuer "http://openid.net/specs/connect/1.0/issuer"
   @profile_page "http://webfinger.net/rel/profile-page"
   @activity_streams "https://www.w3.org/ns/activitystreams"
@@ -37,6 +39,7 @@ defmodule CPub.Web.WebFinger do
   end
 
   @spec descriptor(User.t(), map) :: map
+  @dialyzer {:nowarn_function, descriptor: 2}
   defp descriptor(%User{} = user, opts) do
     %{
       "subject" => subject(user),
@@ -51,11 +54,13 @@ defmodule CPub.Web.WebFinger do
   end
 
   @spec descriptor_aliases(User.t()) :: [String.t()]
-  defp descriptor_aliases(%User{} = user), do: [user_uri(user)]
+  @dialyzer {:nowarn_function, descriptor_aliases: 1}
+  defp descriptor_aliases(%User{} = user), do: [Path.user(%Plug.Conn{}, user)]
 
   @spec descriptor_links(User.t()) :: [map]
+  @dialyzer {:nowarn_function, descriptor_links: 1}
   defp descriptor_links(%User{} = user) do
-    user_uri = user_uri(user)
+    user_uri = Path.user(%Plug.Conn{}, user)
 
     [
       %{
@@ -77,17 +82,15 @@ defmodule CPub.Web.WebFinger do
   end
 
   @spec opts_links(map) :: [map]
+  @dialyzer {:nowarn_function, opts_links: 1}
   defp opts_links(%{"rel" => @open_id_connect_issuer}) do
     [
       %{
         "rel" => @open_id_connect_issuer,
-        "href" => "#{Config.base_url()}auth/login"
+        "href" => Path.authentication_session_login(%Plug.Conn{})
       }
     ]
   end
 
   defp opts_links(_), do: []
-
-  @spec user_uri(User.t()) :: String.t()
-  defp user_uri(%User{} = user), do: "#{Config.base_url()}users/#{user.username}"
 end

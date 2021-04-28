@@ -16,7 +16,7 @@ defmodule CPub.Web.Authorization.TokenController do
 
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.{Client, Scope, Token}
-  alias CPub.Web.UserController
+  alias CPub.Web.Path
 
   action_fallback CPub.Web.Authorization.FallbackController
 
@@ -39,7 +39,7 @@ defmodule CPub.Web.Authorization.TokenController do
           expires_in: Token.valid_for(),
           refresh_token: authorization.refresh_token,
           # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
-          me: UserController.user_uri(conn, user)
+          me: Path.user(conn, user)
         }
       )
     end
@@ -59,7 +59,7 @@ defmodule CPub.Web.Authorization.TokenController do
           expires_in: Token.valid_for(),
           refresh_token: authorization.refresh_token,
           # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
-          me: UserController.user_uri(conn, user)
+          me: Path.user(conn, user)
         }
       )
     end
@@ -82,7 +82,7 @@ defmodule CPub.Web.Authorization.TokenController do
           expires_in: Token.valid_for(),
           refresh_token: authorization.refresh_token,
           # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
-          me: UserController.user_uri(conn, user)
+          me: Path.user(conn, user)
         }
       )
     else

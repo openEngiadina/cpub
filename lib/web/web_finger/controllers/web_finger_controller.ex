@@ -13,6 +13,7 @@ defmodule CPub.Web.WebFinger.WebFingerController do
   alias CPub.Web.WebFinger
 
   @spec resource(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @dialyzer {:nowarn_function, resource: 2}
   def resource(%Plug.Conn{} = conn, %{"resource" => "acct:" <> account = resource} = params) do
     case WebFinger.account(account, params) do
       {:ok, response} ->

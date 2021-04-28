@@ -13,7 +13,7 @@ defmodule CPub.Web.UserController do
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
 
-  alias CPub.Web.Endpoint
+  alias CPub.Web.Path
 
   action_fallback CPub.Web.FallbackController
 
@@ -105,27 +105,6 @@ defmodule CPub.Web.UserController do
     )
   end
 
-  @spec user_uri(Plug.Conn.t(), User.t()) :: String.t()
-  def user_uri(%Plug.Conn{} = conn, %User{} = user) do
-    conn
-    |> Routes.user_path(:show, user.username)
-    |> Endpoint.base_path()
-  end
-
-  @spec user_inbox_uri(Plug.Conn.t(), User.t()) :: String.t()
-  def user_inbox_uri(%Plug.Conn{} = conn, %User{} = user) do
-    conn
-    |> Routes.user_inbox_path(:get_inbox, user.username)
-    |> Endpoint.base_path()
-  end
-
-  @spec user_outbox_uri(Plug.Conn.t(), User.t()) :: String.t()
-  def user_outbox_uri(%Plug.Conn{} = conn, %User{} = user) do
-    conn
-    |> Routes.user_outbox_path(:get_outbox, user.username)
-    |> Endpoint.base_path()
-  end
-
   @spec get_authorized_user(Plug.Conn.t(), keyword) :: {:ok, User.t()} | {:error, any}
   defp get_authorized_user(
          %Plug.Conn{assigns: %{authorization: authorization}},
@@ -146,18 +125,6 @@ defmodule CPub.Web.UserController do
   defp authorize_user(%User{username: username}, %{"user_id" => username}), do: {:ok, username}
   defp authorize_user(%User{}, _), do: {:error, :unauthorized}
 
-  # Add a inbox/outbox property to user profile based on current connection.
-  @spec add_inbox_outbox(User.t(), Plug.Conn.t()) :: FragmentGraph.t()
-  defp add_inbox_outbox(user, conn) do
-    user_inbox_iri = conn |> user_inbox_uri(user) |> RDF.iri()
-    user_outbox_iri = conn |> user_outbox_uri(user) |> RDF.iri()
-
-    user
-    |> User.get_profile()
-    |> FragmentGraph.add(LDP.inbox(), user_inbox_iri)
-    |> FragmentGraph.add(AS.outbox(), user_outbox_iri)
-  end
-
   @spec render_user(Plug.Conn.t(), User.t()) :: Plug.Conn.t()
   defp render_user(%Plug.Conn{} = conn, %User{} = user) do
     conn
@@ -165,10 +132,21 @@ defmodule CPub.Web.UserController do
     |> render(:show,
       data:
         user
-        # Add the HTTP inbox/outbox
-        |> add_inbox_outbox(conn)
+        |> User.get_profile()
         # Replace the base subject of the profile object with the user's URI
-        |> FragmentGraph.set_base_subject(user_uri(conn, user))
+        |> FragmentGraph.set_base_subject(Path.user(conn, user))
+        |> add_inbox_outbox(conn, user)
     )
+  end
+
+  # Add inbox/outbox properties to user profile generated with instance URL
+  @spec add_inbox_outbox(FragmentGraph.t(), Plug.Conn.t(), User.t()) :: FragmentGraph.t()
+  defp add_inbox_outbox(%FragmentGraph{} = graph, %Plug.Conn{} = conn, %User{} = user) do
+    user_inbox_iri = conn |> Path.user_inbox(user) |> RDF.iri()
+    user_outbox_iri = conn |> Path.user_outbox(user) |> RDF.iri()
+
+    graph
+    |> FragmentGraph.add(LDP.inbox(), user_inbox_iri)
+    |> FragmentGraph.add(AS.outbox(), user_outbox_iri)
   end
 end
