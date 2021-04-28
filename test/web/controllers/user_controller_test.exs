@@ -30,7 +30,7 @@ defmodule CPub.Web.UserControllerTest do
   end
 
   describe "whoami/2" do
-    test "returns user profile for authenticated request", %{conn: conn, user: user, token: token} do
+    test "returns user profile for authenticated request", %{conn: conn, token: token} do
       response =
         conn
         |> put_req_header("authorization", "Bearer " <> token.access_token)
@@ -39,8 +39,6 @@ defmodule CPub.Web.UserControllerTest do
       assert response.status == 200
 
       assert {:ok, _response_rdf} = Jason.decode(response.resp_body)
-
-      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
 
     test "returns 404 for unauthenticated request", %{conn: conn} do
@@ -52,12 +50,6 @@ defmodule CPub.Web.UserControllerTest do
 
   describe "show/2" do
     test "returns user profile in response to application/ld+json", %{conn: conn, user: user} do
-      # The URL used in testing seems to be `http://www.example.com/`
-      _url =
-        ("http://www.example.com" <>
-           Routes.user_path(conn, :show, user.username))
-        |> RDF.IRI.new!()
-
       response =
         conn
         |> put_req_header("accept", "application/ld+json")
@@ -66,18 +58,12 @@ defmodule CPub.Web.UserControllerTest do
       assert response.status == 200
 
       assert {:ok, _response_rdf} = Jason.decode(response.resp_body)
-
-      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
 
-    test "returns user profile in response to application/activity+json",
-         %{conn: conn, user: user} do
-      # The URL used in testing seems to be `http://www.example.com/`
-      _url =
-        ("http://www.example.com" <>
-           Routes.user_path(conn, :show, user.username))
-        |> RDF.IRI.new!()
-
+    test "returns user profile in response to application/activity+json", %{
+      conn: conn,
+      user: user
+    } do
       response =
         conn
         |> put_req_header("accept", "application/activity+json")
@@ -86,17 +72,9 @@ defmodule CPub.Web.UserControllerTest do
       assert response.status == 200
 
       assert {:ok, _response_rdf} = Jason.decode(response.resp_body)
-
-      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
 
     test "returns user profile in response to application/rdf+json", %{conn: conn, user: user} do
-      # The URL used in testing seems to be `http://www.example.com/`
-      _url =
-        ("http://www.example.com" <>
-           Routes.user_path(conn, :show, user.username))
-        |> RDF.IRI.new!()
-
       response =
         conn
         |> put_req_header("accept", "application/rdf+json")
@@ -105,17 +83,9 @@ defmodule CPub.Web.UserControllerTest do
       assert response.status == 200
 
       assert {:ok, _response_rdf} = RDFJSON.Decoder.decode(response.resp_body)
-
-      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
 
     test "returns user profile in response to text/turtle", %{conn: conn, user: user} do
-      # The URL used in testing seems to be `http://www.example.com/`
-      _url =
-        ("http://www.example.com" <>
-           Routes.user_path(conn, :show, user.username))
-        |> RDF.IRI.new!()
-
       response =
         conn
         |> put_req_header("accept", "text/turtle")
@@ -124,8 +94,6 @@ defmodule CPub.Web.UserControllerTest do
       assert response.status == 200
 
       assert {:ok, _response_rdf} = RDFTurtle.Decoder.decode(response.resp_body)
-
-      {:ok, _profile} = user.profile |> CPub.ERIS.get_rdf()
     end
 
     test "returns 404 for unknown profile", %{conn: conn} do

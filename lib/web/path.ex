@@ -18,6 +18,21 @@ defmodule CPub.Web.Path do
     conn |> Routes.authentication_session_path(:login, params) |> base_path()
   end
 
+  @spec oauth_server_client_registration(Plug.Conn.t()) :: String.t()
+  def oauth_server_client_registration(%Plug.Conn{} = conn) do
+    conn |> Routes.oauth_server_client_path(:create) |> base_path()
+  end
+
+  @spec oauth_server_authorization(Plug.Conn.t()) :: String.t()
+  def oauth_server_authorization(%Plug.Conn{} = conn) do
+    conn |> Routes.oauth_server_authorization_path(:authorize) |> base_path()
+  end
+
+  @spec oauth_server_token(Plug.Conn.t()) :: String.t()
+  def oauth_server_token(%Plug.Conn{} = conn) do
+    conn |> Routes.oauth_server_token_path(:token) |> base_path()
+  end
+
   @spec user(Plug.Conn.t(), User.t()) :: String.t()
   def user(%Plug.Conn{} = conn, %User{username: username}) do
     conn |> Routes.user_path(:show, username) |> base_path()

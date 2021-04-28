@@ -12,6 +12,7 @@ defmodule CPub.Web.UserController do
 
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.NS.LDP
+  alias CPub.NS.Litepub, as: LP
 
   alias CPub.Web.Path
 
@@ -136,6 +137,7 @@ defmodule CPub.Web.UserController do
         # Replace the base subject of the profile object with the user's URI
         |> FragmentGraph.set_base_subject(Path.user(conn, user))
         |> add_inbox_outbox(conn, user)
+        |> add_endpoints(conn)
     )
   end
 
@@ -148,5 +150,32 @@ defmodule CPub.Web.UserController do
     graph
     |> FragmentGraph.add(LDP.inbox(), user_inbox_iri)
     |> FragmentGraph.add(AS.outbox(), user_outbox_iri)
+  end
+
+  # Add endpoints property to user profile generated with instance URL
+  @spec add_endpoints(FragmentGraph.t(), Plug.Conn.t()) :: FragmentGraph.t()
+  defp add_endpoints(%FragmentGraph{} = graph, %Plug.Conn{} = conn) do
+    oauth_server_authorization_iri = conn |> Path.oauth_server_authorization() |> RDF.iri()
+    oauth_server_token_iri = conn |> Path.oauth_server_token() |> RDF.iri()
+
+    oauth_server_client_registration_iri =
+      conn |> Path.oauth_server_client_registration() |> RDF.iri()
+
+    graph
+    |> FragmentGraph.add_fragment_statement(
+      "endpoints",
+      AS.oauthAuthorizationEndpoint(),
+      oauth_server_authorization_iri
+    )
+    |> FragmentGraph.add_fragment_statement(
+      "endpoints",
+      AS.oauthTokenEndpoint(),
+      oauth_server_token_iri
+    )
+    |> FragmentGraph.add_fragment_statement(
+      "endpoints",
+      LP.oauthRegistrationEndpoint(),
+      oauth_server_client_registration_iri
+    )
   end
 end

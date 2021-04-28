@@ -43,6 +43,7 @@ config :mime, :types, %{
 config :rdf,
   default_prefixes: %{
     as: "https://www.w3.org/ns/activitystreams#",
+    litepub: "http://litepub.social/ns#",
     ldp: "http://www.w3.org/ns/ldp#",
     foaf: "http://xmlns.com/foaf/0.1/"
   }
