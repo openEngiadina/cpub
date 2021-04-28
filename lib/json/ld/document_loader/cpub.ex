@@ -19,7 +19,11 @@ defmodule JSON.LD.DocumentLoader.CPub do
   @litepub_url "http://litepub.social/ns#"
   @litepub_data %{
     "@context" => %{
-      "oauthRegistraionEndpoint" => %{"@id" => "as:oauthRegistrationEndpoint", "@type" => "@id"}
+      "litepub" => @litepub_url,
+      "oauthRegistrationEndpoint" => %{
+        "@id" => "litepub:oauthRegistrationEndpoint",
+        "@type" => "@id"
+      }
     }
   }
 
