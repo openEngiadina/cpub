@@ -34,7 +34,7 @@ defmodule CPub.User.Outbox do
                object_id
                |> FragmentGraph.new()
                |> FragmentGraph.add(graph)
-               |> FragmentGraph.finalize() do
+               |> FragmentGraph.finalize(&CPub.Magnet.fragment_graph_finalizer/1) do
           {:ok, object,
            replace_object_in_fragment_graph(activity, object_id, object.base_subject)}
         end
@@ -57,7 +57,7 @@ defmodule CPub.User.Outbox do
          activity_id
          |> FragmentGraph.new()
          |> FragmentGraph.add(graph)
-         |> FragmentGraph.finalize()}
+         |> FragmentGraph.finalize(&CPub.Magnet.fragment_graph_finalizer/1)}
 
       _ ->
         {:error, :no_activity_to_post}

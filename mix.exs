@@ -92,6 +92,7 @@ defmodule CPub.MixProject do
 
       # ERIS & content-addressing
       {:eris, git: "https://gitlab.com/openengiadina/elixir-eris", branch: "main"},
+      {:magnet, git: "https://github.com/rustra/magnet.git", branch: "fancy"},
 
       # User passwords
       # TODO: replace argon2_elixir with argon2i from :monocypher

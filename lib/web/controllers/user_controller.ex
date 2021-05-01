@@ -61,7 +61,7 @@ defmodule CPub.Web.UserController do
          {:ok, ^username} <- authorize_user(user, params),
          {:ok, {activity_read_cap, _}} <- User.Outbox.post(user, graph) do
       conn
-      |> put_resp_header("location", ERIS.ReadCapability.to_string(activity_read_cap))
+      |> put_resp_header("location", CPub.Magnet.from_eris_read_capability(activity_read_cap))
       |> send_resp(:created, "")
     end
   end
@@ -96,7 +96,7 @@ defmodule CPub.Web.UserController do
       fn read_cap, graph ->
         iri =
           read_cap
-          |> ERIS.ReadCapability.to_string()
+          |> CPub.Magnet.from_eris_read_capability()
           |> RDF.iri()
 
         graph

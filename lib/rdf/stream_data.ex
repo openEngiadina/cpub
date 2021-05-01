@@ -103,7 +103,7 @@ defmodule RDF.StreamData do
       FragmentGraph.new("urn:dummy")
       |> add_statements_to_fg(statements)
       |> add_fragment_statements_to_fg(fragment_statements)
-      |> FragmentGraph.finalize()
+      |> FragmentGraph.finalize(&CPub.Magnet.fragment_graph_finalizer/1)
     end)
   end
 

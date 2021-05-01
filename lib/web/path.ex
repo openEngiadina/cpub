@@ -33,6 +33,13 @@ defmodule CPub.Web.Path do
     conn |> Routes.oauth_server_token_path(:token) |> base_path()
   end
 
+  @spec urn_resolution(Plug.Conn.t(), String.t(), String.t()) :: String.t()
+  def urn_resolution(%Plug.Conn{} = conn, service, urn) do
+    with path <- conn |> Routes.urn_resolution_path(:resolve, service) |> base_path() do
+      "#{path}?#{urn}"
+    end
+  end
+
   @spec user(Plug.Conn.t(), User.t()) :: String.t()
   def user(%Plug.Conn{} = conn, %User{username: username}) do
     conn |> Routes.user_path(:show, username) |> base_path()

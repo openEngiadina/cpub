@@ -479,17 +479,16 @@ defmodule RDF.FragmentGraph do
   Finalize the `RDF.FragmentGraph` with a custom finalizer. The default finalizer
   sets the base subject to the ERIS URN of the content.
   """
-  @spec finalize(t, (t -> t)) :: t
+  @spec finalize(t, (t -> String.t())) :: t
   def finalize(%__MODULE__{} = fg, finalizer \\ &eris_finalizer/1) do
-    finalizer.(fg)
+    set_base_subject(fg, finalizer.(fg))
   end
 
-  @spec eris_finalizer(t) :: t
+  @spec eris_finalizer(t) :: String.t()
   def eris_finalizer(%__MODULE__{} = fg) do
-    with csexp <- CSexp.encode(fg),
-         urn <- ERIS.encode_urn(csexp) do
-      set_base_subject(fg, urn)
-    end
+    fg
+    |> CSexp.encode()
+    |> ERIS.encode_urn()
   end
 
   #########################
