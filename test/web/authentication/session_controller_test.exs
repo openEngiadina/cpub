@@ -21,26 +21,21 @@ defmodule CPub.Web.Authentication.SessionControllerTest do
   end
 
   describe "login/2" do
-    # TODO fix this test
-    # test "renders login screen when not authenticated", %{conn: conn} do
-    #   response =
-    #     conn
-    #     |> get(Routes.authentication_session_path(conn, :login))
+    test "renders login screen when not authenticated", %{conn: conn} do
+      response =
+        conn
+        |> get(Routes.authentication_session_path(conn, :login))
 
-    #   assert html_response(response, 200) =~ "Login"
-    # end
+      assert html_response(response, 200) =~ "Login"
+    end
 
-    test "redirectes to internal provider for user with internal registration", %{
-      conn: conn,
-      user: user
-    } do
+    test "redirectes to internal provider for user with internal registration",
+         %{conn: conn, user: user} do
       response =
         conn
         |> post(
           Routes.authentication_session_path(conn, :login),
-          %{
-            "credential" => user.username
-          }
+          %{"credential" => user.username}
         )
 
       assert redirected_to(response) ==
