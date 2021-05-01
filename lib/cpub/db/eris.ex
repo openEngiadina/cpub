@@ -84,15 +84,13 @@ defmodule CPub.ERIS do
     end)
   end
 
-  @spec get_rdf(String.t() | ERIS.ReadCapability.t() | {:ok, ERIS.ReadCapability.t()}) ::
+  @spec get_rdf(String.t() | ERIS.ReadCapability.t()) ::
           :ok | {:ok, FragmentGraph.t()} | {:error, any}
   def get_rdf(urn) when is_binary(urn) do
-    urn
-    |> ERIS.ReadCapability.parse()
-    |> get_rdf()
+    with {:ok, read_capability} <- ERIS.ReadCapability.parse(urn) do
+      get_rdf(read_capability)
+    end
   end
-
-  def get_rdf({:ok, %ERIS.ReadCapability{} = read_capability}), do: get_rdf(read_capability)
 
   def get_rdf(%ERIS.ReadCapability{} = read_capability) do
     DB.transaction(fn ->

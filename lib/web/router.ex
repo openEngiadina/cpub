@@ -116,6 +116,13 @@ defmodule CPub.Web.Router do
     get "/whoami", UserController, :whoami
   end
 
+  ## URN resolution
+  scope "/uri-res", CPub.Web.URNResolution do
+    pipe_through :api
+
+    get "/:service", URNResolutionController, :resolve
+  end
+
   # Well-known URIs
   scope "/.well-known", CPub.Web do
     pipe_through :well_known
@@ -131,7 +138,6 @@ defmodule CPub.Web.Router do
   scope "/", CPub.Web do
     pipe_through :api
 
-    get "/resolve", ResolveController, :show
     get "/public", PublicController, :get_public
   end
 
