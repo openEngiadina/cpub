@@ -19,8 +19,6 @@ defmodule RDF.FragmentGraph do
   ~I<http://example.com/#a-fragment> are also permitted).
 
   TODO: This needs some love:
-   - Make more explicit a FragmentGraph that is being built and a finalized
-     FragmentGraph
    - Update RDF.Data to 0.9 interface of rdf-ex
   """
 
@@ -292,7 +290,8 @@ defmodule RDF.FragmentGraph do
     end
   end
 
-  # Helper to create a FragmentGraph with a dummy base subject (useful when creating a content-addressed Frgment Graph).
+  # Helper to create a FragmentGraph with a dummy base subject (useful when
+  # creating a content-addressed Frgment Graph).
   @spec new() :: t
   def new, do: new("urn:fragment-graph-to-be-finalized")
 
@@ -477,14 +476,16 @@ defmodule RDF.FragmentGraph do
   end
 
   @doc """
-  Finalize the `RDF.FragmentGraph` by setting the base subject to the ERIS URN
-  of the content.
-
-  TODO: This binds the `RDF.FragmentGraph` implementation to `ERIS`. Maybe this
-  can be separated in a nice way?
+  Finalize the `RDF.FragmentGraph` with a custom finalizer. The default finalizer
+  sets the base subject to the ERIS URN of the content.
   """
-  @spec finalize(t) :: t
-  def finalize(%__MODULE__{} = fg) do
+  @spec finalize(t, (t -> t)) :: t
+  def finalize(%__MODULE__{} = fg, finalizer \\ &eris_finalizer/1) do
+    finalizer.(fg)
+  end
+
+  @spec eris_finalizer(t) :: t
+  def eris_finalizer(%__MODULE__{} = fg) do
     with csexp <- CSexp.encode(fg),
          urn <- ERIS.encode_urn(csexp) do
       set_base_subject(fg, urn)
