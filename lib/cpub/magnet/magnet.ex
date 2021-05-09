@@ -13,6 +13,7 @@ defmodule CPub.Magnet do
   alias CPub.Web.Path
 
   @spec from_urn(String.t()) :: String.t()
+  @dialyzer {:nowarn_function, from_urn: 1}
   def from_urn(urn) do
     with urn_resolution_path <- Path.urn_resolution(%Plug.Conn{}, "N2R", urn),
          magnet_params <- %{info_hash: [urn], source: [urn_resolution_path]},
@@ -22,6 +23,7 @@ defmodule CPub.Magnet do
   end
 
   @spec from_eris_read_capability(ERIS.ReadCapability.t()) :: String.t()
+  @dialyzer {:nowarn_function, from_eris_read_capability: 1}
   def from_eris_read_capability(%ERIS.ReadCapability{} = read_capability) do
     read_capability
     |> ERIS.ReadCapability.to_string()
@@ -29,6 +31,7 @@ defmodule CPub.Magnet do
   end
 
   @spec fragment_graph_finalizer(FragmentGraph.t()) :: String.t()
+  @dialyzer {:nowarn_function, fragment_graph_finalizer: 1}
   def fragment_graph_finalizer(%FragmentGraph{} = fg) do
     fg
     |> FragmentGraph.eris_finalizer()

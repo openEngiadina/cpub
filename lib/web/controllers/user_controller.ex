@@ -56,6 +56,7 @@ defmodule CPub.Web.UserController do
   POST to your outbox to send messages to the world (client-to-server)
   """
   @spec post_to_outbox(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @dialyzer {:nowarn_function, post_to_outbox: 2}
   def post_to_outbox(%Plug.Conn{} = conn, %{"user_id" => username, graph: graph} = params) do
     with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
          {:ok, ^username} <- authorize_user(user, params),
@@ -87,6 +88,7 @@ defmodule CPub.Web.UserController do
   as:Collection.
   """
   @spec as_container(MapSet.t(), RDF.IRI.t()) :: RDF.Graph.t()
+  @dialyzer {:nowarn_function, as_container: 2}
   def as_container(objects, id) do
     Enum.reduce(
       objects,
