@@ -55,13 +55,11 @@ defmodule CPub.Web.WebFinger do
 
   @spec descriptor_aliases(User.t()) :: [String.t()]
   @dialyzer {:nowarn_function, descriptor_aliases: 1}
-  defp descriptor_aliases(%User{} = user) do
-    [Path.user(Phoenix.ConnTest.build_conn(), user)]
-  end
+  defp descriptor_aliases(%User{} = user), do: [Path.user(user)]
 
   @spec descriptor_links(User.t()) :: [map]
   defp descriptor_links(%User{} = user) do
-    user_uri = Path.user(Phoenix.ConnTest.build_conn(), user)
+    user_uri = Path.user(user)
 
     [
       %{
@@ -87,7 +85,7 @@ defmodule CPub.Web.WebFinger do
     [
       %{
         "rel" => @open_id_connect_issuer,
-        "href" => Path.authentication_session_login(Phoenix.ConnTest.build_conn())
+        "href" => Path.authentication_session_login()
       }
     ]
   end

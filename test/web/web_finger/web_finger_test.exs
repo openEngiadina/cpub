@@ -29,9 +29,8 @@ defmodule CPub.Web.WebFingerTest do
 
   describe "account/2" do
     test "returns account descriptor", %{user: user} do
-      conn = build_conn()
       account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
-      user_uri = Path.user(conn, user)
+      user_uri = Path.user(user)
 
       assert {:ok, desc} = WebFinger.account(account, %{})
 
@@ -60,10 +59,9 @@ defmodule CPub.Web.WebFingerTest do
     end
 
     test "returns account descriptor with issuer", %{user: user} do
-      conn = build_conn()
       account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
-      user_uri = Path.user(conn, user)
-      auth_login_uri = Path.authentication_session_login(conn)
+      user_uri = Path.user(user)
+      auth_login_uri = Path.authentication_session_login()
 
       assert {:ok, desc} =
                WebFinger.account(account, %{"rel" => "http://openid.net/specs/connect/1.0/issuer"})

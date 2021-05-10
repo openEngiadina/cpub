@@ -39,7 +39,7 @@ defmodule CPub.Web.Authorization.TokenController do
           expires_in: Token.valid_for(),
           refresh_token: authorization.refresh_token,
           # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
-          me: Path.user(conn, user)
+          me: Path.user(user)
         }
       )
     end
@@ -59,7 +59,7 @@ defmodule CPub.Web.Authorization.TokenController do
           expires_in: Token.valid_for(),
           refresh_token: authorization.refresh_token,
           # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
-          me: Path.user(conn, user)
+          me: Path.user(user)
         }
       )
     end
@@ -82,7 +82,7 @@ defmodule CPub.Web.Authorization.TokenController do
           expires_in: Token.valid_for(),
           refresh_token: authorization.refresh_token,
           # IndieAuth: https://indieauth.spec.indieweb.org/#access-token-response
-          me: Path.user(conn, user)
+          me: Path.user(user)
         }
       )
     else

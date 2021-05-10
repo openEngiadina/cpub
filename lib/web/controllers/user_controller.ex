@@ -135,17 +135,17 @@ defmodule CPub.Web.UserController do
         user
         |> User.get_profile()
         # Replace the base subject of the profile object with the user's URI
-        |> FragmentGraph.set_base_subject(Path.user(conn, user))
-        |> add_inbox_outbox(conn, user)
-        |> add_endpoints(conn)
+        |> FragmentGraph.set_base_subject(Path.user(user))
+        |> add_inbox_outbox(user)
+        |> add_endpoints()
     )
   end
 
   # Add inbox/outbox properties to user profile generated with instance URL
-  @spec add_inbox_outbox(FragmentGraph.t(), Plug.Conn.t(), User.t()) :: FragmentGraph.t()
-  defp add_inbox_outbox(%FragmentGraph{} = graph, %Plug.Conn{} = conn, %User{} = user) do
-    user_inbox_iri = conn |> Path.user_inbox(user) |> RDF.iri()
-    user_outbox_iri = conn |> Path.user_outbox(user) |> RDF.iri()
+  @spec add_inbox_outbox(FragmentGraph.t(), User.t()) :: FragmentGraph.t()
+  defp add_inbox_outbox(%FragmentGraph{} = graph, %User{} = user) do
+    user_inbox_iri = Path.user_inbox(user) |> RDF.iri()
+    user_outbox_iri = Path.user_outbox(user) |> RDF.iri()
 
     graph
     |> FragmentGraph.add(LDP.inbox(), user_inbox_iri)
@@ -153,13 +153,12 @@ defmodule CPub.Web.UserController do
   end
 
   # Add endpoints property to user profile generated with instance URL
-  @spec add_endpoints(FragmentGraph.t(), Plug.Conn.t()) :: FragmentGraph.t()
-  defp add_endpoints(%FragmentGraph{} = graph, %Plug.Conn{} = conn) do
-    oauth_server_authorization_iri = conn |> Path.oauth_server_authorization() |> RDF.iri()
-    oauth_server_token_iri = conn |> Path.oauth_server_token() |> RDF.iri()
+  @spec add_endpoints(FragmentGraph.t()) :: FragmentGraph.t()
+  defp add_endpoints(%FragmentGraph{} = graph) do
+    oauth_server_authorization_iri = Path.oauth_server_authorization() |> RDF.iri()
+    oauth_server_token_iri = Path.oauth_server_token() |> RDF.iri()
 
-    oauth_server_client_registration_iri =
-      conn |> Path.oauth_server_client_registration() |> RDF.iri()
+    oauth_server_client_registration_iri = Path.oauth_server_client_registration() |> RDF.iri()
 
     graph
     |> FragmentGraph.add_fragment_statement(

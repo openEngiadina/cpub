@@ -14,8 +14,7 @@ defmodule CPub.Magnet do
 
   @spec from_urn(String.t()) :: String.t()
   def from_urn(urn) do
-    with conn <- Phoenix.ConnTest.build_conn(),
-         urn_resolution_path <- Path.urn_resolution(conn, "N2R", urn),
+    with urn_resolution_path <- Path.urn_resolution("N2R", urn),
          magnet_params <- %{info_hash: [urn], source: [urn_resolution_path]},
          magnet <- struct(Magnet, magnet_params) do
       Magnet.encode(magnet)

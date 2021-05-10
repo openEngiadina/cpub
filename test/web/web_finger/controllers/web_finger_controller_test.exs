@@ -29,7 +29,7 @@ defmodule CPub.Web.WebFinger.WebFingerControllerTest do
   describe "resource/2" do
     test "returns account descriptor", %{conn: conn, user: user} do
       account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
-      user_uri = Path.user(conn, user)
+      user_uri = Path.user(user)
 
       response =
         conn
@@ -65,8 +65,8 @@ defmodule CPub.Web.WebFinger.WebFingerControllerTest do
 
     test "returns account descriptor with issuer", %{conn: conn, user: user} do
       account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
-      user_uri = Path.user(conn, user)
-      auth_login_uri = Path.authentication_session_login(conn)
+      user_uri = Path.user(user)
+      auth_login_uri = Path.authentication_session_login()
 
       response =
         conn
