@@ -12,7 +12,7 @@ defmodule CPub.Web.RDFParser do
 
   import RDF.Sigils
 
-  alias RDF.JSON.DocumentLoader
+  alias JSON.LD.DocumentLoader
   alias RDF.Turtle
 
   @doc false
