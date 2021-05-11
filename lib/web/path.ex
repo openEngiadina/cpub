@@ -55,6 +55,16 @@ defmodule CPub.Web.Path do
     conn() |> Routes.user_outbox_path(:get_outbox, username) |> base_path()
   end
 
+  @spec user_followers(User.t()) :: String.t()
+  def user_followers(%User{username: username}) do
+    conn() |> Routes.user_followers_path(:get_followers, username) |> base_path()
+  end
+
+  @spec user_following(User.t()) :: String.t()
+  def user_following(%User{username: username}) do
+    conn() |> Routes.user_following_path(:get_following, username) |> base_path()
+  end
+
   @spec base_path(String.t()) :: String.t()
   def base_path(path) do
     Config.base_url()

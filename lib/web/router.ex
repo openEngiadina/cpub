@@ -149,6 +149,9 @@ defmodule CPub.Web.Router do
       post "/outbox", UserController, :post_to_outbox, as: :outbox
       get "/outbox", UserController, :get_outbox, as: :outbox
       get "/inbox", UserController, :get_inbox, as: :inbox
+
+      get "/following", UserController, :get_following, as: :following
+      get "/followers", UserController, :get_followers, as: :followers
     end
   end
 end

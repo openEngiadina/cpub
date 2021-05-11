@@ -9,7 +9,7 @@ defmodule CPub.User do
   """
 
   use Memento.Table,
-    attributes: [:id, :username, :profile, :inbox, :outbox],
+    attributes: [:id, :username, :profile, :inbox, :outbox, :followers, :following],
     index: [:username],
     type: :set
 
@@ -29,7 +29,9 @@ defmodule CPub.User do
           username: String.t(),
           profile: FragmentGraph.t(),
           inbox: IRI.t(),
-          outbox: IRI.t()
+          outbox: IRI.t(),
+          followers: IRI.t(),
+          following: IRI.t()
         }
 
   # don't check if user already exists, just write.
@@ -37,13 +39,17 @@ defmodule CPub.User do
   def create!(username) do
     with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put(),
          inbox <- DB.Set.new(),
-         outbox <- DB.Set.new() do
+         outbox <- DB.Set.new(),
+         followers <- DB.Set.new(),
+         following <- DB.Set.new() do
       %__MODULE__{
         id: UUID.uuid4(),
         username: username,
         profile: profile_read_capability,
         inbox: inbox,
-        outbox: outbox
+        outbox: outbox,
+        followers: followers,
+        following: following
       }
       |> Query.write()
     else

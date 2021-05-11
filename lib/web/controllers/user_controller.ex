@@ -136,20 +136,24 @@ defmodule CPub.Web.UserController do
         |> User.get_profile()
         # Replace the base subject of the profile object with the user's URI
         |> FragmentGraph.set_base_subject(Path.user(user))
-        |> add_inbox_outbox(user)
+        |> add_collections(user)
         |> add_endpoints()
     )
   end
 
-  # Add inbox/outbox properties to user profile generated with instance URL
-  @spec add_inbox_outbox(FragmentGraph.t(), User.t()) :: FragmentGraph.t()
-  defp add_inbox_outbox(%FragmentGraph{} = graph, %User{} = user) do
+  # Add collections properties to user profile generated with instance URL
+  @spec add_collections(FragmentGraph.t(), User.t()) :: FragmentGraph.t()
+  defp add_collections(%FragmentGraph{} = graph, %User{} = user) do
     user_inbox_iri = Path.user_inbox(user) |> RDF.iri()
     user_outbox_iri = Path.user_outbox(user) |> RDF.iri()
+    user_followers_iri = Path.user_followers(user) |> RDF.iri()
+    user_following_iri = Path.user_following(user) |> RDF.iri()
 
     graph
     |> FragmentGraph.add(LDP.inbox(), user_inbox_iri)
     |> FragmentGraph.add(AS.outbox(), user_outbox_iri)
+    |> FragmentGraph.add(AS.followers(), user_followers_iri)
+    |> FragmentGraph.add(AS.following(), user_following_iri)
   end
 
   # Add endpoints property to user profile generated with instance URL
