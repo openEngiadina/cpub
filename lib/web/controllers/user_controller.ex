@@ -91,8 +91,8 @@ defmodule CPub.Web.UserController do
     Enum.reduce(
       objects,
       RDF.Graph.new()
-      |> RDF.Graph.add({id, RDF.type(), RDF.iri(LDP.BasicContainer)})
-      |> RDF.Graph.add({id, RDF.type(), RDF.iri(AS.Collection)}),
+      |> RDF.Graph.add({id, RDF.type(), LDP.BasicContainer})
+      |> RDF.Graph.add({id, RDF.type(), AS.Collection}),
       fn read_cap, graph ->
         iri =
           read_cap

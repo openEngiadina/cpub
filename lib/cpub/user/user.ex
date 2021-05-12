@@ -13,16 +13,14 @@ defmodule CPub.User do
     index: [:username],
     type: :set
 
-  alias CPub.DB
-  alias CPub.ERIS
-
-  # RDF namespaces
-  alias CPub.NS.ActivityStreams, as: AS
+  alias Memento.Query
 
   alias RDF.FragmentGraph
   alias RDF.IRI
 
-  alias Memento.Query
+  alias CPub.DB
+  alias CPub.ERIS
+  alias CPub.NS.ActivityStreams, as: AS
 
   @type t :: %__MODULE__{
           id: String.t(),
@@ -76,9 +74,16 @@ defmodule CPub.User do
 
   @spec default_profile(String.t()) :: FragmentGraph.t()
   defp default_profile(username) do
+    now =
+      NaiveDateTime.utc_now()
+      |> NaiveDateTime.truncate(:second)
+      |> NaiveDateTime.to_iso8601()
+      |> RDF.XSD.dateTime()
+
     FragmentGraph.new()
     |> FragmentGraph.add(RDF.type(), AS.Person)
     |> FragmentGraph.add(AS.preferredUsername(), username)
+    |> FragmentGraph.add(AS.published(), now)
   end
 
   @spec load_profile(any) :: t
