@@ -80,12 +80,14 @@ defmodule CPub.User.OutboxTest do
            bto <- object[EX.Object][AS.bto()] |> MapSet.new(),
            cc <- [@as_public] |> MapSet.new(),
            all_recipients <- to |> MapSet.union(bto) |> MapSet.union(cc),
-           {:ok, object_fg} <-
+           {:ok, magnet} <-
              activity_fg.statements[AS.object()]
              |> MapSet.to_list()
              |> List.first()
              |> to_string()
-             |> Magnet.decode()
+             |> Magnet.decode(),
+           {:ok, object_fg} <-
+             magnet
              |> Map.get(:info_hash)
              |> List.first()
              |> CPub.ERIS.get_rdf(),
@@ -117,12 +119,14 @@ defmodule CPub.User.OutboxTest do
       assert {:ok, {activity_read_cap, recipients}} = Outbox.post(alice, activity)
 
       with {:ok, activity_fg} <- CPub.ERIS.get_rdf(activity_read_cap),
-           {:ok, object_fg} <-
+           {:ok, magnet} <-
              activity_fg.statements[AS.object()]
              |> MapSet.to_list()
              |> List.first()
              |> to_string()
-             |> Magnet.decode()
+             |> Magnet.decode(),
+           {:ok, object_fg} <-
+             magnet
              |> Map.get(:info_hash)
              |> List.first()
              |> CPub.ERIS.get_rdf(),

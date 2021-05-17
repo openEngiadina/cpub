@@ -16,8 +16,9 @@ defmodule CPub.Magnet do
   def from_urn(urn) do
     with urn_resolution_path <- Path.urn_resolution("N2R", urn),
          magnet_params <- %{info_hash: [urn], source: [urn_resolution_path]},
-         magnet <- struct(Magnet, magnet_params) do
-      Magnet.encode(magnet)
+         magnet <- struct(Magnet, magnet_params),
+         {:ok, magnet_uri} <- Magnet.encode(magnet) do
+      magnet_uri
     end
   end
 
