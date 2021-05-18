@@ -18,7 +18,8 @@ defmodule CPub.User.Outbox do
   alias RDF.NS.RDFS
   alias RDF.Statement
 
-  alias CPub.ActivityPub
+  alias CPub.ActivityPub.Delivery
+  alias CPub.ActivityPub.Dereference
   alias CPub.DB
   alias CPub.NS.ActivityStreams, as: AS
   alias CPub.User
@@ -33,6 +34,7 @@ defmodule CPub.User.Outbox do
 
   @create_activity ~I<https://www.w3.org/ns/activitystreams#Create>
   @update_activity ~I<https://www.w3.org/ns/activitystreams#Update>
+  @delete_activity ~I<https://www.w3.org/ns/activitystreams#Delete>
 
   @activity_with_object_bgp [
     {:activity_id?, :a, :activity_type?},
@@ -58,8 +60,7 @@ defmodule CPub.User.Outbox do
            {:ok, _object} <- perform_activity_side_effect(activity_type, object),
            {:ok, activity_read_capability} <- CPub.ERIS.put(activity),
            :ok <- DB.Set.add(actor.outbox, activity_read_capability) do
-        {activity_read_capability,
-         ActivityPub.Delivery.deliver(recipients, activity_read_capability)}
+        {activity_read_capability, Delivery.deliver(recipients, activity_read_capability)}
       else
         {:error, reason} ->
           DB.abort(reason)
@@ -101,18 +102,12 @@ defmodule CPub.User.Outbox do
 
     object_recipients = extract_recipients(object)
     activity_recipients = extract_recipients(activity)
-
-    recipients =
-      Map.merge(object_recipients, activity_recipients, fn _k, v1, v2 ->
-        (List.wrap(v1) ++ List.wrap(v2)) |> MapSet.new() |> MapSet.to_list()
-      end)
+    recipients = merge_recipients(object_recipients, activity_recipients)
 
     [object, activity] =
       Enum.map([object, activity], fn item ->
         item
-        |> Description.put({AS.to(), recipients[AS.to()]})
-        |> Description.put({AS.cc(), recipients[AS.cc()]})
-        |> Description.put({AS.audience(), recipients[AS.audience()]})
+        |> add_public_recipients(recipients)
         |> remove_hidden_recipients()
       end)
 
@@ -152,6 +147,42 @@ defmodule CPub.User.Outbox do
   defp extract_activity_with_object_uri({:ok, [%{activity_type: activity_type}]}, _, _)
        when activity_type in [@create_activity, @update_activity] do
     {:error, :no_object}
+  end
+
+  defp extract_activity_with_object_uri(
+         {:ok,
+          [%{activity_id: activity_id, activity_type: @delete_activity, object_uri: object_id}]},
+         %Graph{} = activity_graph,
+         %User{} = actor
+       ) do
+    with {:ok, object_fg} <- Dereference.fetch(object_id),
+         [attributed_to] <- object_fg.statements[AS.attributedTo()] |> MapSet.to_list(),
+         true <- to_string(attributed_to) == (actor_url = Path.user(actor)) do
+      now = now()
+
+      activity =
+        activity_graph[activity_id]
+        |> Description.put({AS.actor(), attributed_to})
+        |> Description.put({AS.published(), now})
+        |> add_actor_followers_to_recipients(actor)
+
+      object_recipients = extract_recipients(object_fg.statements)
+      activity_recipients = extract_recipients(activity)
+      recipients = merge_recipients(object_recipients, activity_recipients)
+
+      activity =
+        activity
+        |> add_public_recipients(recipients)
+        |> remove_hidden_recipients()
+
+      activity_fg = create_finalized_fragment_graph(activity_id, activity)
+      recipients = list_recipients(recipients, actor_url)
+
+      {:ok, AS.Delete |> RDF.iri(), activity_fg, object_fg, recipients}
+    else
+      _ ->
+        {:error, :unauthorized}
+    end
   end
 
   ## TODO: add support
@@ -197,13 +228,13 @@ defmodule CPub.User.Outbox do
     {:ok, AS.Create |> RDF.iri(), create_activity_fg, object_fg, recipients}
   end
 
-  @spec get_all(Description.t(), [IRI.t()], [Statement.object()]) :: recipients_map
+  @spec get_all(Enumerable.t(), [IRI.t()], [Statement.object()]) :: recipients_map
   defp get_all(container, keys, default) do
-    Map.new(keys, &{&1, Access.get(container, &1, default)})
+    Map.new(keys, &{&1, container |> Access.get(&1, default) |> Enum.to_list()})
   end
 
   # Extract all recipients from an object
-  @spec extract_recipients(Description.t()) :: recipients_map
+  @spec extract_recipients(Enumerable.t()) :: recipients_map
   defp extract_recipients(object) do
     get_all(object, [AS.to(), AS.cc(), AS.bto(), AS.bcc(), AS.audience()], [])
   end
@@ -221,6 +252,13 @@ defmodule CPub.User.Outbox do
     |> MapSet.to_list()
   end
 
+  @spec merge_recipients(recipients_map, recipients_map) :: recipients_map
+  def merge_recipients(recipients1, recipients2) do
+    Map.merge(recipients1, recipients2, fn _k, v1, v2 ->
+      (List.wrap(v1) ++ List.wrap(v2)) |> MapSet.new() |> MapSet.to_list()
+    end)
+  end
+
   # Add actor's followers to the `to` property of an object
   @spec add_actor_followers_to_recipients(Description.t(), User.t()) :: Description.t()
   defp add_actor_followers_to_recipients(%Description{} = object, %User{} = actor) do
@@ -231,6 +269,15 @@ defmodule CPub.User.Outbox do
       {AS.to(),
        [actor_followers_iri | List.wrap(object[AS.to()])] |> MapSet.new() |> MapSet.to_list()}
     )
+  end
+
+  # Add `to`, `cc` and `audience` properties to an object
+  @spec add_public_recipients(Description.t(), recipients_map) :: Description.t()
+  defp add_public_recipients(%Description{} = object, recipients) do
+    object
+    |> Description.put({AS.to(), recipients[AS.to()]})
+    |> Description.put({AS.cc(), recipients[AS.cc()]})
+    |> Description.put({AS.audience(), recipients[AS.audience()]})
   end
 
   # Remove `bto` and `bcc` properties from an object
@@ -250,9 +297,7 @@ defmodule CPub.User.Outbox do
     |> Description.put({AS.actor(), actor_url |> RDF.iri()})
     |> Description.put({AS.published(), now})
     |> Description.put({AS.object(), object_id})
-    |> Description.put({AS.to(), recipients[AS.to()]})
-    |> Description.put({AS.cc(), recipients[AS.cc()]})
-    |> Description.put({AS.audience(), recipients[AS.audience()]})
+    |> add_public_recipients(recipients)
   end
 
   @spec create_finalized_fragment_graph(IRI.t(), Description.t()) :: FragmentGraph.t()
@@ -294,5 +339,9 @@ defmodule CPub.User.Outbox do
   @spec perform_activity_side_effect(IRI.t(), FragmentGraph.t()) :: {:ok, FragmentGraph.t()}
   defp perform_activity_side_effect(@create_activity, object) do
     with {:ok, _} <- CPub.ERIS.put(object), do: {:ok, object}
+  end
+
+  defp perform_activity_side_effect(@delete_activity, object) do
+    with {:ok, _} <- CPub.ERIS.delete(object), do: {:ok, nil}
   end
 end

@@ -51,6 +51,13 @@ defmodule CPub.ERIS do
             {:error, :eris_block_not_found}
         end
       end
+
+      def delete(transaction, data) do
+        ref = ERIS.Crypto.blake2b(data)
+        _ = Memento.Query.delete_record(%Block{ref: ref, data: data})
+
+        {:ok, transaction}
+      end
     end
   end
 
@@ -69,6 +76,24 @@ defmodule CPub.ERIS do
       transaction = Transaction.new()
 
       with {read_capability, _} <- ERIS.encode(data, transaction), do: read_capability
+    end)
+  end
+
+  @doc """
+  Delete ERIS-encoded data blocks from database.any()
+  """
+  @spec delete(FragmentGraph.t() | String.t()) :: {:ok, nil}
+  def delete(%FragmentGraph{} = fg) do
+    fg
+    |> FragmentGraph.CSexp.encode()
+    |> delete()
+  end
+
+  def delete(data) when is_binary(data) do
+    DB.transaction(fn ->
+      transaction = Transaction.new()
+
+      with {:ok, _} <- ERIS.delete(data, transaction), do: nil
     end)
   end
 

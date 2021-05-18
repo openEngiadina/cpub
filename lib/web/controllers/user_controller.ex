@@ -64,8 +64,8 @@ defmodule CPub.Web.UserController do
       |> put_resp_header("location", CPub.Magnet.from_eris_read_capability(activity_read_cap))
       |> send_resp(:created, "")
     else
-      {:error, :not_supported} ->
-        {:error, :not_supported}
+      {:error, reason} when reason in [:not_supported, :not_found, :unauthorized] ->
+        {:error, reason}
 
       {:error, _} ->
         {:error, :bad_request}
