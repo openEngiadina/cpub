@@ -93,7 +93,6 @@ defmodule CPub.User.Outbox do
       activity_graph[object_id]
       |> Description.put({AS.attributedTo(), actor_url |> RDF.iri()})
       |> Description.put({AS.published(), now})
-      |> add_actor_followers_to_recipients(actor)
 
     activity =
       activity_graph[activity_id]
@@ -164,7 +163,6 @@ defmodule CPub.User.Outbox do
         activity_graph[activity_id]
         |> Description.put({AS.actor(), attributed_to})
         |> Description.put({AS.published(), now})
-        |> add_actor_followers_to_recipients(actor)
 
       object_recipients = extract_recipients(object_fg.statements)
       activity_recipients = extract_recipients(activity)
@@ -209,7 +207,6 @@ defmodule CPub.User.Outbox do
       object_graph[object_id]
       |> Description.put({AS.attributedTo(), actor_url |> RDF.iri()})
       |> Description.put({AS.published(), now})
-      |> add_actor_followers_to_recipients(actor)
 
     recipients = extract_recipients(object)
 
@@ -257,18 +254,6 @@ defmodule CPub.User.Outbox do
     Map.merge(recipients1, recipients2, fn _k, v1, v2 ->
       (List.wrap(v1) ++ List.wrap(v2)) |> MapSet.new() |> MapSet.to_list()
     end)
-  end
-
-  # Add actor's followers to the `to` property of an object
-  @spec add_actor_followers_to_recipients(Description.t(), User.t()) :: Description.t()
-  defp add_actor_followers_to_recipients(%Description{} = object, %User{} = actor) do
-    actor_followers_iri = Path.user_followers(actor) |> RDF.iri()
-
-    Description.put(
-      object,
-      {AS.to(),
-       [actor_followers_iri | List.wrap(object[AS.to()])] |> MapSet.new() |> MapSet.to_list()}
-    )
   end
 
   # Add `to`, `cc` and `audience` properties to an object

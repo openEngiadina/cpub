@@ -74,9 +74,7 @@ defmodule CPub.User.OutboxTest do
       with {:ok, activity_fg} <- CPub.ERIS.get_rdf(activity_read_cap),
            as_create <- [AS.Create |> RDF.iri()] |> MapSet.new(),
            alice_iri <- [alice |> Path.user() |> RDF.iri()] |> MapSet.new(),
-           to <-
-             [alice |> Path.user_followers() |> RDF.iri() | object[EX.Object][AS.to()]]
-             |> MapSet.new(),
+           to <- object[EX.Object][AS.to()] |> MapSet.new(),
            bto <- object[EX.Object][AS.bto()] |> MapSet.new(),
            cc <- [@as_public] |> MapSet.new(),
            all_recipients <- to |> MapSet.union(bto) |> MapSet.union(cc),
@@ -133,13 +131,10 @@ defmodule CPub.User.OutboxTest do
            as_create <- [AS.Create |> RDF.iri()] |> MapSet.new(),
            as_note <- [AS.Note |> RDF.iri()] |> MapSet.new(),
            alice_iri <- [alice |> Path.user() |> RDF.iri()] |> MapSet.new(),
-           object_to <-
-             [alice |> Path.user_followers() |> RDF.iri() | object[EX.Object][AS.to()]]
-             |> MapSet.new(),
+           object_to <- object[EX.Object][AS.to()] |> MapSet.new(),
            object_bto <- object[EX.Object][AS.bto()] |> MapSet.new(),
            object_cc <- object[EX.Object][AS.cc()] |> MapSet.new(),
-           activity_to <-
-             activity[EX.Example][AS.to()] |> MapSet.new(),
+           activity_to <- activity[EX.Example][AS.to()] |> MapSet.new(),
            to <- object_to |> MapSet.union(activity_to),
            all_recipients <- to |> MapSet.union(object_bto) |> MapSet.union(object_cc) do
         assert %{
