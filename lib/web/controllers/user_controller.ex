@@ -48,7 +48,7 @@ defmodule CPub.Web.UserController do
          {:ok, inbox} <- User.Inbox.get(user) do
       conn
       |> put_view(RDFView)
-      |> render(:show, data: as_container(inbox, RDF.iri(request_url(conn))))
+      |> render(:show, data: as_container(inbox, user |> Path.user_inbox() |> RDF.iri()))
     end
   end
 
@@ -83,7 +83,7 @@ defmodule CPub.Web.UserController do
          {:ok, outbox} <- User.Outbox.get(user) do
       conn
       |> put_view(RDFView)
-      |> render(:show, data: as_container(outbox, RDF.iri(request_url(conn))))
+      |> render(:show, data: as_container(outbox, user |> Path.user_outbox() |> RDF.iri()))
     end
   end
 
@@ -93,20 +93,21 @@ defmodule CPub.Web.UserController do
   """
   @spec as_container(MapSet.t(), RDF.IRI.t()) :: RDF.Graph.t()
   def as_container(objects, id) do
-    Enum.reduce(
-      objects,
+    objects
+    |> RDFView.sort_by_published()
+    |> Enum.reduce(
       RDF.Graph.new()
       |> RDF.Graph.add({id, RDF.type(), LDP.BasicContainer})
-      |> RDF.Graph.add({id, RDF.type(), AS.Collection}),
+      |> RDF.Graph.add({id, RDF.type(), AS.OrderedCollection}),
       fn read_cap, graph ->
-        iri =
+        magnet_iri =
           read_cap
           |> CPub.Magnet.from_eris_read_capability()
           |> RDF.iri()
 
         graph
-        |> RDF.Graph.add({id, LDP.member(), iri})
-        |> RDF.Graph.add({id, AS.items(), iri})
+        |> RDF.Graph.add({id, LDP.member(), magnet_iri})
+        |> RDF.Graph.add({id, AS.items(), magnet_iri})
       end
     )
   end
