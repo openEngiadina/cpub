@@ -50,6 +50,14 @@ defmodule CPub.User.Outbox do
   ]
 
   @doc """
+  Get activities of `actor`.
+  """
+  @spec get(User.t()) :: {:ok, MapSet.t()} | {:error, any}
+  def get(%User{} = user) do
+    DB.Set.state(user.outbox)
+  end
+
+  @doc """
   Post activity in `graph` on behalf of `actor`.
   """
   @spec post(User.t(), Graph.t()) :: {:ok, {ERIS.ReadCapability.t(), map}} | {:error, any}

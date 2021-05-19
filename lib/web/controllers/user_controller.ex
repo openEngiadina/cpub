@@ -80,8 +80,7 @@ defmodule CPub.Web.UserController do
   def get_outbox(%Plug.Conn{} = conn, %{"user_id" => username} = params) do
     with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
          {:ok, ^username} <- authorize_user(user, params),
-         # TODO: get real outbox
-         {:ok, outbox} <- {:ok, MapSet.new()} do
+         {:ok, outbox} <- User.Outbox.get(user) do
       conn
       |> put_view(RDFView)
       |> render(:show, data: as_container(outbox, RDF.iri(request_url(conn))))
