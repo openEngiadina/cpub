@@ -59,9 +59,11 @@ defmodule CPub.Web.UserController do
   def post_to_outbox(%Plug.Conn{} = conn, %{"user_id" => username, graph: graph} = params) do
     with {:ok, user} <- get_authorized_user(conn, scope: [:write]),
          {:ok, ^username} <- authorize_user(user, params),
-         {:ok, {activity_read_cap, _}} <- User.Outbox.post(user, graph) do
+         {:ok, {activity_read_cap, _}} <- User.Outbox.post(user, graph),
+         urn_resolution_path <-
+           Path.urn_resolution("N2R", ERIS.ReadCapability.to_string(activity_read_cap)) do
       conn
-      |> put_resp_header("location", CPub.Magnet.from_eris_read_capability(activity_read_cap))
+      |> put_resp_header("location", urn_resolution_path)
       |> send_resp(:created, "")
     else
       {:error, reason} when reason in [:not_supported, :not_found, :unauthorized] ->
@@ -100,14 +102,14 @@ defmodule CPub.Web.UserController do
       |> RDF.Graph.add({id, RDF.type(), LDP.BasicContainer})
       |> RDF.Graph.add({id, RDF.type(), AS.OrderedCollection}),
       fn read_cap, graph ->
-        magnet_iri =
+        iri =
           read_cap
-          |> CPub.Magnet.from_eris_read_capability()
+          |> ERIS.ReadCapability.to_string()
           |> RDF.iri()
 
         graph
-        |> RDF.Graph.add({id, LDP.member(), magnet_iri})
-        |> RDF.Graph.add({id, AS.items(), magnet_iri})
+        |> RDF.Graph.add({id, LDP.member(), iri})
+        |> RDF.Graph.add({id, AS.items(), iri})
       end
     )
   end

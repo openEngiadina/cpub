@@ -144,7 +144,7 @@ defmodule CPub.Signify do
        |> FragmentGraph.add(RDF.value(), RDF.XSD.base64Binary(signature, as_value: true))
        |> FragmentGraph.add(NS.message(), RDF.iri(message))
        |> FragmentGraph.add(NS.publicKey(), PublicKey.to_iri(sk.public_key))
-       |> FragmentGraph.finalize(&CPub.Magnet.fragment_graph_finalizer/1)}
+       |> FragmentGraph.finalize()}
     end
   end
 

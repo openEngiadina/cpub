@@ -298,7 +298,7 @@ defmodule CPub.User.Outbox do
     object_id
     |> FragmentGraph.new()
     |> FragmentGraph.add(Graph.new(object))
-    |> FragmentGraph.finalize(&CPub.Magnet.fragment_graph_finalizer/1)
+    |> FragmentGraph.finalize()
   end
 
   # Helper to replace occurence of a specific object in a FragmentGraph
