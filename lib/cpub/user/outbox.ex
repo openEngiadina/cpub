@@ -15,7 +15,7 @@ defmodule CPub.User.Outbox do
   alias RDF.Graph
   alias RDF.IRI
   alias RDF.Literal
-  alias RDF.NS.RDFS
+  alias RDF.Query
   alias RDF.Statement
 
   alias CPub.ActivityPub.Delivery
@@ -26,28 +26,11 @@ defmodule CPub.User.Outbox do
 
   alias CPub.Web.Path
 
-  @type rdf_query_result :: {:ok, [%{:atom => IRI.t()}]}
-
   @type recipients_map :: %{IRI.t() => Statement.object()}
-
-  @activity_streams RDF.Turtle.read_file!("./priv/vocabs/activitystreams2.ttl")
 
   @create_activity ~I<https://www.w3.org/ns/activitystreams#Create>
   @update_activity ~I<https://www.w3.org/ns/activitystreams#Update>
   @delete_activity ~I<https://www.w3.org/ns/activitystreams#Delete>
-
-  @activity_with_object_bgp [
-    {:activity_id?, :a, :activity_type?},
-    {:activity_type?, RDFS.subClassOf(), AS.Activity},
-    {:activity_id?, AS.object(), :object_id?},
-    {:object_id?, :a, :object_type?}
-  ]
-
-  @activity_with_object_uri_bgp [
-    {:activity_id?, :a, :activity_type?},
-    {:activity_type?, RDFS.subClassOf(), AS.Activity},
-    {:activity_id?, AS.object(), :object_uri?}
-  ]
 
   @doc """
   Get activities of `actor`.
@@ -80,17 +63,23 @@ defmodule CPub.User.Outbox do
   @spec extract_or_create_activity(Graph.t(), User.t()) ::
           {:ok, RDF.IRI.t(), FragmentGraph.t(), FragmentGraph.t(), [String.t()]} | {:error, any}
   defp extract_or_create_activity(%Graph{} = graph, %User{} = actor) do
-    @activity_with_object_bgp
-    |> RDF.Query.execute(RDF.Data.merge(graph, @activity_streams))
-    |> extract_activity_with_object(graph, actor)
+    case Query.ActivityStreams.type(graph) do
+      {:activity_with_object, activity_with_object} ->
+        extract_activity_with_object(activity_with_object, graph, actor)
+
+      {:activity_with_object_uri, activity_with_object_uri} ->
+        extract_activity_with_object_uri(activity_with_object_uri, graph, actor)
+
+      _ ->
+        create_activity(graph, actor)
+    end
   end
 
   # Extract the `Create` activity with object's properties
-  @spec extract_activity_with_object(rdf_query_result, Graph.t(), User.t()) ::
+  @spec extract_activity_with_object(map, Graph.t(), User.t()) ::
           {:ok, RDF.IRI.t(), FragmentGraph.t(), FragmentGraph.t(), [String.t()]} | {:error, any}
   defp extract_activity_with_object(
-         {:ok,
-          [%{activity_id: activity_id, activity_type: @create_activity, object_id: object_id}]},
+         %{activity_id: activity_id, activity_type: @create_activity, object_id: object_id},
          %Graph{} = activity_graph,
          %User{} = actor
        ) do
@@ -132,33 +121,25 @@ defmodule CPub.User.Outbox do
 
   ## TODO: add support
   # Extract the `Update` activity with object's properties
-  defp extract_activity_with_object({:ok, [%{activity_type: @update_activity}]}, _, _) do
+  defp extract_activity_with_object(%{activity_type: @update_activity}, _, _) do
     {:error, :not_supported}
   end
 
   # Any activities except of `Create` and `Update` should contain an object's URI
-  defp extract_activity_with_object({:ok, [%{activity_type: _}]}, _, _) do
+  defp extract_activity_with_object(%{activity_type: _}, _, _) do
     {:error, :no_object_uri}
   end
 
-  # Extract an activity with an object's URI
-  defp extract_activity_with_object({:ok, []}, %Graph{} = graph, %User{} = actor) do
-    @activity_with_object_uri_bgp
-    |> RDF.Query.execute(RDF.Data.merge(graph, @activity_streams))
-    |> extract_activity_with_object_uri(graph, actor)
-  end
-
   # `Create` and `Update` activities should contain actual object's properties
-  @spec extract_activity_with_object_uri(rdf_query_result, Graph.t(), User.t()) ::
+  @spec extract_activity_with_object_uri(map, Graph.t(), User.t()) ::
           {:ok, RDF.IRI.t(), FragmentGraph.t(), FragmentGraph.t(), [String.t()]} | {:error, any}
-  defp extract_activity_with_object_uri({:ok, [%{activity_type: activity_type}]}, _, _)
+  defp extract_activity_with_object_uri(%{activity_type: activity_type}, _, _)
        when activity_type in [@create_activity, @update_activity] do
     {:error, :no_object}
   end
 
   defp extract_activity_with_object_uri(
-         {:ok,
-          [%{activity_id: activity_id, activity_type: @delete_activity, object_uri: object_id}]},
+         %{activity_id: activity_id, activity_type: @delete_activity, object_uri: object_id},
          %Graph{} = activity_graph,
          %User{} = actor
        ) do
@@ -193,13 +174,8 @@ defmodule CPub.User.Outbox do
 
   ## TODO: add support
   # Extract an activity with an object's URI for the rest types of activities
-  defp extract_activity_with_object_uri({:ok, [%{activity_id: _, object_uri: _}]}, _, _) do
+  defp extract_activity_with_object_uri(%{activity_id: _, object_uri: _}, _, _) do
     {:error, :not_supported}
-  end
-
-  # Extract an object for creation without a surrounding activity
-  defp extract_activity_with_object_uri({:ok, []}, %Graph{} = graph, %User{} = actor) do
-    create_activity(graph, actor)
   end
 
   # Surround an object with the `Create` activity
