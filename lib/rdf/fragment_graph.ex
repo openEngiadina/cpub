@@ -30,6 +30,7 @@ defmodule RDF.FragmentGraph do
 
   alias RDF.Data
   alias RDF.Description
+  alias RDF.Graph
   alias RDF.IRI
   alias RDF.Literal
   alias RDF.Statement
@@ -189,6 +190,16 @@ defmodule RDF.FragmentGraph do
       %IRI{} = iri ->
         Description.new(iri)
     end
+  end
+
+  @doc """
+  Return `RDF.Graph` for given `RDF.FragmentGraph`.
+  """
+  @spec graph(t) :: Graph.t()
+  def graph(%__MODULE__{} = fg) do
+    fg
+    |> statements()
+    |> RDF.Graph.new()
   end
 
   @doc """

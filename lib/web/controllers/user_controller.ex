@@ -100,7 +100,8 @@ defmodule CPub.Web.UserController do
     |> Enum.reduce(
       RDF.Graph.new()
       |> RDF.Graph.add({id, RDF.type(), LDP.BasicContainer})
-      |> RDF.Graph.add({id, RDF.type(), AS.OrderedCollection}),
+      |> RDF.Graph.add({id, RDF.type(), AS.OrderedCollection})
+      |> RDF.Graph.add({id, AS.totalItems(), RDF.XSD.nonNegativeInteger(MapSet.size(objects))}),
       fn read_cap, graph ->
         iri =
           read_cap

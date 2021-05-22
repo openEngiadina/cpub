@@ -10,7 +10,7 @@ defmodule CPub.Web.RDFView do
 
   use CPub.Web, :view
 
-  alias JSON.LD.Encoder.CPub, as: CPubEncoder
+  alias JSON.LD.Encoder.ActivityPub, as: CPubEncoder
 
   alias CPub.NS.ActivityStreams, as: AS
 

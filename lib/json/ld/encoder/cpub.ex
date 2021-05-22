@@ -13,6 +13,9 @@ defmodule JSON.LD.Encoder.CPub do
 
   alias CPub.NS
 
+  @context %{"@context" => [NS.activity_streams_url(), NS.litepub_url(), NS.ldp_url()]}
+  @document_loader DocumentLoader.CPub
+
   @spec compact_encode!(Encoder.input() | RDF.FragmentGraph.t()) :: String.t()
   def compact_encode!(%RDF.FragmentGraph{} = data) do
     {json_ld, properties} =
@@ -42,14 +45,8 @@ defmodule JSON.LD.Encoder.CPub do
   @dialyzer {:nowarn_function, compact_json_ld: 1}
   defp compact_json_ld(data) do
     data
-    |> Encoder.encode!(
-      expand_context: %{"@context" => [NS.activity_streams_url(), NS.litepub_url()]},
-      document_loader: DocumentLoader.CPub
-    )
+    |> Encoder.encode!(expand_context: @context, document_loader: @document_loader)
     |> Jason.decode!()
-    |> JSON.LD.compact(
-      %{"@context" => [NS.activity_streams_url(), NS.litepub_url()]},
-      document_loader: DocumentLoader.CPub
-    )
+    |> JSON.LD.compact(@context, document_loader: @document_loader)
   end
 end
