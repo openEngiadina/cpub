@@ -62,7 +62,7 @@ defmodule RDF.Query.ActivityStreams do
 
     Enum.reduce_while(@types_check_list, {:unknown, %{}}, fn {type, type_bgp}, acc ->
       case RDF.Query.execute(type_bgp, graph) do
-        {:ok, [object]} when not (type in [:collection]) ->
+        {:ok, [object]} when type not in [:collection] ->
           {:halt, {type, object}}
 
         {:ok, items} when type in [:collection] and length(items) > 0 ->

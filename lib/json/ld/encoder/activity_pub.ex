@@ -51,7 +51,9 @@ defmodule JSON.LD.Encoder.ActivityPub do
              &with {:ok, fg} <- CPub.ERIS.get_rdf(&1), do: do_compact_encode!(fg, :activity)
            ) do
       collection
+      # AS.items
       |> Map.put("items", items)
+      # LDP.member
       |> Map.put("member", items)
     end
   end
@@ -65,6 +67,7 @@ defmodule JSON.LD.Encoder.ActivityPub do
               {:ok, object_fg} ->
                 with object <- object_fg |> do_compact_encode!(:object) |> Map.delete("@context"),
                      activity <- do_compact_encode!(activity_fg, :object) do
+                  # AS.object
                   Map.put(activity, "object", object)
                 end
 

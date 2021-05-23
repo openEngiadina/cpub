@@ -4,7 +4,7 @@
 
 # GitLab CI configuration
 
-image: elixir:1.11.4
+image: elixir:latest
 
 stages:
   - test
