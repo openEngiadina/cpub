@@ -64,7 +64,22 @@ defmodule CPub.Application do
   defp http_children(_, _), do: []
 
   defp cache_children do
-    [{ConCache, [name: :jsonld_context, ttl_check_interval: false]}]
+    [
+      Supervisor.child_spec(
+        {ConCache, [name: :jsonld_context, ttl_check_interval: false]},
+        id: :jsonld_context_cache
+      ),
+      Supervisor.child_spec(
+        {ConCache,
+         [
+           name: :fragment_graphs,
+           ttl_check_interval: :timer.hours(24),
+           global_ttl: :timer.hours(24 * 7),
+           touch_on_read: true
+         ]},
+        id: :fragment_graphs_cache
+      )
+    ]
   end
 
   defp log_application_info do

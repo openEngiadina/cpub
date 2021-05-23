@@ -57,17 +57,28 @@ defmodule JSON.LD.Encoder.ActivityPub do
   end
 
   defp do_compact_encode!(%RDF.FragmentGraph{} = activity_fg, :activity) do
-    with [urn] <- MapSet.to_list(activity_fg.statements[AS.object()]) do
-      case CPub.ERIS.get_rdf(urn) do
-        {:ok, object_fg} ->
-          with object <- object_fg |> do_compact_encode!(:object) |> Map.delete("@context"),
-               activity <- do_compact_encode!(activity_fg, :object) do
-            Map.put(activity, "object", object)
+    case ConCache.get(:fragment_graphs, activity_fg.base_subject) do
+      nil ->
+        fg_to_cache =
+          with [urn] <- MapSet.to_list(activity_fg.statements[AS.object()]) do
+            case CPub.ERIS.get_rdf(urn) do
+              {:ok, object_fg} ->
+                with object <- object_fg |> do_compact_encode!(:object) |> Map.delete("@context"),
+                     activity <- do_compact_encode!(activity_fg, :object) do
+                  Map.put(activity, "object", object)
+                end
+
+              {:error, _} ->
+                do_compact_encode!(activity_fg, :object)
+            end
           end
 
-        {:error, _} ->
-          do_compact_encode!(activity_fg, :object)
-      end
+        :ok = ConCache.put(:fragment_graphs, activity_fg.base_subject, fg_to_cache)
+
+        fg_to_cache
+
+      cached_fg ->
+        cached_fg
     end
   end
 
