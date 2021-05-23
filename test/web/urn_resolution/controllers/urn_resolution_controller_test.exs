@@ -13,10 +13,10 @@ defmodule CPub.Web.URNResolution.URNResolutionControllerTest do
   setup do
     fg =
       FragmentGraph.new()
-      |> FragmentGraph.add(RDF.type(), EX.Something)
-      |> FragmentGraph.add(EX.content(), "Hellow")
-      |> FragmentGraph.add_fragment_statement("abc", RDF.type(), EX.Subthing)
-      |> FragmentGraph.add_fragment_statement("abc", EX.something(), 42)
+      |> FragmentGraph.add({RDF.type(), EX.Something})
+      |> FragmentGraph.add({EX.content(), "Hellow"})
+      |> FragmentGraph.add_fragment_statement("abc", {RDF.type(), EX.Subthing})
+      |> FragmentGraph.add_fragment_statement("abc", {EX.something(), 42})
       |> FragmentGraph.finalize()
 
     with {:ok, read_capability} <- fg |> CPub.ERIS.put() do

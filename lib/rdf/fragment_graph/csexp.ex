@@ -113,10 +113,10 @@ defmodule RDF.FragmentGraph.CSexp do
   defp decode_and_add_statement(statement, fg) do
     case statement do
       ["s", p, o] ->
-        FragmentGraph.add(fg, decode_term(p), decode_term(o))
+        FragmentGraph.add(fg, {decode_term(p), decode_term(o)})
 
       ["fs", f, p, o] ->
-        FragmentGraph.add_fragment_statement(fg, f, decode_term(p), decode_term(o))
+        FragmentGraph.add_fragment_statement(fg, f, {decode_term(p), decode_term(o)})
     end
   end
 end

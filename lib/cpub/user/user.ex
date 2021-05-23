@@ -81,9 +81,9 @@ defmodule CPub.User do
       |> RDF.XSD.dateTime()
 
     FragmentGraph.new()
-    |> FragmentGraph.add(RDF.type(), AS.Person)
-    |> FragmentGraph.add(AS.preferredUsername(), username)
-    |> FragmentGraph.add(AS.published(), now)
+    |> FragmentGraph.add({RDF.type(), AS.Person})
+    |> FragmentGraph.add({AS.preferredUsername(), username})
+    |> FragmentGraph.add({AS.published(), now})
   end
 
   @spec load_profile(any) :: t

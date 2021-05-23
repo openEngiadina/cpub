@@ -140,10 +140,10 @@ defmodule CPub.Signify do
          signature <- Monocypher.crypto_ed25519_sign(sk.value, sk.public_key.value, message) do
       {:ok,
        FragmentGraph.new()
-       |> FragmentGraph.add(RDF.type(), NS.Signature)
-       |> FragmentGraph.add(RDF.value(), RDF.XSD.base64Binary(signature, as_value: true))
-       |> FragmentGraph.add(NS.message(), RDF.iri(message))
-       |> FragmentGraph.add(NS.publicKey(), PublicKey.to_iri(sk.public_key))
+       |> FragmentGraph.add({RDF.type(), NS.Signature})
+       |> FragmentGraph.add({RDF.value(), RDF.XSD.base64Binary(signature, as_value: true)})
+       |> FragmentGraph.add({NS.message(), RDF.iri(message)})
+       |> FragmentGraph.add({NS.publicKey(), PublicKey.to_iri(sk.public_key)})
        |> FragmentGraph.finalize()}
     end
   end

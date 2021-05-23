@@ -159,10 +159,10 @@ defmodule CPub.Web.UserController do
     user_following_iri = Path.user_following(user) |> RDF.iri()
 
     graph
-    |> FragmentGraph.add(LDP.inbox(), user_inbox_iri)
-    |> FragmentGraph.add(AS.outbox(), user_outbox_iri)
-    |> FragmentGraph.add(AS.followers(), user_followers_iri)
-    |> FragmentGraph.add(AS.following(), user_following_iri)
+    |> FragmentGraph.add({LDP.inbox(), user_inbox_iri})
+    |> FragmentGraph.add({AS.outbox(), user_outbox_iri})
+    |> FragmentGraph.add({AS.followers(), user_followers_iri})
+    |> FragmentGraph.add({AS.following(), user_following_iri})
   end
 
   # Add endpoints property to user profile generated with instance URL
@@ -176,18 +176,15 @@ defmodule CPub.Web.UserController do
     graph
     |> FragmentGraph.add_fragment_statement(
       "endpoints",
-      AS.oauthAuthorizationEndpoint(),
-      oauth_server_authorization_iri
+      {AS.oauthAuthorizationEndpoint(), oauth_server_authorization_iri}
     )
     |> FragmentGraph.add_fragment_statement(
       "endpoints",
-      AS.oauthTokenEndpoint(),
-      oauth_server_token_iri
+      {AS.oauthTokenEndpoint(), oauth_server_token_iri}
     )
     |> FragmentGraph.add_fragment_statement(
       "endpoints",
-      LP.oauthRegistrationEndpoint(),
-      oauth_server_client_registration_iri
+      {LP.oauthRegistrationEndpoint(), oauth_server_client_registration_iri}
     )
   end
 end

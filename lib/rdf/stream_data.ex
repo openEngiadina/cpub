@@ -109,13 +109,13 @@ defmodule RDF.StreamData do
 
   @spec add_statements_to_fg(FragmentGraph.t(), [Statement.t()]) :: FragmentGraph.t()
   defp add_statements_to_fg(fg, statements) do
-    Enum.reduce(statements, fg, fn {p, o}, fg -> FragmentGraph.add(fg, p, o) end)
+    Enum.reduce(statements, fg, fn {p, o}, fg -> FragmentGraph.add(fg, {p, o}) end)
   end
 
   @spec add_fragment_statements_to_fg(FragmentGraph.t(), [Statement.t()]) :: FragmentGraph.t()
   defp add_fragment_statements_to_fg(fg, fragment_statements) do
     Enum.reduce(fragment_statements, fg, fn {fid, p, o}, fg ->
-      FragmentGraph.add_fragment_statement(fg, fid, p, o)
+      FragmentGraph.add_fragment_statement(fg, fid, {p, o})
     end)
   end
 end
