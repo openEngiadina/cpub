@@ -46,9 +46,14 @@ defmodule JSON.LD.Encoder.ActivityPub do
     with collection <- do_compact_encode!(collection_fg, :object),
          items <-
            collection_fg.statements[AS.items()]
-           |> MapSet.to_list()
-           |> Enum.map(
-             &with {:ok, fg} <- CPub.ERIS.get_rdf(&1), do: do_compact_encode!(fg, :activity)
+           |> Enum.to_list()
+           |> Task.async_stream(&CPub.ERIS.get_rdf/1)
+           |> Stream.map(&with {:ok, {:ok, fg}} <- &1, do: do_compact_encode!(fg, :activity))
+           |> Enum.to_list()
+           # sort by AS.published for AS.OrderedCollection
+           |> Enum.sort_by(
+             &NaiveDateTime.from_iso8601!(&1["published"]),
+             &(NaiveDateTime.compare(&1, &2) == :gt)
            ) do
       collection
       # AS.items

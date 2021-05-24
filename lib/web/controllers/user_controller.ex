@@ -96,7 +96,6 @@ defmodule CPub.Web.UserController do
   @spec as_container(MapSet.t(), RDF.IRI.t()) :: RDF.Graph.t()
   def as_container(objects, id) do
     objects
-    |> RDFView.sort_by_published()
     |> Enum.reduce(
       RDF.Graph.new()
       |> RDF.Graph.add({id, RDF.type(), LDP.BasicContainer})
