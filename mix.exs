@@ -91,7 +91,7 @@ defmodule CPub.MixProject do
       {:elixir_uuid, "~> 1.2"},
 
       # ERIS & content-addressing
-      {:eris, git: "https://gitlab.com/openengiadina/elixir-eris", branch: "main"},
+      {:eris, git: "https://codeberg.org/openEngiadina/elixir-eris", branch: "main"},
       {:magnet, "~> 0.1.0"},
 
       # User passwords
