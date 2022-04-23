@@ -145,7 +145,7 @@ defmodule CPub.User.Outbox do
        ) do
     with {:ok, object_fg} <- Dereference.fetch(object_id),
          [attributed_to] <- object_fg.statements[AS.attributedTo()] |> MapSet.to_list(),
-         true <- to_string(attributed_to) == (actor_url = Path.user(actor)) do
+         true <- to_string(attributed_to) ==  Path.user(actor) do
       now = now()
 
       activity =
@@ -156,6 +156,8 @@ defmodule CPub.User.Outbox do
       object_recipients = extract_recipients(object_fg.statements)
       activity_recipients = extract_recipients(activity)
       recipients = merge_recipients(object_recipients, activity_recipients)
+
+      actor_url = Path.user(actor)
 
       activity =
         activity
