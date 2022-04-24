@@ -9,7 +9,7 @@ defmodule CPub.MixProject do
   def project do
     [
       app: :cpub,
-      version: "0.3.0-dev",
+      version: "0.3.0",
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),

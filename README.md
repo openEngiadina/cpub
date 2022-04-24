@@ -34,11 +34,11 @@ See the [example](docs/demo.org) on how to create a user and some data.
 Releases are tagged commits on the `main` branch. To make a new release:
 
 - [ ] Make sure Changelog is up-to-date
-- [ ] Start a merge of `develop` into `main` with `git merge --no-ff --no-commit develop`. 
 - [ ] Update version in Changelog and `mix.exs`
 - [ ] Conclude merge with `git commit`
 - [ ] Add a git tag with `git tag -a v0.x -m "v0.x"`
 - [ ] Push to upstream branch with `git push upstream main` and `git push upstream main --tags`
+
 ## Documentation
 
 See the [docs](docs/) folder for documentation. Documentation is also available [online](https://openengiadina.codeberg.page/cpub).

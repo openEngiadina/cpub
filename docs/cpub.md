@@ -13,6 +13,8 @@ The goals of CPub are:
 
 See the [demo](./demo.md) for an overview of some of the implemented ideas.
 
+The source code of CPub is available at [codeberg](https://codeberg.org/openengiadina/cpub) (AGPL-3.0-or-later).
+
 CPub was developed for the [openEngiadina](https://openengiadina.net) project as a platform for open local knowledge.
 
 ## Status

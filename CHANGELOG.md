@@ -6,7 +6,9 @@ SPDX-License-Identifier: CC0-1.0
 
 # Changelog
 
-## [UNRELEASED]
+## [0.3.0] - 2022-04-24
+
+Initial support of the ActivityPub Client-to-Server protocol.
 
 ### Added
 
