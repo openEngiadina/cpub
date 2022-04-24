@@ -22,6 +22,9 @@ defmodule CPub.ActivityPub.Delivery do
       "local:" <> username ->
         deliver_local(username, message)
 
+      "https://www.w3.org/ns/activitystreams#Public" ->
+        CPub.Public.deliver(message)
+
       _ ->
         {:error, :no_delivery_method}
     end
