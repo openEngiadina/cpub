@@ -6,6 +6,7 @@ defmodule CPub.Web.WebFingerTest do
   @moduledoc false
 
   use ExUnit.Case
+  use CPub.Web.ConnCase
   use CPub.DataCase
 
   alias CPub.Config
@@ -13,6 +14,7 @@ defmodule CPub.Web.WebFingerTest do
 
   alias CPub.Web.Authorization
   alias CPub.Web.Authorization.Token
+  alias CPub.Web.Path
   alias CPub.Web.WebFinger
 
   doctest CPub.Web.WebFinger
@@ -27,8 +29,8 @@ defmodule CPub.Web.WebFingerTest do
 
   describe "account/2" do
     test "returns account descriptor", %{user: user} do
-      account = "#{user.username}@#{Config.host()}"
-      user_uri = "#{Config.base_url()}users/#{user.username}"
+      account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
+      user_uri = Path.user(user)
 
       assert {:ok, desc} = WebFinger.account(account, %{})
 
@@ -57,9 +59,9 @@ defmodule CPub.Web.WebFingerTest do
     end
 
     test "returns account descriptor with issuer", %{user: user} do
-      account = "#{user.username}@#{Config.host()}"
-      user_uri = "#{Config.base_url()}users/#{user.username}"
-      auth_login_uri = "#{Config.base_url()}auth/login"
+      account = "#{user.username}@#{URI.parse(Config.base_url()).host}"
+      user_uri = Path.user(user)
+      auth_login_uri = Path.authentication_session_login()
 
       assert {:ok, desc} =
                WebFinger.account(account, %{"rel" => "http://openid.net/specs/connect/1.0/issuer"})

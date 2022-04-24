@@ -14,14 +14,26 @@ defmodule CPub.Web.Authorization.Utils do
   @doc """
   Returns the `CPub.Web.Authorization.Client` associated with the connection.
   """
-  @spec get_client(Plug.Conn.t()) :: {:ok, Client.t()} | {:error, any}
+  @spec get_client(Plug.Conn.t()) :: {:ok, Client.t()} | {:error, any, any}
   def get_client(%Plug.Conn{} = conn) do
-    case Client.get(conn.params["client_id"]) do
-      {:ok, client} ->
-        {:ok, client}
-
-      {:error, _} ->
+    with {client_id, _} when is_binary(client_id) <- get_client_credentials(conn),
+         {:ok, %Client{} = client} <- Client.get(client_id) do
+      {:ok, client}
+    else
+      _ ->
         {:error, :invalid_request, "invalid client_id"}
+    end
+  end
+
+  @spec get_client_credentials(Plug.Conn.t()) :: {String.t(), String.t()}
+  def get_client_credentials(%Plug.Conn{} = conn) do
+    # Per RFC 6749, HTTP Basic is preferred to body params
+    with ["Basic " <> encoded] <- Plug.Conn.get_req_header(conn, "authorization"),
+         {:ok, decoded} <- Base.decode64(encoded),
+         [id, secret] <- Enum.map(String.split(decoded, ":"), &URI.decode_www_form/1) do
+      {id, secret}
+    else
+      _ -> {conn.params["client_id"], conn.params["client_secret"]}
     end
   end
 

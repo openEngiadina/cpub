@@ -10,11 +10,20 @@ defmodule CPub.ActivityPub.Delivery do
 
   alias CPub.User
 
-  @spec deliver(RDF.IRI.t(), ERIS.ReadCapability.t()) :: {:ok, :local} | {:error, atom}
+  @spec deliver(RDF.IRI.t() | [RDF.IRI.t()], ERIS.ReadCapability.t()) ::
+          %{required(RDF.IRI.t()) => {:ok, :local} | {:error, atom}}
+  def deliver(recipients, %ERIS.ReadCapability{} = message) when is_list(recipients) do
+    ## TODO: analyze for which recipients message could be delivered to their shared inbox
+    Map.new(recipients, &{&1, deliver(&1, message)})
+  end
+
   def deliver(%RDF.IRI{} = recipient, %ERIS.ReadCapability{} = message) do
     case RDF.IRI.to_string(recipient) do
       "local:" <> username ->
         deliver_local(username, message)
+
+      "https://www.w3.org/ns/activitystreams#Public" ->
+        CPub.Public.deliver(message)
 
       _ ->
         {:error, :no_delivery_method}

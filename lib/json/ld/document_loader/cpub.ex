@@ -16,13 +16,37 @@ defmodule JSON.LD.DocumentLoader.CPub do
 
   alias CPub.HTTP
 
-  @spec load(String.t(), Options.t()) :: {:ok, RemoteDocument.t()} | {:error, any}
-  def load(url, _options) do
-    headers = [{"Accept", "application/ld+json"}]
+  @litepub_url "http://litepub.social/ns#"
+  @litepub_data %{
+    "@context" => %{
+      "litepub" => @litepub_url,
+      "oauthRegistrationEndpoint" => %{
+        "@id" => "litepub:oauthRegistrationEndpoint",
+        "@type" => "@id"
+      }
+    }
+  }
 
-    with {:ok, res} <- HTTP.get(url, headers, []),
-         {:ok, data} <- Jason.decode(res.body) do
-      {:ok, %RemoteDocument{document: data, document_url: url}}
+  @spec load(String.t(), Options.t()) :: {:ok, RemoteDocument.t()} | {:error, any}
+  def load(@litepub_url, _options) do
+    # it's a hack as Litepub context URL is unavailable
+    {:ok, %RemoteDocument{document: @litepub_data, document_url: @litepub_url}}
+  end
+
+  def load(url, _options) do
+    case ConCache.get(:jsonld_context, url) do
+      nil ->
+        headers = [{"Accept", "application/ld+json"}]
+
+        with {:ok, res} <- HTTP.get(url, headers, []),
+             {:ok, data} <- Jason.decode(res.body) do
+          :ok = ConCache.put(:jsonld_context, url, data)
+
+          {:ok, %RemoteDocument{document: data, document_url: url}}
+        end
+
+      data ->
+        {:ok, %RemoteDocument{document: data, document_url: url}}
     end
   end
 end

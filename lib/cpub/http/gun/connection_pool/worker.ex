@@ -134,7 +134,13 @@ defmodule CPub.HTTP.Gun.ConnectionPool.Worker do
   # Gracefully shutdown if the connection got closed without any streams left
   @impl true
   def handle_info({:gun_down, _pid, _protocol, _reason, []}, state) do
-    {:stop, :normal, state}
+    case Map.keys(state.client_monitors) do
+      [] ->
+        {:stop, :normal, state}
+
+      _pids ->
+        {:noreply, state, :hibernate}
+    end
   end
 
   # Otherwise, wait for retry

@@ -9,27 +9,27 @@ defmodule CPub.User do
   """
 
   use Memento.Table,
-    attributes: [:id, :username, :profile, :inbox, :outbox],
+    attributes: [:id, :username, :profile, :inbox, :outbox, :followers, :following],
     index: [:username],
     type: :set
 
-  alias CPub.DB
-  alias CPub.ERIS
-
-  # RDF namespaces
-  alias CPub.NS.ActivityStreams, as: AS
+  alias Memento.Query
 
   alias RDF.FragmentGraph
   alias RDF.IRI
 
-  alias Memento.Query
+  alias CPub.DB
+  alias CPub.ERIS
+  alias CPub.NS.ActivityStreams, as: AS
 
   @type t :: %__MODULE__{
           id: String.t(),
           username: String.t(),
           profile: FragmentGraph.t(),
           inbox: IRI.t(),
-          outbox: IRI.t()
+          outbox: IRI.t(),
+          followers: IRI.t(),
+          following: IRI.t()
         }
 
   # don't check if user already exists, just write.
@@ -37,13 +37,17 @@ defmodule CPub.User do
   def create!(username) do
     with {:ok, profile_read_capability} <- default_profile(username) |> ERIS.put(),
          inbox <- DB.Set.new(),
-         outbox <- DB.Set.new() do
+         outbox <- DB.Set.new(),
+         followers <- DB.Set.new(),
+         following <- DB.Set.new() do
       %__MODULE__{
         id: UUID.uuid4(),
         username: username,
         profile: profile_read_capability,
         inbox: inbox,
-        outbox: outbox
+        outbox: outbox,
+        followers: followers,
+        following: following
       }
       |> Query.write()
     else
@@ -70,9 +74,16 @@ defmodule CPub.User do
 
   @spec default_profile(String.t()) :: FragmentGraph.t()
   defp default_profile(username) do
+    now =
+      NaiveDateTime.utc_now()
+      |> NaiveDateTime.truncate(:second)
+      |> NaiveDateTime.to_iso8601()
+      |> RDF.XSD.dateTime()
+
     FragmentGraph.new()
-    |> FragmentGraph.add(RDF.type(), AS.Person)
-    |> FragmentGraph.add(AS.preferredUsername(), username)
+    |> FragmentGraph.add({RDF.type(), AS.Person})
+    |> FragmentGraph.add({AS.preferredUsername(), username})
+    |> FragmentGraph.add({AS.published(), now})
   end
 
   @spec load_profile(any) :: t

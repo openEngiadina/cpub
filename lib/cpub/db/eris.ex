@@ -51,6 +51,13 @@ defmodule CPub.ERIS do
             {:error, :eris_block_not_found}
         end
       end
+
+      def delete(transaction, data) do
+        ref = ERIS.Crypto.blake2b(data)
+        _ = Memento.Query.delete_record(%Block{ref: ref, data: data})
+
+        {:ok, transaction}
+      end
     end
   end
 
@@ -73,6 +80,24 @@ defmodule CPub.ERIS do
   end
 
   @doc """
+  Delete ERIS-encoded data blocks from database.any()
+  """
+  @spec delete(FragmentGraph.t() | String.t()) :: {:ok, nil}
+  def delete(%FragmentGraph{} = fg) do
+    fg
+    |> FragmentGraph.CSexp.encode()
+    |> delete()
+  end
+
+  def delete(data) when is_binary(data) do
+    DB.transaction(fn ->
+      transaction = Transaction.new()
+
+      with {:ok, _} <- ERIS.delete(data, transaction), do: nil
+    end)
+  end
+
+  @doc """
   Decode ERIS encoded content given a read capability.
   """
   @spec get(ERIS.ReadCapability.t()) :: {:ok, {:ok, String.t()}}
@@ -84,15 +109,19 @@ defmodule CPub.ERIS do
     end)
   end
 
-  @spec get_rdf(String.t() | ERIS.ReadCapability.t() | {:ok, ERIS.ReadCapability.t()}) ::
+  @spec get_rdf(String.t() | RDF.IRI.t() | ERIS.ReadCapability.t()) ::
           :ok | {:ok, FragmentGraph.t()} | {:error, any}
-  def get_rdf(urn) when is_binary(urn) do
-    urn
-    |> ERIS.ReadCapability.parse()
+  def get_rdf(%RDF.IRI{} = iri) do
+    iri
+    |> to_string()
     |> get_rdf()
   end
 
-  def get_rdf({:ok, %ERIS.ReadCapability{} = read_capability}), do: get_rdf(read_capability)
+  def get_rdf(urn) when is_binary(urn) do
+    with {:ok, read_capability} <- ERIS.ReadCapability.parse(urn) do
+      get_rdf(read_capability)
+    end
+  end
 
   def get_rdf(%ERIS.ReadCapability{} = read_capability) do
     DB.transaction(fn ->

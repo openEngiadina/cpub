@@ -99,6 +99,30 @@ defmodule CPub.Web.Router do
     # TODO post("/revoke", TokenController, :revoke)
   end
 
+  ## Mastodon API (Apps)
+  scope "/api/v1", CPub.Web.Authorization, as: :mastodon_api do
+    pipe_through :json_api
+    pipe_through :session_authentication
+
+    # Client application registration
+    post "/apps", ClientController, :create
+  end
+
+  ## pump.io API (for AndStatus client compatibility)
+  scope "/api", CPub.Web do
+    pipe_through :api
+    pipe_through :authorization
+
+    get "/whoami", UserController, :whoami
+  end
+
+  ## URN resolution
+  scope "/uri-res", CPub.Web.URNResolution do
+    pipe_through :api
+
+    get "/:service", URNResolutionController, :resolve
+  end
+
   # Well-known URIs
   scope "/.well-known", CPub.Web do
     pipe_through :well_known
@@ -114,7 +138,6 @@ defmodule CPub.Web.Router do
   scope "/", CPub.Web do
     pipe_through :api
 
-    get "/resolve", ResolveController, :show
     get "/public", PublicController, :get_public
   end
 
@@ -126,6 +149,9 @@ defmodule CPub.Web.Router do
       post "/outbox", UserController, :post_to_outbox, as: :outbox
       get "/outbox", UserController, :get_outbox, as: :outbox
       get "/inbox", UserController, :get_inbox, as: :inbox
+
+      get "/following", UserController, :get_following, as: :following
+      get "/followers", UserController, :get_followers, as: :followers
     end
   end
 end

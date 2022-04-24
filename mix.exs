@@ -10,7 +10,7 @@ defmodule CPub.MixProject do
     [
       app: :cpub,
       version: "0.3.0-dev",
-      elixir: "~> 1.5",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -24,11 +24,11 @@ defmodule CPub.MixProject do
 
       # Docs
       name: "CPub",
-      homepage_url: "https://openengiadina.net/",
-      source_url: "https://gitlab.com/openengiadina/cpub",
+      homepage_url: "https://openengiadina.codeberg.page/cpub/",
+      source_url: "https://codeberg.org/openEngiadina/cpub",
       docs: [
-        extras: ["README.md", "CHANGELOG.md"] ++ Path.wildcard("docs/*.md"),
-        main: "readme",
+        extras: ["CHANGELOG.md"] ++ Path.wildcard("docs/*.md"),
+        main: "cpub",
         # TODO: to some nicer grouping
         groups_for_modules: [
           Schema: [CPub.User, CPub.User.Registration],
@@ -62,8 +62,8 @@ defmodule CPub.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      # Phoenix, Web and Databse
-      {:phoenix, "~> 1.5"},
+      # Phoenix, Web and Database
+      {:phoenix, "~> 1.5.9"},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_html, "~> 2.14"},
       {:plug_cowboy, "~> 2.0"},
@@ -86,16 +86,20 @@ defmodule CPub.MixProject do
       {:jason, "~> 1.2"},
 
       # RDF
-      {:rdf, git: "https://github.com/rdf-elixir/rdf-ex.git", branch: "master", override: true},
-      {:json_ld, "~> 0.3"},
+      {:rdf, "~> 0.9.3"},
+      {:json_ld, "~> 0.3.3"},
       {:elixir_uuid, "~> 1.2"},
 
       # ERIS & content-addressing
-      {:eris, git: "https://gitlab.com/openengiadina/elixir-eris", branch: "main"},
+      {:eris, git: "https://codeberg.org/openEngiadina/elixir-eris", branch: "main"},
+      {:magnet, "~> 0.1.0"},
 
       # User passwords
       # TODO: replace argon2_elixir with argon2i from :monocypher
       {:argon2_elixir, "~> 2.3"},
+
+      # Auxiliary
+      {:con_cache, "~> 1.0"},
 
       # dev & test
       {:stream_data, "~> 0.5"},

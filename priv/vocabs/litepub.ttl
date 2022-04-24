@@ -17,12 +17,3 @@ litepub:oauthRegistrationEndpoint
     a rdf:Property ;
     rdfs:label "OAuth Registration Endpoint" .
 
-# This property is NOT defined in the JSON-LD context used by Pleroma. But it is used.
-litepub:oauthAuthorizationEndpoint
-    a rdf:Property ;
-    rdfs:label "OAuth Authorization Endpoint" .
-
-# This property is NOT defined in the JSON-LD context used by Pleroma. But it is used.
-litepub:oauthTokenEndpoint
-    a rdf:Property ;
-    rdfs:label "OAuth Token Endpoint" .

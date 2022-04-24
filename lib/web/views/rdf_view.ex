@@ -10,18 +10,16 @@ defmodule CPub.Web.RDFView do
 
   use CPub.Web, :view
 
-  alias JSON.LD.DocumentLoader
+  alias JSON.LD.Encoder.ActivityPub, as: CPubEncoder
 
   @spec render(String.t(), map) :: String.t() | map
   @dialyzer {:nowarn_function, render: 2}
   def render("show.jsonld", %{data: %RDF.FragmentGraph{} = data}) do
-    data
-    |> RDF.FragmentGraph.description(data.base_subject)
-    |> JSON.LD.Encoder.encode!(document_loader: DocumentLoader.CPub)
+    CPubEncoder.compact_encode!(data)
   end
 
   def render("show.jsonld", %{data: data}) do
-    JSON.LD.Encoder.encode!(data, document_loader: DocumentLoader.CPub)
+    CPubEncoder.compact_encode!(data)
   end
 
   def render("show.json", %{data: data}) do

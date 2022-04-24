@@ -11,13 +11,14 @@ defmodule CPub.Web.Authorization.Scope do
 
   - `:read`
   - `:write`
+  - `:follow`
 
   See [the Mastodon OAuth
   scopes](https://docs.joinmastodon.org/api/oauth-scopes/) for inspiration on
   more finer-grained scopes that might be implemented in the future.
   """
 
-  @valid_scopes [:openid, :read, :write]
+  @valid_scopes [:follow, :openid, :read, :write]
 
   @spec default :: [atom]
   def default, do: [:read, :write]
@@ -38,6 +39,8 @@ defmodule CPub.Web.Authorization.Scope do
   def valid?(scope), do: scope in @valid_scopes
 
   @spec parse_individual(any) :: atom
+  defp parse_individual("follow"), do: :follow
+  defp parse_individual(:follow), do: :follow
   defp parse_individual("read"), do: :read
   defp parse_individual(:read), do: :read
   defp parse_individual("write"), do: :write
