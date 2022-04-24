@@ -24,11 +24,11 @@ defmodule CPub.MixProject do
 
       # Docs
       name: "CPub",
-      homepage_url: "https://openengiadina.net/",
-      source_url: "https://gitlab.com/openengiadina/cpub",
+      homepage_url: "https://openengiadina.codeberg.page/cpub/",
+      source_url: "https://codeberg.org/openEngiadina/cpub",
       docs: [
-        extras: ["README.md", "CHANGELOG.md"] ++ Path.wildcard("docs/*.md"),
-        main: "readme",
+        extras: ["CHANGELOG.md"] ++ Path.wildcard("docs/*.md"),
+        main: "cpub",
         # TODO: to some nicer grouping
         groups_for_modules: [
           Schema: [CPub.User, CPub.User.Registration],

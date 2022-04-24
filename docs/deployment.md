@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2020 pukkamustard <pukkamustard@posteo.net>
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# Deployment of CPub
+# Deployment
 
 Some notes on how to deploy a CPub instance.
 

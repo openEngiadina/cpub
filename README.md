@@ -6,14 +6,11 @@ SPDX-License-Identifier: CC0-1.0
 
 # CPub
 
-CPub is a general [ActivityPub](https://www.w3.org/TR/activitypub/) server built upon Semantic Web ideas. Most notably it also implements a [Linked Data Platform (LDP)](https://www.w3.org/TR/ldp/) and uses [RDF Turtle](https://www.w3.org/TR/turtle/) as serialization format.
+CPub is an experimental [ActivityPub](https://www.w3.org/TR/activitypub/) server that uses Semantic Web ideas.
 
-The project goals are:
+CPub was developed for the [openEngiadina](https://openengiadina.net) project as a platform for open local knowledge.
 
-- Develop a general ActivityPub server that can be used to create any kind of structured content.
-- Experiment with using Linked Data (RDF) as data model for everything.
-
-CPub is developed as part of the [openEngiadina](https://openengiadina.net/) platform for open local knowledge.
+See also [docs/cpub.md](docs/cpub.md) for more information.
 
 ## Quick start
 
@@ -42,8 +39,10 @@ Releases are tagged commits on the `main` branch. To make a new release:
 - [ ] Conclude merge with `git commit`
 - [ ] Add a git tag with `git tag -a v0.x -m "v0.x"`
 - [ ] Push to upstream branch with `git push upstream main` and `git push upstream main --tags`
-
-
 ## Documentation
 
-See the [docs](docs/) folder for documentation.
+See the [docs](docs/) folder for documentation. Documentation is also available [online](https://openengiadina.codeberg.page/cpub).
+
+## Acknowledgments
+
+CPub was developed as part of the [openEngiadina](https://openengiadina.net) project and has been supported by the [NLnet Foundation](https://nlnet.nl/) trough the [NGI0 Discovery Fund](https://nlnet.nl/discovery/).
